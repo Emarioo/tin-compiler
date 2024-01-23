@@ -1,2 +1,4 @@
 
-g++ src/main.cpp -o app.exe
+g++ src/main.cpp src/Lexer.cpp -Iinclude -include include/pch.h -o app.exe
+
+app
