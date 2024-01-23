@@ -39,7 +39,7 @@ fun name() int
 
 int name(int arg, int arg2) {
     int b = 0;
-
+    a = "dadad";
     a = 3;
     a = 3 + 4;
 

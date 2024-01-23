@@ -1,11 +1,14 @@
 #include <stdio.h>
 
 #include "Lexer.h"
+#include "Parser.h"
 
 int main() {
     // printf("Hello world\n");
 
-    auto tokens = lex_file("test.txt");
+    TokenStream* stream = lex_file("test.txt");
 
-    tokens->print();
+    ParseTokenStream(stream);
+
+    stream->print();
 }

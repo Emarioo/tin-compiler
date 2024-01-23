@@ -1,4 +1,4 @@
 logs
 bin
-.exe
-.o
+*.exe
+*.o
