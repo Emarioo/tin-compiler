@@ -1,6 +1,6 @@
 #pragma once
 
-enum InstructionType {
+enum Opcode : u8 {
     INST_HALT,
     INST_NOP,
 
@@ -23,5 +23,16 @@ enum InstructionType {
 };
 
 struct Code {
+    // instructions bytes
+    std::vector<u8> bytes;
+
+    void emit_li(int reg, int imm);
+    void emit_mov_rr(int to_reg, int from_reg);
+
+    void emit_add(int to_reg, int from_reg);
+    void emit_sub(int to_reg, int from_reg);
+    void emit_mul(int to_reg, int from_reg);
+    void emit_div(int to_reg, int from_reg);
+
     
 };

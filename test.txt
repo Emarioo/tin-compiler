@@ -1,4 +1,7 @@
+a: string;
+a = "dad"
 struct Vector {
-    x int,
-    y int,
+    x: int,
+    y: int,
 }
+5
