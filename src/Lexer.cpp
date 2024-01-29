@@ -1,5 +1,8 @@
 #include "Lexer.h"
 
+void TokenStream::Destroy(TokenStream* stream) {
+    delete stream;
+}
 TokenStream* lex_file(const std::string& path) {
     std::ifstream file(path, std::ifstream::binary);
     if(!file.is_open())

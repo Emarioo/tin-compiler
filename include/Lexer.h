@@ -23,6 +23,8 @@ struct Token {
     int data_index;
 };
 struct TokenStream {
+    static void Destroy(TokenStream* stream);
+    
     std::vector<Token> tokens;
     std::vector<std::string> strings;
     std::vector<int> integers;

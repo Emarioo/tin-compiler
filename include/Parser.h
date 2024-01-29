@@ -2,8 +2,8 @@
 
 #include "Lexer.h"
 
-// This struct is for keeping a state of 
-// where we are in the stream and what
+// This struct contains information
+// about where we are in the stream and what
 // we should parse next.
 struct ParseContext {
 
