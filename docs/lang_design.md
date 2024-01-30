@@ -1,8 +1,11 @@
 Extended Backus-Naur form
 ```c
-program := { struct | function | global_var } *
+program := { struct | function | global_var | include } *
 
 global_var := "global" declaration
+
+include := "include" "<" filename ">"
+filename := any characters except "<" ">"
 
 struct := "struct" id "{" members "}"
 members := { id ":" type "," } *
@@ -10,11 +13,13 @@ members := { id ":" type "," } *
 function := "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
 parameters := id ":" type { "," id ":" type "," } *
 
-statements := { while | if | return | function_call | declaration } *
+statements := { while | if | return | function_call | declaration | assignment } *
 
-loop_statements := statements | { "break" | "continue" } *
 
 declaration := id ":" type [ "=" expression ] ";"
+assignment := id "=" expression ";"
+
+loop_statements := statements | { "break" | "continue" } *
 
 return := "return" [ expression ] ";"
 while := "while" expression "{" loop_statements "}"
@@ -27,9 +32,10 @@ arguments := expression { "," expression } *
 expression := term { ( "+" | "-" ) term } *
 term :=  factor { ( "*" | "/" ) term } *
 factor := "(" expression ")" | operand
-operand := id | number | function_call
+operand := id | number | function_call | string
 
 number := [0-9]*
+string := any characters in quotes?
 id := [a-zA-Z][a-zA-Z0-9]*
 type := id [ "*" ] *
 ```
@@ -69,6 +75,9 @@ struct KOkea {
     namep: string*;
     name: string,
 }
+
+include <main.txt>
+include <stdio.txt>
 
 ```
 

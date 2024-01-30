@@ -38,6 +38,7 @@ struct ASTStatement {
     
     ASTExpression* expression; // used by RETURN, EXPRESSION, IF, WHILE, VAR_DECLARATION
     ASTBody* body; // used by IF, WHILE
+    ASTBody* elseBody; // used by IF sometimes
 };
 
 struct ASTBody {
@@ -54,6 +55,8 @@ struct ASTFunction {
     };
     std::vector<Parameter> parameters;
     
+    // std::string return_type; // should it be a string?
+
     ASTBody* body;
 };
 struct ASTStructure {
@@ -61,6 +64,8 @@ struct ASTStructure {
     
     struct Member {
         std::string name;
+        // std::string type;
+        // int typeId;
         // type, byte offset (in case of padding)
     };
     std::vector<Member> members;

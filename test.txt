@@ -1,7 +1,12 @@
-a: string;
-a = "dad"
-struct Vector {
-    x: int,
-    y: int,
+// Math.txt
+fun vector_add(a: int, b: int) {
+
 }
-5
+
+// main.txt
+include <Math.txt>
+
+fun main() {
+    vector_add();   
+}
+
