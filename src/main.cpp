@@ -9,7 +9,8 @@ int main() {
     // stream->print();
     
     // CompileFile("test.txt");
-    CompileFile("tests/structs.txt");
+    // CompileFile("tests/structs.txt");
+    CompileFile("tests/expr.txt");
 
     return 0;
 }

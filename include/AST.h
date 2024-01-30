@@ -10,12 +10,22 @@ struct ASTStructure;
 
 struct ASTExpression {
     enum Type {
+        INVALID,
         IDENTIFIER,
         FUNCTION_CALL,
-        // integer literal
-        // add, sub...
+        LITERAL_INT,
+        LITERAL_STR,
+        ADD,
+        SUB,
+        DIV,
+        MUL,
+        AND,
+        OR,
     };
     Type type;
+
+    std::string literal_string;
+    int literal_integer;
     
     std::string name; // used with IDENTIFIER, FUNCTION_CALL
     
@@ -27,6 +37,7 @@ struct ASTExpression {
 
 struct ASTStatement {
     enum Type {
+        INVALID,
         VAR_DECLARATION, // variable declaration
         EXPRESSION,
         IF,
@@ -84,5 +95,7 @@ struct AST {
     ASTFunction* createFunction();
     ASTStructure* createStructure();
 
-    void print(); // for debugging
+    void print(ASTExpression* expr, int depth = 0);
+    void print(ASTBody* body, int depth = 0);
+    void print();
 };

@@ -48,7 +48,7 @@ struct TokenStream {
 
         if(str && (tokens[index].type == TOKEN_ID || tokens[index].type == TOKEN_LITERAL_STRING))
             *str = strings[tokens[index].data_index];
-        else if(tokens[index].type == TOKEN_LITERAL_INTEGER) 
+        else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
         return &tokens[index];
     }

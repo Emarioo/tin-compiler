@@ -15,7 +15,6 @@ parameters := id ":" type { "," id ":" type "," } *
 
 statements := { while | if | return | function_call | declaration | assignment } *
 
-
 declaration := id ":" type [ "=" expression ] ";"
 assignment := id "=" expression ";"
 

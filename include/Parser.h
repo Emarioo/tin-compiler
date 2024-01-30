@@ -26,12 +26,14 @@ struct ParseContext {
     void advance(int n = 1) {
         head++;
     }
-
+    
     ASTStatement* parseIf();
+
+    ASTExpression* parseExpression();
+    ASTBody* parseBody();
+
     ASTStructure* parseStruct();
     ASTFunction* parseFunction();
-    ASTBody* parseBody();
-    ASTExpression* parseExpression();
 
     std::string parseType();
 };

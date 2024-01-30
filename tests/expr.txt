@@ -1,0 +1,4 @@
+fun main() {
+    okay + 2 * main() - 5
+
+}
