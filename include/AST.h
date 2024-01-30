@@ -1,3 +1,6 @@
+#pragma once
+
+#include "Util.h"
 
 struct ASTExpression;
 struct ASTStatement;
@@ -42,7 +45,6 @@ struct ASTStatement {
 };
 
 struct ASTBody {
-    
     std::vector<ASTStatement*> statements;
 };
 
@@ -51,11 +53,11 @@ struct ASTFunction {
     
     struct Parameter {
         std::string name;
-        // type
+        std::string type;
     };
     std::vector<Parameter> parameters;
     
-    // std::string return_type; // should it be a string?
+    std::string returnType;
 
     ASTBody* body;
 };
@@ -64,9 +66,7 @@ struct ASTStructure {
     
     struct Member {
         std::string name;
-        // std::string type;
-        // int typeId;
-        // type, byte offset (in case of padding)
+        std::string type;
     };
     std::vector<Member> members;
     
@@ -83,4 +83,6 @@ struct AST {
     ASTBody* createBody();
     ASTFunction* createFunction();
     ASTStructure* createStructure();
+
+    void print(); // for debugging
 };
