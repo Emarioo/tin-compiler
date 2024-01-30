@@ -10,3 +10,9 @@ fun main() {
     vector_add();   
 }
 
+
+name {
+    x ineger + 2, 8
+}
+
+fun MyFun(par integer) integer {}

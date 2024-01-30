@@ -4,10 +4,35 @@
     A function for every statement type, function, struct, expression.
 */
 
+
+
+ASTStatement * ParseContext::parseWhile(){
+    // while expr {}
+
+    ASTStatement* out = ast->createStatement(ASTStatement::Type::WHILE);
+    
+    Token* token = gettok();
+
+    if (token->type != TOKEN_WHILE){
+        return nullptr;
+    }
+    advance();
+    ASTExpression * expr= parseExpr();
+    if (!expr){
+        printf("Error in Expresion!");
+    }
+    out->expression= expr;
+
+    token= gettok();
+
+
+
+}
+
 ASTStatement* ParseContext::parseIf() {
     // if expression { } else expression
     
-    ASTStatement* out = ast->createStatement();
+    ASTStatement* out = ast->createStatement(ASTStatement::Type::IF);
 
     Token* token = gettok();
     if(token->type != TOKEN_IF) {
