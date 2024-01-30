@@ -2,13 +2,16 @@
 
 
 void CompileFile(const std::string& path) {
-    TokenStream* stream = lex_file("test.txt");
-    stream->print();
 
-    ParseTokenStream(stream);
+    AST* ast = new AST();
 
+    TokenStream* stream = lex_file(path);
+    // stream->print();
+
+    ParseTokenStream(stream, ast);
+
+    ast->print();
     
-    
-    
+    delete ast;
     TokenStream::Destroy(stream);
 }

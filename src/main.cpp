@@ -8,5 +8,8 @@ int main() {
     // TokenStream* stream = lex_file("test.txt");
     // stream->print();
     
-    CompileFile("test.txt");
+    // CompileFile("test.txt");
+    CompileFile("tests/structs.txt");
+
+    return 0;
 }

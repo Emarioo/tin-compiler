@@ -19,20 +19,60 @@ TokenStream* lex_file(const std::string& path) {
     // printf("size: %d\n", filesize);
 
     TokenStream* stream = new TokenStream();
+    stream->path = path;
     
     bool is_id = false;
     bool is_num = false;
     bool is_str = false;
+    bool is_comment = false;
+    bool is_multicomment = false;
+
+    int line=1;
+    int column=1;
 
     int data_start = 0;
 
     int index=0;
     while(index<filesize) {
         char chr = text[index];
+        char nextChr = 0;
+        if(index+1 < filesize)
+            nextChr = text[index+1];
         index++;
+
+        if(chr == '\t')
+            column+=4;
+        else
+            column++;
+        if(chr == '\n') {
+            column = 1;
+            line++;
+        }
 
         bool ending = index == filesize;
         bool delim = chr == ' ' || chr == '\n' || chr == '\r' || chr == '\t';
+
+        if(is_comment) {
+            if(chr == '\n')
+                is_comment = false;
+            continue;
+        }
+        if(is_multicomment) {
+            if(chr == '*' && chr == '/')
+                is_multicomment = false;
+            continue;
+        }
+
+        if(chr == '/' && nextChr == '/') {
+            index++; // skip the second slash
+            is_comment=true;
+            continue;
+        }
+        if(chr == '/' && nextChr == '*') {
+            index++; // skip the asterix
+            is_multicomment=true;
+            continue;
+        }
 
         if(chr == '"') {
             if(!is_str) {
@@ -42,14 +82,14 @@ TokenStream* lex_file(const std::string& path) {
             }
             int data_end = index-1 - data_start;
             auto str = std::string(text + data_start, data_end);
-            stream->add_string(str);
+            stream->add_string(str, line, column);
             is_str = false;
             continue;
         }
         if(is_str)
             continue;
 
-        if((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z')) {
+        if((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_') {
             if(!is_id)
                 data_start = index-1;
             is_id = true;
@@ -58,9 +98,11 @@ TokenStream* lex_file(const std::string& path) {
         }
 
         if((chr >= '0' && chr <= '9')) {
-            if(!is_num)
-                data_start = index-1;
-            is_num = true;
+            if(!is_id) {
+                if(!is_num)
+                    data_start = index-1;
+                is_num = true;
+            }
             if(!ending)
                 continue;
         }
@@ -71,7 +113,7 @@ TokenStream* lex_file(const std::string& path) {
                 data_end++;
             auto str = std::string(text + data_start, data_end);
             int num = atoi(str.c_str());
-            stream->add_int(num);
+            stream->add_int(num, line, column);
             is_num = false;
         }
 
@@ -81,7 +123,7 @@ TokenStream* lex_file(const std::string& path) {
                 data_end++;
             auto str = std::string(text + data_start, data_end);
 
-            #define CASE(T) if(str == NAME_OF_TOKEN(T)) stream->add(T);
+            #define CASE(T) if(str == NAME_OF_TOKEN(T)) stream->add(T, line, column);
             
             CASE(TOKEN_STRUCT)
             else CASE(TOKEN_FUNCTION)
@@ -91,9 +133,10 @@ TokenStream* lex_file(const std::string& path) {
             else CASE(TOKEN_IF)
             else CASE(TOKEN_ELSE)
             else CASE(TOKEN_GLOBAL)
+            else CASE(TOKEN_INCLUDE)
             else {
 
-                stream->add_id(str);
+                stream->add_id(str, line, column);
             }
             is_id = false;
         }
@@ -102,7 +145,7 @@ TokenStream* lex_file(const std::string& path) {
             continue;
 
         if(!ending)
-            stream->add((TokenType)chr);
+            stream->add((TokenType)chr, line, column);
     }
 
     free(text);
@@ -111,6 +154,7 @@ TokenStream* lex_file(const std::string& path) {
 }
 
 const char* token_names[] {
+    "eof",        // TOKEN_EOF,
     "id",        // TOKEN_ID,
     "lit_int",   // TOKEN_LITERAL_INTEGER,
     "lit_str",   // TOKEN_LITERAL_STRING,
@@ -121,7 +165,8 @@ const char* token_names[] {
     "break",     // TOKEN_BREAK,
     "if",        // TOKEN_IF,
     "else",      // TOKEN_ELSE,
-    "global",      // TOKEN_ELSE,
+    "global",      // TOKEN_GLOBAL,
+    "include",      // TOKEN_INCLUDE,
 };
 
 void TokenStream::print() {

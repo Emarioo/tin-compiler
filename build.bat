@@ -1,4 +1,11 @@
+@echo off
+@setlocal enabledelayedexpansion
 
-g++ -g src/main.cpp src/Lexer.cpp src/Parser.cpp -Iinclude -include include/pch.h -o app.exe
+SET SRC= main.cpp Lexer.cpp Parser.cpp AST.cpp Compiler.cpp
+SET SRC=!SRC: = src/!
+
+g++ -g !SRC! -Iinclude -include include/pch.h -o app.exe
 
 app
+
+
