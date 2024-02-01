@@ -31,7 +31,8 @@ const char* expr_type_table[]{
     "div", // DIV
     "mul", // MUL
     "and", // AND
-    "or", // OR
+    "or",  // OR
+    "not", // NOT
 };
 void AST::print(ASTExpression* expr, int depth) {
     Assert(expr);
@@ -46,7 +47,7 @@ void AST::print(ASTExpression* expr, int depth) {
     } else if(expr->type == ASTExpression::LITERAL_INT) {
         printf("%d\n",expr->literal_integer);
     } else if(expr->type == ASTExpression::LITERAL_STR) {
-        printf("%s\n",expr->literal_string);
+        printf("%s\n",expr->literal_string.c_str());
     } else {
         printf("OP %s\n",expr_type_table[expr->type]);
         if(expr->left)
@@ -60,7 +61,39 @@ void AST::print(ASTBody* body, int depth) {
     for(const auto& s : body->statements) {
         switch(s->type){
             case ASTStatement::EXPRESSION: {
-                print(s->expression, depth + 1);
+                print(s->expression, depth);
+                break;
+            }
+            case ASTStatement::BREAK: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("break\n");
+                break;
+            }
+            case ASTStatement::CONTINUE: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("continue\n");
+                break;
+            }
+            case ASTStatement::RETURN: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("return\n");
+                break;
+            }
+            case ASTStatement::IF: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("if\n");
+                print(s->expression, depth+1);
+                print(s->body, depth+1);
+                if(s->elseBody) {
+                    printf("else\n");
+                    print(s->elseBody, depth+1);
+                }
+                break;
+            }
+            case ASTStatement::VAR_DECLARATION: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("var_decl %s: %s\n", s->declaration_name.c_str(), s->declaration_type.c_str());
+                print(s->expression, depth+1);
                 break;
             }
             default: Assert(false);
@@ -68,7 +101,13 @@ void AST::print(ASTBody* body, int depth) {
     }
 }
 void AST::print() {
+    log_color(Color::GOLD);
     printf("PRINTING AST:\n");
+    log_color(Color::NO_COLOR);
+    if(structures.size() == 0)
+        printf(" No structures\n");
+    if(functions.size() == 0)
+        printf(" No functions\n");
     for(const auto& st : structures) {
         Assert(st);
         printf("%s {\n", st->name.c_str());

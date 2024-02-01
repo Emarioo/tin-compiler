@@ -2,3 +2,6 @@ logs
 bin
 *.exe
 *.o
+*.obj
+*.ilk
+*.pdb

@@ -1,4 +1,4 @@
 fun main() {
-    okay + 2 * main() - 5
+    okay + 2 * main() - 5;
 
 }

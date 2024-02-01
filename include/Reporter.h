@@ -6,12 +6,18 @@
     Struct that handles error reporting
 */
 struct Reporter {
-    void err(Token* token, const char* msg) {
+    int errors = 0;
+    void err(Token* token, const std::string& msg) {
         Assert(token);
+        errors++;
         // TODO: Color
         const char* file = "?";
         if(token->file)
             file = token->file->c_str();
-        printf("ERROR %s:%d:%d: %s\n",file, token->line, token->column, msg);
+            
+        log_color(Color::RED);
+        printf("ERROR %s:%d:%d: ",file, token->line, token->column);
+        log_color(Color::NO_COLOR);
+        printf("%s\n", msg.c_str());
     }
 };

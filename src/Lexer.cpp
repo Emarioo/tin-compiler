@@ -28,7 +28,7 @@ TokenStream* lex_file(const std::string& path) {
     bool is_multicomment = false;
 
     int line=1;
-    int column=1;
+    int column=0;
 
     int data_start = 0;
 
@@ -45,7 +45,7 @@ TokenStream* lex_file(const std::string& path) {
         else
             column++;
         if(chr == '\n') {
-            column = 1;
+            column = 0;
             line++;
         }
 
@@ -115,6 +115,8 @@ TokenStream* lex_file(const std::string& path) {
             int num = atoi(str.c_str());
             stream->add_int(num, line, column);
             is_num = false;
+            if(ending)
+                continue;
         }
 
         if(is_id) {
@@ -139,13 +141,14 @@ TokenStream* lex_file(const std::string& path) {
                 stream->add_id(str, line, column);
             }
             is_id = false;
+            if(ending)
+                continue;
         }
 
         if(delim)
             continue;
 
-        if(!ending)
-            stream->add((TokenType)chr, line, column);
+        stream->add((TokenType)chr, line, column);
     }
 
     free(text);

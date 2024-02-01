@@ -28,6 +28,8 @@ struct ParseContext {
     }
     
     ASTStatement* parseIf();
+    ASTStatement* parseWhile();
+    ASTStatement* parseVarDeclaration();
 
     ASTExpression* parseExpression();
     ASTBody* parseBody();
@@ -38,4 +40,4 @@ struct ParseContext {
     std::string parseType();
 };
 
-void ParseTokenStream(TokenStream* stream, AST* ast);
+void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter);

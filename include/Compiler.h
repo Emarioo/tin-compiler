@@ -1,6 +1,8 @@
 #include "AST.h"
 #include "Parser.h"
 #include "Lexer.h"
+#include "Generator.h"
+#include "Interpreter.h"
 
 struct Compiler {
     

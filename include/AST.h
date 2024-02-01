@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Util.h"
+#include "Lexer.h"
 
 struct ASTExpression;
 struct ASTStatement;
@@ -21,6 +22,7 @@ struct ASTExpression {
         MUL,
         AND,
         OR,
+        NOT,
     };
     Type type;
 
@@ -33,6 +35,8 @@ struct ASTExpression {
     ASTExpression* right;
     
     std::vector<ASTExpression*> arguments; // used with FUNCTION_CALL
+    
+    Token* location;
 };
 
 struct ASTStatement {
@@ -48,11 +52,14 @@ struct ASTStatement {
     };
     Type type;
     
+    std::string declaration_type; // used by VAR_DECLARATION
     std::string declaration_name; // used by VAR_DECLARATION
     
     ASTExpression* expression; // used by RETURN, EXPRESSION, IF, WHILE, VAR_DECLARATION
     ASTBody* body; // used by IF, WHILE
     ASTBody* elseBody; // used by IF sometimes
+    
+    Token* location;
 };
 
 struct ASTBody {

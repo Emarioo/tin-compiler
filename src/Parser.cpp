@@ -5,32 +5,6 @@
 */
 
 
-
-
-
-ASTStatement * ParseContext::parseWhile(){
-    // while expr {}
-
-    ASTStatement* out = ast->createStatement(ASTStatement::Type::WHILE);
-    
-    Token* token = gettok();
-
-    if (token->type != TOKEN_WHILE){
-        return nullptr;
-    }
-    advance();
-    ASTExpression * expr= parseExpr();
-    if (!expr){
-        printf("Error in Expresion!");
-    }
-    out->expression= expr;
-
-    token= gettok();
-
-
-
-}
-
 std::string ParseContext::parseType() {
     std::string out = "";
     Token* token = gettok(&out);
@@ -100,7 +74,14 @@ ASTExpression* ParseContext::parseExpression() {
                 ending = true; // no valid operation, end of expression
             }
         } else {
+            if(token->type == '!') {
+                operations.push_back(ASTExpression::NOT);
+                advance();
+                continue;
+            }
+            
             if(token->type == TOKEN_ID) {
+                Token* location = token;
                 advance();
                 token = gettok();
                 if(token->type == '(') {
@@ -109,11 +90,12 @@ ASTExpression* ParseContext::parseExpression() {
                     
                     ASTExpression* expr_call = ast->createExpression(ASTExpression::FUNCTION_CALL);
                     expr_call->name = name;
+                    expr_call->location = location;
 
                     while(true) {
                         token = gettok();
                         if(token->type == TOKEN_EOF) {
-                            reporter->err(token,"Sudden end of file");
+                            reporter->err(token,"Sudden end of file.");
                             return nullptr;
                         }
                         if(token->type == ')') {
@@ -131,7 +113,7 @@ ASTExpression* ParseContext::parseExpression() {
                         } else if(token->type == ')') {
                             continue;
                         } else {
-                            reporter->err(token, "Expected closing parentheses");
+                            reporter->err(token, "Expected closing parentheses.");
                             return nullptr;
                         }
 
@@ -143,6 +125,7 @@ ASTExpression* ParseContext::parseExpression() {
                     // identifier
                     ASTExpression* expr = ast->createExpression(ASTExpression::IDENTIFIER);
                     expr->name = name;
+                    expr->location = location;
                     expressions.push_back(expr);
                 }
             } else if(token->type == TOKEN_LITERAL_INTEGER) {
@@ -165,18 +148,31 @@ ASTExpression* ParseContext::parseExpression() {
                 if(token->type == ')') {
                     advance();
                 } else {
-                    reporter->err(token, "Expected closing parentheses");
+                    reporter->err(token, "Expected closing parentheses.");
                     return nullptr;
                 }
 
                 expressions.push_back(expr);
             } else {
-                reporter->err(token, "Invalid token");
+                reporter->err(token, "Invalid token.");
                 return nullptr;
             }
         }
 
-        if(is_operator) {
+        if(!is_operator) {
+            // fix unary operators (like NOT)
+            while(operations.size() > 0) {
+                auto op = operations.back();
+                if(op != ASTExpression::NOT) {
+                    break;
+                }
+                operations.pop_back();
+                ASTExpression* expr = ast->createExpression(op);
+                expr->left = expressions.back();
+                expressions.pop_back();
+                expressions.push_back(expr);
+            }
+        } else {
             if(!ending) {
                 while(true) {
                     if(operations.size() >= 2) {
@@ -223,44 +219,120 @@ ASTExpression* ParseContext::parseExpression() {
 /*################
     STATEMENTS
 ##################*/
+ASTStatement * ParseContext::parseWhile(){
+    // while expr {}
+
+    ASTStatement* out = ast->createStatement(ASTStatement::Type::WHILE);
+    
+    Token* token = gettok();
+
+    if (token->type != TOKEN_WHILE){
+        return nullptr;
+    }
+    advance();
+    ASTExpression * expr= parseExpression();
+    if (!expr){
+        printf("Error in Expresion!");
+    }
+    out->expression= expr;
+
+    token= gettok();
+
+
+    return out;
+}
 ASTStatement* ParseContext::parseIf() {
     // if expression { } else expression
     
     ASTStatement* out = ast->createStatement(ASTStatement::Type::IF);
 
     Token* token = gettok();
-    if(token->type != TOKEN_IF) {
-        return nullptr;
-    }
-
+    Assert(token->type == TOKEN_IF);
     advance();
 
     ASTExpression* expr = parseExpression();
     if(!expr) {
-        // error
+        return nullptr;
     }
-
     out->expression = expr;
 
-    token = gettok();
-
     out->body = parseBody();
-
+    if(!out->body) return nullptr;
     token = gettok();
     if(token->type != TOKEN_ELSE) {
         return out;
     }
-
-    out->elseBody = parseBody();
+    advance();
+    
+    // TODO: Don't handle else if recursively
+    token = gettok();
+    if(token->type == TOKEN_IF) {
+        ASTBody* body = ast->createBody();
+        
+        ASTStatement* stmt = parseIf();
+        if(!stmt)
+            return nullptr;
+        body->statements.push_back(stmt);
+        
+        out->elseBody = body;
+    } else {
+        out->elseBody = parseBody();
+    }
 
     return out;
 }
+ASTStatement* ParseContext::parseVarDeclaration() {
+    // if expression { } else expression
+    
+    ASTStatement* out = ast->createStatement(ASTStatement::VAR_DECLARATION);
+
+    std::string var_name;
+    Token* token = gettok(&var_name);
+    Assert(token->type == TOKEN_ID);
+    advance();
+    
+    out->declaration_name = var_name;
+    out->location = token; // for error messages in generator
+    
+    token = gettok();
+    if(token->type == ':') {
+        advance();
+        
+        std::string type = parseType();
+        if(type.empty()) {
+            reporter->err(token, "Invalid syntax for type.");
+            return nullptr;
+        }
+        
+        out->declaration_type = type;
+    }
+    
+    token = gettok();
+    if(token->type != '=') {
+        if(token->type == ';') {
+            return out;
+        }
+        reporter->err(token, "Expected '=' or semi-colon after variable name and type.");
+        return nullptr;
+    }
+    advance();
+
+    ASTExpression* expr = parseExpression();
+    if(!expr) {
+        return nullptr;
+    }
+    
+    out->expression = expr;
+    
+    return out;
+}
+
 ASTBody* ParseContext::parseBody() {
     ASTBody* out = ast->createBody();
 
     Token* token = gettok();
     if(token->type != '{') {
-        reporter->err(token, "Should be a curly brace");
+        reporter->err(token, "Should be a curly brace.");
         return nullptr;
     }
     advance();
@@ -281,17 +353,36 @@ ASTBody* ParseContext::parseBody() {
                 break;
             }
             case TOKEN_WHILE: {
-                // stmt = parseWhile();
+                stmt = parseWhile();
                 break;
             }
             default: {
-                ASTExpression* expr = parseExpression();
-                if(!expr)
-                    return nullptr;
-                stmt = ast->createStatement(ASTStatement::EXPRESSION);
-                stmt->expression = expr;
-
-                // TODO: check semi colon
+                auto token2 = gettok(1);
+                if(token->type == TOKEN_ID && (token2->type == ':' || token2->type == '='))  {
+                    stmt = parseVarDeclaration();
+                    if(!stmt)
+                        return nullptr;
+                        
+                    token = gettok();
+                    if(token->type != ';') {
+                        reporter->err(token, "You forgot a semi-colon after the statement.");
+                        return nullptr;
+                    }
+                    advance();
+                } else {
+                    ASTExpression* expr = parseExpression();
+                    if(!expr)
+                        return nullptr;
+                    stmt = ast->createStatement(ASTStatement::EXPRESSION);
+                    stmt->expression = expr;
+                    
+                    token = gettok();
+                    if(token->type != ';') {
+                        reporter->err(token, "You forgot a semi-colon after the statement.");
+                        return nullptr;
+                    }
+                    advance();
+                }
                 break;
             }
         }
@@ -314,7 +405,7 @@ ASTFunction* ParseContext::parseFunction() {
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
-        reporter->err(token, "Should be an identifier");
+        reporter->err(token, "Should be an identifier.");
         return nullptr;
     }
     advance();
@@ -322,7 +413,7 @@ ASTFunction* ParseContext::parseFunction() {
 
     token = gettok();
     if(token->type != '(') {
-        reporter->err(token, "Should be a opening parenthesses");
+        reporter->err(token, "Should be a opening parenthesses.");
         return nullptr;
     }
     advance();
@@ -330,7 +421,7 @@ ASTFunction* ParseContext::parseFunction() {
     while(true) {
         token = gettok();
         if(token->type == TOKEN_EOF) {
-            reporter->err(token, "Sudden end of file");
+            reporter->err(token, "Sudden end of file.");
             break;
         }
         if(token->type == ')') {
@@ -340,14 +431,14 @@ ASTFunction* ParseContext::parseFunction() {
         std::string param_name="";
         token = gettok(&param_name);
         if(token->type != TOKEN_ID) {
-            reporter->err(token, "Should be an identifier");
+            reporter->err(token, "Should be an identifier.");
             return nullptr;
         }
         advance();
 
         token = gettok();
         if(token->type != ':') {
-            reporter->err(token, "Should be a colon");
+            reporter->err(token, "Should be a colon.");
             return nullptr;
         }
         advance();
@@ -355,7 +446,7 @@ ASTFunction* ParseContext::parseFunction() {
         token = gettok(); // needed when reporting error
         std::string type = parseType();
         if(type.empty()) {
-            reporter->err(token, "Invalid syntax for type");
+            reporter->err(token, "Invalid syntax for type.");
             return nullptr;
         }
         ASTFunction::Parameter param{};
@@ -379,7 +470,7 @@ ASTFunction* ParseContext::parseFunction() {
         advance();
         std::string return_type = parseType();
          if(return_type.empty()) {
-            reporter->err(token, "Invalid syntax for type");
+            reporter->err(token, "Invalid syntax for type.");
             return nullptr;
         }
         out->returnType = return_type;
@@ -401,7 +492,7 @@ ASTStructure* ParseContext::parseStruct() {
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
-        reporter->err(token, "Should be an identifier");
+        reporter->err(token, "Should be an identifier.");
         return nullptr;
     }
     advance();
@@ -409,7 +500,7 @@ ASTStructure* ParseContext::parseStruct() {
 
     token = gettok();
     if(token->type != '{') {
-        reporter->err(token, "Should be a curly brace");
+        reporter->err(token, "Should be a curly brace.");
         return nullptr;
     }
     advance();
@@ -417,7 +508,7 @@ ASTStructure* ParseContext::parseStruct() {
     while(true) {
         token = gettok();
         if(token->type == TOKEN_EOF) {
-            reporter->err(token, "Sudden end of file");
+            reporter->err(token, "Sudden end of file.");
             break;
         }
         if(token->type == '}') {
@@ -427,14 +518,14 @@ ASTStructure* ParseContext::parseStruct() {
         std::string member_name="";
         token = gettok(&member_name);
         if(token->type != TOKEN_ID) {
-            reporter->err(token, "Should be an identifier");
+            reporter->err(token, "Should be an identifier.");
             return nullptr;
         }
         advance();
 
         token = gettok();
         if(token->type != ':') {
-            reporter->err(token, "Should be a colon");
+            reporter->err(token, "Should be a colon.");
             return nullptr;
         }
         advance();
@@ -442,7 +533,7 @@ ASTStructure* ParseContext::parseStruct() {
         token = gettok(); // needed when reporting error
         std::string type = parseType();
         if(type.empty()) {
-            reporter->err(token, "Invalid syntax for type");
+            reporter->err(token, "Invalid syntax for type.");
             return nullptr;
         }
         ASTStructure::Member member{};
@@ -463,9 +554,9 @@ ASTStructure* ParseContext::parseStruct() {
     return out;
 }
 
-void ParseTokenStream(TokenStream* stream, AST* ast) {
+void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
     ParseContext context{};
-    context.reporter = new Reporter();
+    context.reporter = reporter;
     context.stream = stream;
     context.ast = ast;
 
@@ -480,14 +571,16 @@ void ParseTokenStream(TokenStream* stream, AST* ast) {
                 auto ast_struct = context.parseStruct();
                 if(!ast_struct)
                     running = false; // stop running, parsing failed
-                context.ast->structures.push_back(ast_struct);
+                else
+                    context.ast->structures.push_back(ast_struct);
                 break;
             }
             case TOKEN_FUNCTION: {
                 auto ast_func = context.parseFunction();
                 if(!ast_func)
                     running = false; // stop running, parsing failed
-                context.ast->functions.push_back(ast_func);
+                else
+                    context.ast->functions.push_back(ast_func);
                 break;
             }
             case TOKEN_GLOBAL: {
@@ -497,6 +590,10 @@ void ParseTokenStream(TokenStream* stream, AST* ast) {
             case TOKEN_INCLUDE: {
                 
                 break;
+            }
+            default: {
+                context.reporter->err(token, "Unexpected token.");
+                return;
             }
         }
     }
