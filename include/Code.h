@@ -20,6 +20,12 @@ enum Opcode : u8 {
     INST_AND,
     INST_OR,
     INST_NOT,
+    INST_EQUAL,
+    INST_NOT_EQUAL,
+    INST_LESS,
+    INST_GREATER,
+    INST_LESS_EQUAL,
+    INST_GREATER_EQUAL,
 
     INST_RET, // return
     
@@ -83,6 +89,13 @@ struct CodePiece {
     void emit_and(Register to_from_reg, Register from_reg);
     void emit_or(Register to_from_reg, Register from_reg);
     void emit_not(Register to_reg, Register from_reg);
+
+    void emit_eq(Register to_from_reg, Register from_reg);
+    void emit_neq(Register to_from_reg, Register from_reg);
+    void emit_less(Register to_from_reg, Register from_reg);
+    void emit_greater(Register to_from_reg, Register from_reg);
+    void emit_less_equal(Register to_from_reg, Register from_reg);
+    void emit_greater_equal(Register to_from_reg, Register from_reg);
     
     void emit_jmp(int pc);
     void emit_jmp(int* out_index_of_imm);

@@ -50,7 +50,13 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::MUL:
         case ASTExpression::DIV:
         case ASTExpression::AND:
-        case ASTExpression::OR: {
+        case ASTExpression::OR:
+        case ASTExpression::EQUAL:
+        case ASTExpression::NOT_EQUAL:
+        case ASTExpression::LESS:
+        case ASTExpression::GREATER:
+        case ASTExpression::LESS_EQUAL:
+        case ASTExpression::GREATER_EQUAL: {
             generateExpression(expr->left);
             generateExpression(expr->right);
             
@@ -64,6 +70,12 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
                 case ASTExpression::DIV: piece->emit_div(REG_A, REG_D); break;
                 case ASTExpression::AND: piece->emit_and(REG_A, REG_D); break;
                 case ASTExpression::OR:  piece->emit_or (REG_A, REG_D); break;
+                case ASTExpression::EQUAL:          piece->emit_eq(REG_A, REG_D); break;
+                case ASTExpression::NOT_EQUAL:      piece->emit_neq(REG_A, REG_D); break;
+                case ASTExpression::LESS:           piece->emit_less(REG_A, REG_D); break;
+                case ASTExpression::GREATER:        piece->emit_greater(REG_A, REG_D); break;
+                case ASTExpression::LESS_EQUAL:     piece->emit_less_equal(REG_A, REG_D); break;
+                case ASTExpression::GREATER_EQUAL:  piece->emit_greater_equal(REG_A, REG_D); break;
                 default: Assert(false);
             }
             
@@ -187,15 +199,15 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     
     context.piece->name = function->name;
     
-    // Setup the base/frame pointer
-    context.piece->emit_push(REG_BP);
-    context.piece->emit_mov_rr(REG_BP, REG_SP);
+    // Setup the base/frame pointer (the call instruction handles this automatically)
+    // context.piece->emit_push(REG_BP);
+    // context.piece->emit_mov_rr(REG_BP, REG_SP);
     
     context.generateBody(function->body);
     
     // Emit ret instruction if the user forgot the return statement
     if(context.piece->instructions.back().opcode != INST_RET) {
-        context.piece->emit_pop(REG_BP);
+        // context.piece->emit_pop(REG_BP); (the call instruction handles this automatically)
         context.piece->emit_ret();
     }
 }

@@ -93,17 +93,29 @@ void Interpreter::execute() {
             break;
         }
         case INST_CALL: {
+            // push pc
             registers[REG_SP] -= 8;
             CHECK_STACK
             *(i64*)registers[REG_SP] = registers[REG_PC];
             
+            // push piece_index
             registers[REG_SP] -= 8;
             CHECK_STACK
             *(i64*)registers[REG_SP] = piece_index;
             
+            // set program counter to start of the function
             registers[REG_PC] = 0;
             piece_index = imm - 1;
             piece = code->pieces[piece_index];
+
+            // push bp
+            registers[REG_SP] -= 8;
+            CHECK_STACK
+            *(i64*)registers[REG_SP] = registers[REG_BP];
+
+            // mov bp, sp
+            registers[REG_BP] = registers[REG_SP];
+
             break;
         }
         case INST_RET: {
@@ -111,7 +123,12 @@ void Interpreter::execute() {
                 running = false;
                 break;
             }
-            
+
+            // pop bp
+            registers[REG_BP] = *(i64*)registers[REG_SP];
+            registers[REG_SP] += 8;
+            CHECK_STACK
+
             piece_index = *(i64*)registers[REG_SP];
             registers[REG_SP] += 8;
             CHECK_STACK
@@ -140,6 +157,12 @@ void Interpreter::execute() {
         case INST_AND: registers[inst.op0] = registers[inst.op0] && registers[inst.op1]; break;
         case INST_OR:  registers[inst.op0] = registers[inst.op0] || registers[inst.op1]; break;
         case INST_NOT: registers[inst.op0] = !registers[inst.op1]; break;
+        case INST_EQUAL:            registers[inst.op0] = registers[inst.op0] == registers[inst.op1]; break;
+        case INST_NOT_EQUAL:        registers[inst.op0] = registers[inst.op0] != registers[inst.op1]; break;
+        case INST_LESS:             registers[inst.op0] = registers[inst.op0] < registers[inst.op1]; break;
+        case INST_GREATER:          registers[inst.op0] = registers[inst.op0] > registers[inst.op1]; break;
+        case INST_LESS_EQUAL:       registers[inst.op0] = registers[inst.op0] <= registers[inst.op1]; break;
+        case INST_GREATER_EQUAL:    registers[inst.op0] = registers[inst.op0] >= registers[inst.op1]; break;
         default: Assert(("Incomplete instruction",false));
         }
         

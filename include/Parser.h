@@ -24,7 +24,7 @@ struct ParseContext {
         return stream->getToken(head + off, str, num);
     }
     void advance(int n = 1) {
-        head++;
+        head += n;
     }
     
     ASTStatement* parseIf();

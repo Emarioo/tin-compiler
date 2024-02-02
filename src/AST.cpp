@@ -33,6 +33,12 @@ const char* expr_type_table[]{
     "and", // AND
     "or",  // OR
     "not", // NOT
+    "equal", // EQUAL
+    "not_equal", // NOT_EQUAL
+    "less", // LESS
+    "greater", // GREATER
+    "less_equal", // LESS_EQUAL
+    "greater_equal", // GREATER_EQUAL
 };
 void AST::print(ASTExpression* expr, int depth) {
     Assert(expr);
@@ -49,7 +55,7 @@ void AST::print(ASTExpression* expr, int depth) {
     } else if(expr->type == ASTExpression::LITERAL_STR) {
         printf("%s\n",expr->literal_string.c_str());
     } else {
-        printf("OP %s\n",expr_type_table[expr->type]);
+        printf("%s\n",expr_type_table[expr->type]);
         if(expr->left)
             print(expr->left, depth + 1);
         if(expr->right)

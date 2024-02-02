@@ -64,11 +64,32 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 operations.push_back(operationType);
             } else if (token->type == '&' && token2->type == '&') {
-                advance();
+                advance(2);
                 // && is okay but & & is also considered an AND operation. Is that okay?
                 operations.push_back(ASTExpression::AND);
             } else if (token->type == '|' && token2->type == '|') {
+                advance(2);
+                operations.push_back(ASTExpression::OR);
+            } else if (token->type == '=' && token2->type == '=') {
+                advance(2);
+                operations.push_back(ASTExpression::EQUAL);
+            } else if (token->type == '!' && token2->type == '=') {
+                advance(2);
+                operations.push_back(ASTExpression::NOT_EQUAL);
+            } else if (token->type == '<' && token2->type == '=') {
+                advance(2);
+                operations.push_back(ASTExpression::LESS_EQUAL);
+            } else if (token->type == '>' && token2->type == '=') {
+                advance(2);
+                operations.push_back(ASTExpression::GREATER_EQUAL);
+            } else if (token->type == '<') {
                 advance();
+                operations.push_back(ASTExpression::LESS);
+            } else if (token->type == '>') {
+                advance();
+                operations.push_back(ASTExpression::GREATER);
+            } else if (token->type == '|' && token2->type == '|') {
+                advance(2);
                 operations.push_back(ASTExpression::OR);
             } else {
                 ending = true; // no valid operation, end of expression

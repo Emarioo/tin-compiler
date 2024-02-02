@@ -23,6 +23,12 @@ struct ASTExpression {
         AND,
         OR,
         NOT,
+        EQUAL,
+        NOT_EQUAL,
+        LESS,
+        GREATER,
+        LESS_EQUAL,
+        GREATER_EQUAL,
     };
     Type type;
 

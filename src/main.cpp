@@ -10,8 +10,8 @@ int main() {
     
     // CompileFile("test.txt");
     // CompileFile("tests/structs.txt");
-    // CompileFile("tests/expr.txt");
-    CompileFile("tests/stmts.txt");
+    CompileFile("tests/expr.txt");
+    // CompileFile("tests/stmts.txt");
 
     printf("Finished\n");
 

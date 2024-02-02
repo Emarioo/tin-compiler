@@ -43,6 +43,12 @@ DEF_EMIT2(div, DIV)
 DEF_EMIT2(and, AND)
 DEF_EMIT2(or , OR)
 DEF_EMIT2(not, NOT)
+DEF_EMIT2(eq, EQUAL)
+DEF_EMIT2(neq, NOT_EQUAL)
+DEF_EMIT2(less, LESS)
+DEF_EMIT2(greater, GREATER)
+DEF_EMIT2(less_equal, LESS_EQUAL)
+DEF_EMIT2(greater_equal, GREATER_EQUAL)
 
 void CodePiece::emit_jmp(int pc) {
     emit({INST_JMP});
@@ -78,30 +84,37 @@ void CodePiece::fix_jump_here(int imm_index) {
 // }
 
 const char* opcode_names[] {
-    "halt", // INST_HALT
-    "nop", // INST_NOP
+    "halt",             // INST_HALT
+    "nop",              // INST_NOP
     
-    "mov_rr", // INST_MOV_RR
-    "mov_mr", // INST_MOV_MR
-    "mov_rm", // INST_MOV_RM
+    "mov_rr",           // INST_MOV_RR
+    "mov_mr",           // INST_MOV_MR
+    "mov_rm",           // INST_MOV_RM
     
-    "push", // INST_PUSH
-    "pop", // INST_POP
+    "push",             // INST_PUSH
+    "pop",              // INST_POP
     
-    "add", // INST_ADD
-    "sub", // INST_SUB
-    "mul", // INST_MUL
-    "div", // INST_DIV
-    "and", // INST_AND
-    "or", // INST_OR
-    "not", // INST_NOT
+    "add",              // INST_ADD
+    "sub",              // INST_SUB
+    "mul",              // INST_MUL
+    "div",              // INST_DIV
+    "and",              // INST_AND
+    "or",               // INST_OR
+    "not",              // INST_NOT
     
-    "ret", // INST_RET
+    "equal",            // INST_EQUAL,
+    "not_equal",        // INST_NOT_EQUAL,
+    "less",             // INST_LESS,
+    "greater",          // INST_GREATER,
+    "less_equal",       // INST_LESS_EQUAL,
+    "greater_equal",    // INST_GREATER_EQUAL,
     
-    "li", // INST_LI
-    "jmp", // INST_JMP
-    "jz", // INST_JZ
-    "call", // INST_CALL
+    "ret",              // INST_RET
+    
+    "li",               // INST_LI
+    "jmp",              // INST_JMP
+    "jz",               // INST_JZ
+    "call",             // INST_CALL
 };
 const char* register_names[] {
     "invalid", // REG_INVALID
