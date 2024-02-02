@@ -63,7 +63,7 @@ struct Instruction {
         Register operands[3];
     };
 };
-
+struct Code;
 struct CodePiece {
     std::string name;
     std::vector<Instruction> instructions;
@@ -111,7 +111,7 @@ struct CodePiece {
     
     Instruction* get(int index) { return &instructions[index]; }
     
-    void print(int low_index = 0, int high_index = -1);
+    void print(int low_index = 0, int high_index = -1, Code* code = nullptr);
     
 private:
     std::vector<int> index_of_non_immediates;

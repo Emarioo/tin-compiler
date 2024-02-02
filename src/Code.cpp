@@ -129,7 +129,7 @@ const char* register_names[] {
     "pc", // REG_PC
 };
 
-void CodePiece::print(int low_index, int high_index) {
+void CodePiece::print(int low_index, int high_index, Code* code) {
     if(high_index == -1 || high_index > instructions.size())
         high_index = instructions.size();
         
@@ -153,13 +153,16 @@ void CodePiece::print(int low_index, int high_index) {
         if(inst.opcode == INST_LI || inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL) {
             i++;
             int imm = *(int*)&instructions[i];
-            printf(", ");
-            log_color(Color::GREEN);
-            if(inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL) {
+            if(code && inst.opcode == INST_CALL) {
+                log_color(Color::GREEN);
+                printf(" %s", code->pieces[imm-1]->name.c_str());
+            } else if(inst.opcode == INST_JMP || inst.opcode == INST_JZ) {
+                printf(", ");
                 int addr = imm + i;
                 log_color(Color::GRAY);
                 printf("%d:", addr);
             } else {
+                printf(", ");
                 log_color(Color::GREEN);
                 printf("%d",imm);
             }
@@ -194,7 +197,7 @@ void Code::apply_relocations() {
                 }
             }
             if(piece_index != -1) {
-                *(int*)&p->instructions[rel.index_of_immediate] = piece_index +1; // +1 because 0 is seen as invalid
+                *(int*)&p->instructions[rel.index_of_immediate] = piece_index + 1; // +1 because 0 is seen as invalid
             } else {
                 // Probably caused by an error in which case we don't need
                 //  to print a message here since it's probably already covered

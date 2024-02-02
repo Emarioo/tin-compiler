@@ -127,6 +127,8 @@ ASTExpression* ParseContext::parseExpression() {
                         if(!expr)
                             return nullptr;
 
+                        expr_call->arguments.push_back(expr);
+
                         token = gettok();
                         if(token->type == ',') {
                             advance();
@@ -137,8 +139,6 @@ ASTExpression* ParseContext::parseExpression() {
                             reporter->err(token, "Expected closing parentheses.");
                             return nullptr;
                         }
-
-                        expr_call->arguments.push_back(expr);
                     }
 
                     expressions.push_back(expr_call);
@@ -375,6 +375,23 @@ ASTBody* ParseContext::parseBody() {
             }
             case TOKEN_WHILE: {
                 stmt = parseWhile();
+                break;
+            }
+            case TOKEN_RETURN: {
+                advance();
+
+                stmt = ast->createStatement(ASTStatement::RETURN);
+
+                stmt->expression = parseExpression();
+                if(!stmt->expression)
+                    return nullptr;
+
+                token = gettok();
+                if(token->type != ';') {
+                    reporter->err(token, "You forgot a semi-colon after the statement.");
+                    return nullptr;
+                }
+                advance();
                 break;
             }
             default: {

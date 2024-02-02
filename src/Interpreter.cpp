@@ -61,7 +61,7 @@ void Interpreter::execute() {
         // log_color(Color::PURPLE);
         // printf(" %s ",opcode_names[inst.opcode]);
         // log_color(Color::NO_COLOR);
-        piece->print(prev_pc, prev_pc+1);
+        piece->print(prev_pc, prev_pc+1, code);
         
         switch(inst.opcode) {
         case INST_MOV_RR: {
@@ -94,14 +94,15 @@ void Interpreter::execute() {
         }
         case INST_CALL: {
             // push pc
-            registers[REG_SP] -= 8;
+            registers[REG_SP] -= 4;
             CHECK_STACK
-            *(i64*)registers[REG_SP] = registers[REG_PC];
+            *(int*)registers[REG_SP] = registers[REG_PC];
+            Assert(registers[REG_PC] >> 32 == 0); // make sure we don't overflow, probably never will but just in case
             
             // push piece_index
-            registers[REG_SP] -= 8;
+            registers[REG_SP] -= 4;
             CHECK_STACK
-            *(i64*)registers[REG_SP] = piece_index;
+            *(int*)registers[REG_SP] = piece_index;
             
             // set program counter to start of the function
             registers[REG_PC] = 0;
@@ -124,18 +125,27 @@ void Interpreter::execute() {
                 break;
             }
 
+            if(registers[REG_BP] != registers[REG_SP]) {
+                log_color(Color::RED);
+                printf("INTERPRETER: Stack pointer and base pointer mismatch on ret instruction (bp: %lld, sp %lld\n", registers[REG_BP], registers[REG_SP]);
+                log_color(Color::NO_COLOR);
+                return;
+            }
+
+
             // pop bp
             registers[REG_BP] = *(i64*)registers[REG_SP];
             registers[REG_SP] += 8;
             CHECK_STACK
 
-            piece_index = *(i64*)registers[REG_SP];
-            registers[REG_SP] += 8;
+            piece_index = *(int*)registers[REG_SP];
+            registers[REG_SP] += 4;
             CHECK_STACK
             
-            registers[REG_PC] = *(i64*)registers[REG_SP];
-            registers[REG_SP] += 8;
+            registers[REG_PC] = *(int*)registers[REG_SP];
+            registers[REG_SP] += 4;
             CHECK_STACK
+
             
             piece = code->pieces[piece_index];
             break;

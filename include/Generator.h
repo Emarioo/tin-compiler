@@ -23,7 +23,7 @@ struct GeneratorContext {
     bool generateStatement(ASTStatement* stmt);
     bool generateBody(ASTBody* body);
     
-    Variable* addVariable(const std::string& name);
+    Variable* addVariable(const std::string& name, int frame_offset = 0);
     Variable* findVariable(const std::string& name);
 };
 

@@ -17,6 +17,7 @@ enum TokenType {
     TOKEN_WHILE,
     TOKEN_CONTINUE,
     TOKEN_BREAK,
+    TOKEN_RETURN,
     TOKEN_IF,
     TOKEN_ELSE,
     TOKEN_GLOBAL,

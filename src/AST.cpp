@@ -83,6 +83,7 @@ void AST::print(ASTBody* body, int depth) {
             case ASTStatement::RETURN: {
                 for(int i=0;i<depth;i++) printf(" ");
                 printf("return\n");
+                print(s->expression, depth+1);
                 break;
             }
             case ASTStatement::IF: {
@@ -108,7 +109,7 @@ void AST::print(ASTBody* body, int depth) {
 }
 void AST::print() {
     log_color(Color::GOLD);
-    printf("PRINTING AST:\n");
+    printf("Printing AST:\n");
     log_color(Color::NO_COLOR);
     if(structures.size() == 0)
         printf(" No structures\n");

@@ -1,8 +1,6 @@
 #include "Compiler.h"
 
-
 void CompileFile(const std::string& path) {
-
     AST* ast = new AST();
     Reporter* reporter = new Reporter();
 

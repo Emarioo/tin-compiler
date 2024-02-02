@@ -132,6 +132,7 @@ TokenStream* lex_file(const std::string& path) {
             else CASE(TOKEN_WHILE)
             else CASE(TOKEN_CONTINUE)
             else CASE(TOKEN_BREAK)
+            else CASE(TOKEN_RETURN)
             else CASE(TOKEN_IF)
             else CASE(TOKEN_ELSE)
             else CASE(TOKEN_GLOBAL)
@@ -166,6 +167,7 @@ const char* token_names[] {
     "while",     // TOKEN_WHILE,
     "continue",  // TOKEN_CONTINUE,
     "break",     // TOKEN_BREAK,
+    "return",     // TOKEN_RETURN,
     "if",        // TOKEN_IF,
     "else",      // TOKEN_ELSE,
     "global",      // TOKEN_GLOBAL,

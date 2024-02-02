@@ -40,7 +40,7 @@ struct ASTExpression {
     ASTExpression* left;
     ASTExpression* right;
     
-    std::vector<ASTExpression*> arguments; // used with FUNCTION_CALL
+    std::vector<ASTExpression*> arguments{}; // used with FUNCTION_CALL
     
     Token* location;
 };

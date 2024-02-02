@@ -15,7 +15,6 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             break;
         }
         case ASTExpression::IDENTIFIER: {
-            
             auto variable = findVariable(expr->name);
             if(!variable) {
                 reporter->err(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
@@ -34,12 +33,18 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             break;
         }
         case ASTExpression::FUNCTION_CALL: {
-            // TODO: Push arguments
-            
+            for(int i=0;i<expr->arguments.size(); i++) {
+                auto arg = expr->arguments[i];
+                generateExpression(arg);
+            }
+
             int relocation_index = 0;
             piece->emit_call(&relocation_index);
-            
             piece->relocations.push_back({expr->name, relocation_index});
+
+            for(int i=0;i<expr->arguments.size(); i++) {
+                piece->emit_pop(REG_F); // throw away argument values
+            }
             
             // TODO: Some functions do not return a value. Handle it.
             piece->emit_push(REG_A); // push return value
@@ -177,6 +182,12 @@ bool GeneratorContext::generateStatement(ASTStatement* stmt) {
             
             break;
         }
+        case ASTStatement::RETURN: {
+            generateExpression(stmt->expression);
+            piece->emit_pop(REG_A);
+            piece->emit_ret();
+            break;
+        }
         default: Assert(false);
     }
     return true;
@@ -202,6 +213,18 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     // Setup the base/frame pointer (the call instruction handles this automatically)
     // context.piece->emit_push(REG_BP);
     // context.piece->emit_mov_rr(REG_BP, REG_SP);
+
+    GeneratorContext::Variable* variable = nullptr;
+    for(int i=0;i < function->parameters.size(); i++) {
+        auto& param = function->parameters[i];
+        int frame_offset = 16 // 16 bytes for the call frame (pc, bp)
+            + (function->parameters.size()-1-i)*8; // param.size-1-i BECAUSE first argument is pushed first and is the furthest away
+
+        auto variable = context.addVariable(param.name, frame_offset);
+        Assert(("Parameter could not be created. Compiler bug!",variable));
+
+        // TODO: Set type of variable
+    }
     
     context.generateBody(function->body);
     
@@ -212,16 +235,20 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     }
 }
 
-GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& name) {
+GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& name, int frame_offset) {
     auto pair = local_variables.find(name);
     if(pair != local_variables.end())
         return nullptr; // variable already exists
         
     auto ptr = new Variable();
     ptr->name = name;
-    current_frame_offset -= 4;
-    ptr->frame_offset = current_frame_offset;
     local_variables[name] = ptr;
+    if(frame_offset == 0) {
+        current_frame_offset -= 4;
+        ptr->frame_offset = current_frame_offset;
+    } else {
+        ptr->frame_offset = frame_offset;
+    }
     return ptr;
 }
 GeneratorContext::Variable* GeneratorContext::findVariable(const std::string& name) {
