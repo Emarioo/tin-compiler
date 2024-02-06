@@ -1,5 +1,7 @@
 #include "Generator.h"
 
+#define REPORT(L, ...) reporter->err(function->origin_stream, L, __VA_ARGS__)
+
 bool GeneratorContext::generateExpression(ASTExpression* expr) {
     Assert(expr);
     switch(expr->type) {
@@ -17,7 +19,7 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::IDENTIFIER: {
             auto variable = findVariable(expr->name);
             if(!variable) {
-                reporter->err(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
+                REPORT(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
                 break;
             }
             int var_offset = variable->frame_offset;
@@ -40,11 +42,16 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
 
             int relocation_index = 0;
             piece->emit_call(&relocation_index);
+            
+            // how about native calls
             piece->relocations.push_back({expr->name, relocation_index});
-
+            
             for(int i=0;i<expr->arguments.size(); i++) {
                 piece->emit_pop(REG_F); // throw away argument values
             }
+            // NOTE: Optimize by popping all arguments by incrementing stack pointer directly
+            // piece->emit_li(REG_F, expr->arguments.size() * 8);
+            // piece->emit_add(REG_SP, REG_F);
             
             // TODO: Some functions do not return a value. Handle it.
             piece->emit_push(REG_A); // push return value
@@ -99,9 +106,17 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
     }
     return true;
 }
-bool GeneratorContext::generateStatement(ASTStatement* stmt) {
-    Assert(stmt);
-    switch(stmt->type){
+bool GeneratorContext::generateBody(ASTBody* body) {
+    Assert(body);
+    int prev_frame_offset = current_frame_offset;
+    for(auto stmt : body->statements) {
+        // debug line information
+        std::string text = function->origin_stream->getline(stmt->location);
+        int line = function->origin_stream->getToken(stmt->location)->line;
+        piece->push_line(line, text);
+        
+        bool stop = false;
+        switch(stmt->type){
         case ASTStatement::EXPRESSION: {
             generateExpression(stmt->expression);
             piece->emit_pop(REG_A); // we don't care about the value
@@ -111,18 +126,23 @@ bool GeneratorContext::generateStatement(ASTStatement* stmt) {
             // make space on the stack frame for local variable
             
             Variable* variable = nullptr;
+            bool declaration = false;
             if(stmt->declaration_type.empty()) {
                 variable = findVariable(stmt->declaration_name);
                 if(!variable) {
-                    reporter->err(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is not declared.");
+                    REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is not declared.");
                     break;
                 }
             } else {
+                declaration = true;
                 variable = addVariable(stmt->declaration_name);
                 if(!variable) {
-                    reporter->err(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
+                    REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
                     break;
                 }
+                // make space on stack for local variable
+                piece->emit_li(REG_B, 8);
+                piece->emit_sub(REG_SP, REG_B); // sp -= 8
             }
             
             int var_offset = variable->frame_offset;
@@ -141,6 +161,7 @@ bool GeneratorContext::generateStatement(ASTStatement* stmt) {
             
             // set the value of the variable
             piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
+            
             break;
         }
         case ASTStatement::WHILE: {
@@ -183,20 +204,36 @@ bool GeneratorContext::generateStatement(ASTStatement* stmt) {
             break;
         }
         case ASTStatement::RETURN: {
-            generateExpression(stmt->expression);
-            piece->emit_pop(REG_A);
+            if(stmt->expression) {
+                generateExpression(stmt->expression);
+                piece->emit_pop(REG_A);
+            }
+            if(current_frame_offset != prev_frame_offset) {
+                piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+                piece->emit_sub(REG_SP, REG_B);
+            }
             piece->emit_ret();
+            
+            stop = true; // return statement makes the rest of the statments useless
+            
+            if(stop)
+                current_frame_offset = prev_frame_offset;
             break;
         }
         default: Assert(false);
+        }
+        
+        if(stop)
+            break;
     }
-    return true;
-}
-bool GeneratorContext::generateBody(ASTBody* body) {
-    Assert(body);
-    for(auto stmt : body->statements) {
-        auto res = generateStatement(stmt);
+    if(current_frame_offset != prev_frame_offset) {
+        // This also happens in the return statement
+        // "free" local variables from stack
+        piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+        piece->emit_sub(REG_SP, REG_B);
+        current_frame_offset = prev_frame_offset;
     }
+    
     return true;
 }
 
@@ -227,7 +264,7 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     }
     
     context.generateBody(function->body);
-    
+ 
     // Emit ret instruction if the user forgot the return statement
     if(context.piece->instructions.back().opcode != INST_RET) {
         // context.piece->emit_pop(REG_BP); (the call instruction handles this automatically)
@@ -244,7 +281,7 @@ GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& nam
     ptr->name = name;
     local_variables[name] = ptr;
     if(frame_offset == 0) {
-        current_frame_offset -= 4;
+        current_frame_offset -= 8;
         ptr->frame_offset = current_frame_offset;
     } else {
         ptr->frame_offset = frame_offset;

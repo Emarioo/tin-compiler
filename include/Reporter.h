@@ -20,4 +20,20 @@ struct Reporter {
         log_color(Color::NO_COLOR);
         printf("%s\n", msg.c_str());
     }
+    void err(TokenStream* stream, SourceLocation loc, const std::string& msg) {
+        Assert(stream);
+        errors++;
+        
+        auto token = stream->getToken(loc);
+        
+        // TODO: Color
+        const char* file = "?";
+        if(token->file)
+            file = token->file->c_str();
+            
+        log_color(Color::RED);
+        printf("ERROR %s:%d:%d: ",file, token->line, token->column);
+        log_color(Color::NO_COLOR);
+        printf("%s\n", msg.c_str());
+    }
 };

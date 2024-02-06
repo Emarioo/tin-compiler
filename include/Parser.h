@@ -26,6 +26,9 @@ struct ParseContext {
     void advance(int n = 1) {
         head += n;
     }
+    SourceLocation getloc(int off = 0) {
+        return { head + off };
+    }
     
     ASTStatement* parseIf();
     ASTStatement* parseWhile();

@@ -11,6 +11,16 @@ struct Interpreter {
     
     i64 registers[REG_COUNT];
     
+    int piece_index = -1;
+    CodePiece* piece = nullptr;
+    
     void init();
     void execute();
+    
+    void print_registers(bool subtle = false);
+    void print_stack();
+    void print_frame(int high, int low);
+    
+private:
+    void run_native_call(int imm);
 };

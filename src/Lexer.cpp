@@ -175,7 +175,7 @@ const char* token_names[] {
 };
 
 void TokenStream::print() {
-    for(auto tok : tokens) {
+    for(auto& tok : tokens) {
         if(tok.type < 256) {
             printf("%c ",(char)tok.type);
         } else if(tok.type == TOKEN_ID){
@@ -189,4 +189,50 @@ void TokenStream::print() {
         }
     }
     printf("\n");
+}
+std::string TokenStream::feed(int start, int end) {
+    std::string out = "";
+    for(int i=start;i<end;i++) {
+        auto& tok = tokens[i];
+        if(tok.type < 256) {
+            out += (char)tok.type;
+            out += " ";
+        } else if(tok.type == TOKEN_ID){
+            out += strings[tok.data_index];
+            out += " ";
+        } else if(tok.type == TOKEN_LITERAL_STRING){
+            out += strings[tok.data_index];
+            out += " ";
+        } else if(tok.type == TOKEN_LITERAL_INTEGER) {
+            out += std::to_string(integers[tok.data_index]);
+            out += " ";
+        } else {
+            out += NAME_OF_TOKEN(tok.type);
+            out += " ";
+        }
+    }
+    return out;
+}
+std::string TokenStream::getline(int index) {
+    Token* base_tok = getToken(index, nullptr, nullptr);
+    int line = base_tok->line;
+    
+    int start = index;
+    while(start - 1 >= 0) {
+        auto tok = getToken(start - 1, nullptr, nullptr);
+        if(tok->line != line)
+            break;
+        start--;
+    }
+    
+    int end = index;
+    while(end + 1 < tokens.size()) {
+        auto tok = getToken(end + 1, nullptr, nullptr);
+        if(tok->line != line)
+            break;
+        end++;
+    }
+    end++; // exclusive
+    
+    return feed(start, end);
 }

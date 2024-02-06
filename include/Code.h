@@ -50,6 +50,9 @@ enum Register : u8 {
     REG_BP,
     REG_PC,
     
+    REG_T0, // temporary internal registers
+    REG_T1,
+    
     REG_COUNT,
 };
 extern const char* opcode_names[];
@@ -67,6 +70,17 @@ struct Code;
 struct CodePiece {
     std::string name;
     std::vector<Instruction> instructions;
+    
+    std::vector<int> line_of_instruction;
+    struct Line {
+        int line_number;
+        std::string text;
+    };
+    std::vector<Line> lines;
+    
+    void push_line(int line, std::string text) {
+        lines.push_back({line, text});
+    }
     
     struct Relocation {
         std::string func_name;
@@ -119,6 +133,9 @@ private:
     void emit(Instruction inst) {
         index_of_non_immediates.push_back(instructions.size());
         instructions.push_back(inst);
+        
+        line_of_instruction.resize(instructions.size());
+        line_of_instruction[instructions.size()-1] = lines.size()-1;
     }
     void emit_imm(int imm){
         instructions.push_back(*(Instruction*)&imm);
@@ -146,3 +163,10 @@ struct Code {
     
     void print();
 };
+
+enum NativeCalls {
+    NATIVE_START = -200,
+    NATIVE_printi = NATIVE_START,
+};
+#define NAME_OF_NATIVE(X) native_names[X - NATIVE_START]
+extern const char* native_names[];

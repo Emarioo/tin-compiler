@@ -1,6 +1,31 @@
 fun main() {
-    add(9,3);
+    fib_it(7);
+    printi(fib(7));
+    
+    // n: int = add(9,3);
+    // printi(n);
 }
-fun add(a: int, b: int): int {
-    return a + b;
+fun fib(n: int): int {
+    if(n == 1 || n == 0) {
+        return 1;
+    }
+    return fib(n-1) + fib(n-2);
 }
+fun fib_it(n: int): int {
+    last: int = 0;
+    now: int = 1;
+    printi(now);
+    while n > 0 {
+        n = n-1;
+        tmp: int = now;
+        
+        now = now + last;
+        last = tmp;
+        printi(now);
+    }
+    return now;
+}
+
+// fun add(a: int, b: int): int {
+//     return a + b;
+// }

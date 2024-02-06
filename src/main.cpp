@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "Lexer.h"
 #include "Parser.h"
 #include "Compiler.h"
@@ -13,6 +11,7 @@ int main() {
     // CompileFile("tests/expr.txt");
     // CompileFile("tests/stmts.txt");
     CompileFile("tests/func.txt");
+    // CompileFile("tests/loops.txt");
 
     printf("Finished\n");
 

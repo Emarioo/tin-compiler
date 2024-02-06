@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AST.h"
 #include "Code.h"
 #include "Reporter.h"
@@ -20,7 +22,6 @@ struct GeneratorContext {
     std::unordered_map<std::string, Variable*> local_variables;
     
     bool generateExpression(ASTExpression* expr);
-    bool generateStatement(ASTStatement* stmt);
     bool generateBody(ASTBody* body);
     
     Variable* addVariable(const std::string& name, int frame_offset = 0);

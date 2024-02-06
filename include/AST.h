@@ -42,7 +42,7 @@ struct ASTExpression {
     
     std::vector<ASTExpression*> arguments{}; // used with FUNCTION_CALL
     
-    Token* location;
+    SourceLocation location;
 };
 
 struct ASTStatement {
@@ -65,7 +65,7 @@ struct ASTStatement {
     ASTBody* body; // used by IF, WHILE
     ASTBody* elseBody; // used by IF sometimes
     
-    Token* location;
+    SourceLocation location;
 };
 
 struct ASTBody {
@@ -74,6 +74,9 @@ struct ASTBody {
 
 struct ASTFunction {
     std::string name;
+    
+    SourceLocation location;
+    TokenStream* origin_stream;
     
     struct Parameter {
         std::string name;
@@ -87,6 +90,9 @@ struct ASTFunction {
 };
 struct ASTStructure {
     std::string name;
+    
+    SourceLocation location;
+    TokenStream* origin_stream;
     
     struct Member {
         std::string name;

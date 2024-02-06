@@ -5,7 +5,7 @@
 @REM SET USE_MSVC=1
 SET USE_GCC=1
 
-SET SRC= main.cpp Lexer.cpp Parser.cpp AST.cpp Generator.cpp Code.cpp Util.cpp Compiler.cpp Interpreter.cpp
+SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp Interpreter.cpp Lexer.cpp main.cpp Parser.cpp Util.cpp
 SET SRC=!SRC: = src/!
 
 mkdir bin 2> nul

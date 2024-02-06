@@ -102,7 +102,7 @@ ASTExpression* ParseContext::parseExpression() {
             }
             
             if(token->type == TOKEN_ID) {
-                Token* location = token;
+                auto location = getloc();
                 advance();
                 token = gettok();
                 if(token->type == '(') {
@@ -241,10 +241,9 @@ ASTExpression* ParseContext::parseExpression() {
     STATEMENTS
 ##################*/
 ASTStatement * ParseContext::parseWhile(){
-    // while expr {}
-
     ASTStatement* out = ast->createStatement(ASTStatement::Type::WHILE);
     
+    // out->location = getloc();
     Token* token = gettok();
 
     if (token->type != TOKEN_WHILE){
@@ -253,20 +252,25 @@ ASTStatement * ParseContext::parseWhile(){
     advance();
     ASTExpression * expr= parseExpression();
     if (!expr){
-        printf("Error in Expresion!");
+        return nullptr;
+        // printf("Error in Expresion!");
     }
-    out->expression= expr;
+    out->expression = expr;
 
-    token= gettok();
-
-
+    ASTBody* body = parseBody();
+    if(!body)
+        return nullptr;
+        
+    out->body = body;
     return out;
 }
 ASTStatement* ParseContext::parseIf() {
     // if expression { } else expression
     
     ASTStatement* out = ast->createStatement(ASTStatement::Type::IF);
-
+    
+    // out->location = getloc();
+    
     Token* token = gettok();
     Assert(token->type == TOKEN_IF);
     advance();
@@ -307,13 +311,15 @@ ASTStatement* ParseContext::parseVarDeclaration() {
     
     ASTStatement* out = ast->createStatement(ASTStatement::VAR_DECLARATION);
 
+    // out->location = getloc();
+
     std::string var_name;
     Token* token = gettok(&var_name);
     Assert(token->type == TOKEN_ID);
     advance();
     
     out->declaration_name = var_name;
-    out->location = token; // for error messages in generator
+    // out->location = token; // for error messages in generator
     
     token = gettok();
     if(token->type == ':') {
@@ -368,6 +374,7 @@ ASTBody* ParseContext::parseBody() {
         }
 
         ASTStatement* stmt = nullptr;
+        auto loc = getloc();
         switch(token->type) {
             case TOKEN_IF: {
                 stmt = parseIf();
@@ -408,6 +415,7 @@ ASTBody* ParseContext::parseBody() {
                     }
                     advance();
                 } else {
+                    token = gettok();
                     ASTExpression* expr = parseExpression();
                     if(!expr)
                         return nullptr;
@@ -426,6 +434,7 @@ ASTBody* ParseContext::parseBody() {
         }
         if(!stmt)
             return nullptr;
+        stmt->location = loc;
         out->statements.push_back(stmt);
     }
     return out;
@@ -440,6 +449,7 @@ ASTFunction* ParseContext::parseFunction() {
 
     ASTFunction* out = ast->createFunction();
 
+    out->location = getloc();
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
@@ -448,6 +458,8 @@ ASTFunction* ParseContext::parseFunction() {
     }
     advance();
     out->name = name;
+    
+    out->origin_stream = stream;
 
     token = gettok();
     if(token->type != '(') {
@@ -527,6 +539,7 @@ ASTStructure* ParseContext::parseStruct() {
 
     ASTStructure* out = ast->createStructure();
 
+    out->location = getloc();
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {

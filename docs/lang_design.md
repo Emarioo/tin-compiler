@@ -1,42 +1,44 @@
 Extended Backus-Naur form
 ```c
-program := { struct | function | global_var | include } *
+program ::= { struct | function | global_var | include } *
 
-global_var := "global" declaration
+global_var ::= "global" declaration
 
-include := "include" "<" filename ">"
-filename := any characters except "<" ">"
+include ::= "include" "<" filename ">"
+filename ::= any characters except "<" ">"
 
-struct := "struct" id "{" members "}"
-members := { id ":" type "," } *
+struct ::= "struct" id "{" members "}"
+members ::= { id ":" type "," } *
 
-function := "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
-parameters := id ":" type { "," id ":" type "," } *
+function ::= "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
+parameters ::= id ":" type { "," id ":" type "," } *
 
-statements := { while | if | return | function_call | declaration | assignment } *
+statements ::= { while | if | return | function_call | declaration | assignment } *
 
-declaration := id ":" type [ "=" expression ] ";"
-assignment := id "=" expression ";"
+declaration ::= id ":" type [ "=" expression ] ";"
+assignment ::= id "=" expression ";"
 
-loop_statements := statements | { "break" | "continue" } *
+loop_statements ::= statements | { "break" | "continue" } *
 
-return := "return" [ expression ] ";"
-while := "while" expression "{" loop_statements "}"
-if := "if" expression "{" statements "}" [ else ]
-else := "else" [ if | "{" statements "}" ]
+return ::= "return" [ expression ] ";"
+while ::= "while" expression "{" loop_statements "}"
+if ::= "if" expression "{" statements "}" [ else ]
+else ::= "else" [ if | "{" statements "}" ]
 
-function_call := id "(" [ arguments ] ")"
-arguments := expression { "," expression } *
+function_call ::= id "(" [ arguments ] ")"
+arguments ::= expression { "," expression } *
 
-expression := term { ( "+" | "-" ) term } *
-term :=  factor { ( "*" | "/" ) term } *
-factor := "(" expression ")" | operand
-operand := id | number | function_call | string
+expression ::= comparison { ( "||" | "&&" ) expression } *
+comparison ::= arithmetic_low { ( "==" | "<" | ">" | "<=" | ">=" ) comparison } *
+arithmetic_low ::=  arithmetic_high { ( "+" | "-" ) arithmetic_low } *
+arithmetic_high ::=  value { ( "*" | "/" ) arithmetic_high } *
+value ::= "!" expression | "(" expression ")" | id | number | function_call | string
+// ! must be in value, "1 + !3" would not be possible with: expression = "!" expression | comparison { ( "||" ...
 
-number := [0-9]*
-string := any characters in quotes?
-id := [a-zA-Z][a-zA-Z0-9]*
-type := id [ "*" ] *
+number ::= [0-9]*
+string ::= any characters in quotes?
+id ::= [a-zA-Z][a-zA-Z0-9]*
+type ::= id [ "*" ] *
 ```
 
 Language examples

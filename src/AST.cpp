@@ -97,6 +97,13 @@ void AST::print(ASTBody* body, int depth) {
                 }
                 break;
             }
+             case ASTStatement::WHILE: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("while\n");
+                print(s->expression, depth+1);
+                print(s->body, depth+1);
+                break;
+            }
             case ASTStatement::VAR_DECLARATION: {
                 for(int i=0;i<depth;i++) printf(" ");
                 printf("var_decl %s: %s\n", s->declaration_name.c_str(), s->declaration_type.c_str());

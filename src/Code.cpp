@@ -127,6 +127,8 @@ const char* register_names[] {
     "sp", // REG_SP
     "bp", // REG_BP
     "pc", // REG_PC
+    "t0", // REG_T0
+    "t1", // REG_T1
 };
 
 void CodePiece::print(int low_index, int high_index, Code* code) {
@@ -155,7 +157,11 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
             int imm = *(int*)&instructions[i];
             if(code && inst.opcode == INST_CALL) {
                 log_color(Color::GREEN);
-                printf(" %s", code->pieces[imm-1]->name.c_str());
+                if(imm < 0) {
+                    printf(" %s", NAME_OF_NATIVE(imm));
+                } else {
+                    printf(" %s", code->pieces[imm-1]->name.c_str());
+                }
             } else if(inst.opcode == INST_JMP || inst.opcode == INST_JZ) {
                 printf(", ");
                 int addr = imm + i;
@@ -198,11 +204,16 @@ void Code::apply_relocations() {
             }
             if(piece_index != -1) {
                 *(int*)&p->instructions[rel.index_of_immediate] = piece_index + 1; // +1 because 0 is seen as invalid
+            } else if(rel.func_name == "printi") {
+                *(int*)&p->instructions[rel.index_of_immediate] = NATIVE_printi;
             } else {
                 // Probably caused by an error in which case we don't need
                 //  to print a message here since it's probably already covered
-                // printf("Function name for relocation not found\n");
+                printf("'%s' is not a function and relocations to it cannot be applied\n", rel.func_name.c_str());
             }
         }
     }
 }
+const char* native_names[] {
+    "printi", // NATIVE_printi
+};

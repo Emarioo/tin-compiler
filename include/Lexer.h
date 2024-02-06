@@ -23,6 +23,7 @@ enum TokenType {
     TOKEN_GLOBAL,
     TOKEN_INCLUDE,
 };
+
 struct Token {
     TokenType type;
     int data_index;
@@ -32,6 +33,9 @@ struct Token {
     std::string* file;
 
     char debug_type;
+};
+struct SourceLocation {
+    int token_index;
 };
 struct TokenStream {
     static void Destroy(TokenStream* stream);
@@ -52,6 +56,9 @@ struct TokenStream {
         else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
         return &tokens[index];
+    }
+    Token* getToken(SourceLocation loc, std::string* str = nullptr, int* num = nullptr) {
+        return getToken(loc.token_index, str, num);
     }
 
     void add(TokenType t, int line, int column) {
@@ -95,6 +102,13 @@ struct TokenStream {
         tok.column = column;
         tok.file = &path;
     }
+    
+    std::string getline(int index);
+    std::string getline(SourceLocation loc) {
+        return getline(loc.token_index);
+    }
+    
+    std::string feed(int start, int end);
 
     void print();
 };
