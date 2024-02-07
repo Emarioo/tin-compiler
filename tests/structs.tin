@@ -1,0 +1,14 @@
+
+struct Hey {
+
+}
+struct _ {
+    _: _
+}
+struct Na {
+    nu: ni,
+}
+struct Nice {
+    dip: ni,
+    zap: NOP,
+}

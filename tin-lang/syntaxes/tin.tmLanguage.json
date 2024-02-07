@@ -1,0 +1,117 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Better Than Batch",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#strings1"
+		},
+		{
+			"include": "#commentline"
+		},
+		{
+			"include": "#commentblock"	
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#types"
+		}
+	],
+	"repository": {
+		"commentline": {
+			"name":"comment.line",
+			"begin":"//",
+			"end":"\n"
+		},
+		"commentblock": {
+			"name": "comment.block",
+			"begin": "/\\*",
+			"end": "\\*/"
+		},
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control",
+				"match": "\\b(if|else|while|break|continue|global|fun|struct|return|cast|include)\\b"
+			}
+			
+			]
+		},
+		"preproc":{
+			"patterns": [{
+				"name":"entity.name.selector",
+				"match":"#\\w+"
+			}]
+		},
+		"annotation": {
+			"patterns": [
+				{
+					"name": "entity.name.tag",
+					"match": "@\\S+"
+				}
+			]
+		},
+		"functions":{
+			"patterns": [{
+				"name":"entity.name.function",
+				"match": "\\w+\\("
+			}]
+		},
+		"types":{
+			"patterns": [{
+				"name":"entity.name.type",
+				"match": "((?<=\\w+\\s*:\\s*)|(?<=\\)\\s*:\\s*))(?<base>(\\w+::)*(\\w+)(\\<(\\g'base')(,\\g'base')*\\>)?)"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.tin",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.tin",
+					"match": "\\\\."
+				}
+			]
+		},
+		"strings1": {
+			"patterns": [
+				{
+					"name": "string.quoted.single.tin",
+					"match": "'((.)|(\\\\.))'"
+				}
+			]
+		},
+		"operators":{
+			"name":"keyword.operator",
+			"patterns": [
+				{
+					"name": "keyword.operator",
+					"match":"(\\=\\=)|(\\=)|(\\+)|(\\-)|(\\*)|(\\/)|(\\%)|(\\<)|(\\>)|(\\!\\=)|(\\|)|(\\&)|(\\^)"
+				}
+			]
+		},
+		"numbers": {
+			"name": "constant.numeric",
+			"patterns": [
+				{
+					"name": "constant.numeric",
+					"match": "\\b\\d+(\\.\\d+)?d?u?s?\\b|\\b0x[0-9A-F_]+\\b|(false)|(true)|(null)"
+				}
+			]
+		}
+	},
+	"scopeName": "source.tin"
+}

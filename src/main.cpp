@@ -3,15 +3,15 @@
 #include "Compiler.h"
 
 int main() {
-    // TokenStream* stream = lex_file("test.txt");
+    // TokenStream* stream = lex_file("test.tin");
     // stream->print();
     
-    // CompileFile("test.txt");
-    // CompileFile("tests/structs.txt");
-    // CompileFile("tests/expr.txt");
-    // CompileFile("tests/stmts.txt");
-    CompileFile("tests/func.txt");
-    // CompileFile("tests/loops.txt");
+    // CompileFile("test.tin");
+    // CompileFile("tests/structs.tin");
+    // CompileFile("tests/expr.tin");
+    // CompileFile("tests/stmts.tin");
+    CompileFile("tests/fib.tin");
+    // CompileFile("tests/loops.tin");
 
     printf("Finished\n");
 

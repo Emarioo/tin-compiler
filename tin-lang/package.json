@@ -1,0 +1,25 @@
+{
+  "name": "tin-lang",
+  "displayName": "Tin Lang",
+  "description": "Syntax highlight for tin language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.77.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "tin",
+      "aliases": ["Tin", "tin"],
+      "extensions": [".tin"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "tin",
+      "scopeName": "source.tin",
+      "path": "./syntaxes/tin.tmLanguage.json"
+    }]
+  }
+}
