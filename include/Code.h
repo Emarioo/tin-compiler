@@ -12,6 +12,7 @@ enum Opcode : u8 {
 
     INST_PUSH,
     INST_POP,
+    INST_INCR,
 
     INST_ADD,
     INST_SUB,
@@ -91,6 +92,7 @@ struct CodePiece {
     void emit_li(Register reg, int imm);
     void emit_push(Register reg);
     void emit_pop(Register reg);
+    void emit_incr(Register reg, int imm);
     
     void emit_mov_rr(Register to_reg, Register from_reg);
     void emit_mov_mr(Register to_reg, Register from_reg, u8 size);

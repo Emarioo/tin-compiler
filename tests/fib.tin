@@ -1,7 +1,7 @@
 fun main() {
     fib_it(7);
     printi(fib(7));
-    printi(fib_quick(50));
+    //printi(fib_quick(50));
 }
 fun fib(n: int): int {
     if(n == 1 || n == 0) {
@@ -24,26 +24,26 @@ fun fib_it(n: int): int {
     }
     return now;
 }
-fun fib_quick(n: int): int {
-    /*
-    f2 = f1 + f0
-    f2 = y^2, f1 = y, f0 = 1
-    
-    y^2 = y + 1
-    y^2 - y - 1 = 0
-    y0 = 1/2 + sqrt(5/4)
-    y1 = 1/2 - sqrt(5/4)
-    
-    f(n) = A*r0^n + B*r^n
-    f(0) = A + B = 0,  B = -A
-    f(1) = A*r0 + B*r1 = 1,  A(r0 - r1) = 1,  A = 1/(r0 - r1)
-    
-    f(n) = A*r0^n + B*r^n = 1/(r0 - r1) * r0^n - 1/(r0 - r1)*r1^n
-    f(n) = (r0^n - r1^n)/(r0 - r1)
-    */
-    
-    r0: int = 1/2 + sqrt(5/4);
-    r1: int = 1/2 - sqrt(5/4);
-    return (pow(r0,n) - pow(r1,n)) / (r0 - r1);
-    
-}
+//fun fib_quick(n: int): int {
+//    /*
+//    f2 = f1 + f0
+//    f2 = y^2, f1 = y, f0 = 1
+//    
+//    y^2 = y + 1
+//    y^2 - y - 1 = 0
+//    y0 = 1/2 + sqrt(5/4)
+//    y1 = 1/2 - sqrt(5/4)
+//    
+//    f(n) = A*r0^n + B*r^n
+//    f(0) = A + B = 0,  B = -A
+//    f(1) = A*r0 + B*r1 = 1,  A(r0 - r1) = 1,  A = 1/(r0 - r1)
+//    
+//    f(n) = A*r0^n + B*r^n = 1/(r0 - r1) * r0^n - 1/(r0 - r1)*r1^n
+//    f(n) = (r0^n - r1^n)/(r0 - r1)
+//    */
+//    
+//    r0: int = 1/2 + sqrt(5/4);
+//    r1: int = 1/2 - sqrt(5/4);
+//    return (pow(r0,n) - pow(r1,n)) / (r0 - r1);
+//    
+//}

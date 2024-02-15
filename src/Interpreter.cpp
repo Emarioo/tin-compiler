@@ -20,7 +20,7 @@ void Interpreter::execute() {
     bool interactive = false;
     bool enable_logging = false;
     // interactive = true;
-    // enable_logging = true;
+    enable_logging = true;
     
     code->apply_relocations();
     
@@ -161,6 +161,14 @@ void Interpreter::execute() {
             registers[inst.op0] = *(i64*)registers[REG_SP];
             registers[REG_SP] += 8;
             CHECK_STACK
+            break;
+        }
+        case INST_INCR: {
+            int imm = ((i8)inst.op1) | ((i8)inst.op2 << 8);
+            registers[inst.op0] += imm;
+            if(inst.op0 == REG_SP) {
+                CHECK_STACK
+            }
             break;
         }
         case INST_CALL: {
@@ -336,7 +344,7 @@ void Interpreter::print_stack() {
         i64 val = *(i64*)(off);
         
         log_color(Color::CYAN);
-        printf(" %s+%d", register_names[REG_SP], off - registers[REG_SP]);
+        printf(" %s+%lld", register_names[REG_SP], off - registers[REG_SP]);
         log_color(Color::GRAY);
         printf(" = ");
         log_color(Color::GREEN);

@@ -19,7 +19,6 @@ ASTFunction* AST::createFunction() {
 ASTStructure* AST::createStructure() {
     return new ASTStructure();
 }
-
 const char* expr_type_table[]{
     "invalid", // INVALID
     "id", // IDENTIFIER
@@ -39,6 +38,8 @@ const char* expr_type_table[]{
     "greater", // GREATER
     "less_equal", // LESS_EQUAL
     "greater_equal", // GREATER_EQUAL
+    "refer", // REFER
+    "deref", // DEREF
 };
 void AST::print(ASTExpression* expr, int depth) {
     Assert(expr);

@@ -29,6 +29,8 @@ struct ASTExpression {
         GREATER,
         LESS_EQUAL,
         GREATER_EQUAL,
+        REFER, //  
+        DEREF,
     };
     Type type;
 

@@ -24,6 +24,11 @@ void CodePiece::emit_pop(Register r0) {
     
     emit({INST_POP, r0});
 }
+void CodePiece::emit_incr(Register reg, int imm) {
+    // Assert((imm >> 16) == 0);
+    // BUG HERE, 32 bits truncated to 16 bits
+    emit({INST_INCR, reg, (Register)(imm&0xFF), (Register)(imm >> 8) }); // we cast to register but it's not actually registers, it's immediate values
+}
 
 DEF_EMIT2(mov_rr,MOV_RR)
 
@@ -93,6 +98,7 @@ const char* opcode_names[] {
     
     "push",             // INST_PUSH
     "pop",              // INST_POP
+    "incr",              // INST_INCR
     
     "add",              // INST_ADD
     "sub",              // INST_SUB
@@ -143,13 +149,18 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
         printf(" %s", opcode_names[inst.opcode]);
         log_color(Color::NO_COLOR);
         
-        if(inst.op0) printf(" %s", register_names[inst.op0]);
-        if(inst.op1) printf(", %s", register_names[inst.op1]);
-        if(inst.op2 && (inst.opcode == INST_MOV_MR || inst.opcode == INST_MOV_RM)) {
-            if(inst.op2 == 1) printf(", byte");
-            if(inst.op2 == 2) printf(", word");
-            if(inst.op2 == 4) printf(", dword");
-            if(inst.op2 == 8) printf(", qword");
+        if(inst.opcode == INST_INCR) {
+            int imm = ((i8)inst.op1) | ((i8)inst.op2<<8);
+            printf(" %s, %d", register_names[inst.op0], imm);
+        } else {
+            if(inst.op0) printf(" %s", register_names[inst.op0]);
+            if(inst.op1) printf(", %s", register_names[inst.op1]);
+            if(inst.op2 && (inst.opcode == INST_MOV_MR || inst.opcode == INST_MOV_RM)) {
+                if(inst.op2 == 1) printf(", byte");
+                if(inst.op2 == 2) printf(", word");
+                if(inst.op2 == 4) printf(", dword");
+                if(inst.op2 == 8) printf(", qword");
+            }
         }
         
         if(inst.opcode == INST_LI || inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL) {

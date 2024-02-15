@@ -19,6 +19,7 @@ std::string ParseContext::parseType() {
             break;
 
         out+="*";
+        advance();
     }
     return out;
 }
@@ -33,6 +34,7 @@ int GetPrecedence(ASTExpression::Type type) {
         case ASTExpression::Type::AND:
         case ASTExpression::Type::OR:
             return -5;
+        default: Assert(false);
     }
     return 0;
 }
@@ -97,6 +99,16 @@ ASTExpression* ParseContext::parseExpression() {
         } else {
             if(token->type == '!') {
                 operations.push_back(ASTExpression::NOT);
+                advance();
+                continue;
+            }
+            if(token->type == '&') {
+                operations.push_back(ASTExpression::REFER);
+                advance();
+                continue;
+            }
+            if(token->type == '*') {
+                operations.push_back(ASTExpression::DEREF);
                 advance();
                 continue;
             }
@@ -184,7 +196,7 @@ ASTExpression* ParseContext::parseExpression() {
             // fix unary operators (like NOT)
             while(operations.size() > 0) {
                 auto op = operations.back();
-                if(op != ASTExpression::NOT) {
+                if(op != ASTExpression::NOT && op != ASTExpression::REFER && op != ASTExpression::DEREF) {
                     break;
                 }
                 operations.pop_back();

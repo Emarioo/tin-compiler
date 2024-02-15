@@ -10,8 +10,9 @@ int main() {
     // CompileFile("tests/structs.tin");
     // CompileFile("tests/expr.tin");
     // CompileFile("tests/stmts.tin");
-    CompileFile("tests/fib.tin");
+    // CompileFile("tests/fib.tin");
     // CompileFile("tests/loops.tin");
+    CompileFile("tests/ptrs.tin");
 
     printf("Finished\n");
 

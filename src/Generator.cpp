@@ -2,6 +2,45 @@
 
 #define REPORT(L, ...) reporter->err(function->origin_stream, L, __VA_ARGS__)
 
+bool GeneratorContext::generateReference(ASTExpression* expr) {
+    std::vector<ASTExpression*> exprs;
+    
+    while(expr) {
+        if(expr->type == ASTExpression::IDENTIFIER) {
+            exprs.push_back(expr);            
+            expr = expr->left;
+            continue;
+        }
+        // else if(expr->type == ASTExpression::MEMBER) {
+        //     expr = expr->left;
+        // }
+        
+        // expr type not allowed when referencing
+        return false;
+    }
+    
+    for(int i=exprs.size()-1;i>=0;i--) {
+        auto e = exprs[i];
+        
+        if(e->type == ASTExpression::IDENTIFIER) {
+            auto variable = findVariable(e->name);
+            if(!variable) {
+                REPORT(expr->location, std::string() + "Variable '" + e->name + "' does not exist.");
+                return false;
+            }
+            int var_offset = variable->frame_offset;
+            // get the address of the variable
+            // a local variable exists on the stack
+            // with an offset from the base pointer
+            piece->emit_li(REG_B, var_offset);
+            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+            
+            piece->emit_push(REG_B); // push pointer
+            break;
+        }
+    }
+    return true;
+}
 bool GeneratorContext::generateExpression(ASTExpression* expr) {
     Assert(expr);
     switch(expr->type) {
@@ -102,6 +141,18 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             piece->emit_push(REG_A);
             break;   
         }
+        case ASTExpression::REFER: {
+            bool yes = generateReference(expr->left);
+            break;   
+        }
+        case ASTExpression::DEREF: {
+            bool yes = generateExpression(expr->left);
+            
+            piece->emit_pop(REG_B);
+            piece->emit_mov_rm(REG_A, REG_B, 4);
+            piece->emit_push(REG_A);
+            break;   
+        }
         default: Assert(false);
     }
     return true;
@@ -141,8 +192,9 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     break;
                 }
                 // make space on stack for local variable
-                piece->emit_li(REG_B, 8);
-                piece->emit_sub(REG_SP, REG_B); // sp -= 8
+                // piece->emit_li(REG_B, 8);
+                // piece->emit_sub(REG_SP, REG_B); // sp -= 8
+                piece->emit_incr(REG_SP, -8);
             }
             
             int var_offset = variable->frame_offset;
@@ -209,8 +261,9 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                 piece->emit_pop(REG_A);
             }
             if(current_frame_offset != prev_frame_offset) {
-                piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
-                piece->emit_sub(REG_SP, REG_B);
+                // piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+                // piece->emit_sub(REG_SP, REG_B);
+                piece->emit_incr(REG_SP, - (current_frame_offset - prev_frame_offset));
             }
             piece->emit_ret();
             
@@ -229,8 +282,9 @@ bool GeneratorContext::generateBody(ASTBody* body) {
     if(current_frame_offset != prev_frame_offset) {
         // This also happens in the return statement
         // "free" local variables from stack
-        piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
-        piece->emit_sub(REG_SP, REG_B);
+        // piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+        // piece->emit_sub(REG_SP, REG_B);
+        piece->emit_incr(REG_SP, - (current_frame_offset - prev_frame_offset));
         current_frame_offset = prev_frame_offset;
     }
     

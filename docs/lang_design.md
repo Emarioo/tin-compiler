@@ -4,8 +4,8 @@ program ::= { struct | function | global_var | include } *
 
 global_var ::= "global" declaration
 
-include ::= "include" "<" filename ">"
-filename ::= any characters except "<" ">"
+include ::= "include" "\"" filename "\""
+filename ::= any characters except?
 
 struct ::= "struct" id "{" members "}"
 members ::= { id ":" type "," } *
@@ -32,7 +32,7 @@ expression ::= comparison { ( "||" | "&&" ) expression } *
 comparison ::= arithmetic_low { ( "==" | "<" | ">" | "<=" | ">=" ) comparison } *
 arithmetic_low ::=  arithmetic_high { ( "+" | "-" ) arithmetic_low } *
 arithmetic_high ::=  value { ( "*" | "/" ) arithmetic_high } *
-value ::= "!" expression | "(" expression ")" | id | number | function_call | string
+value ::= "!" expression | "*" expression | "&" id | "(" expression ")" | id | number | function_call | string
 // ! must be in value, "1 + !3" would not be possible with: expression = "!" expression | comparison { ( "||" ...
 
 number ::= [0-9]*
