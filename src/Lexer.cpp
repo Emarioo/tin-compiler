@@ -161,17 +161,19 @@ const char* token_names[] {
     "eof",        // TOKEN_EOF,
     "id",        // TOKEN_ID,
     "lit_int",   // TOKEN_LITERAL_INTEGER,
+    "lit_float", // TOKEN_LITERAL_FLOAT,
     "lit_str",   // TOKEN_LITERAL_STRING,
     "struct",    // TOKEN_STRUCT,
     "fun",       // TOKEN_FUNCTION,
     "while",     // TOKEN_WHILE,
     "continue",  // TOKEN_CONTINUE,
     "break",     // TOKEN_BREAK,
-    "return",     // TOKEN_RETURN,
+    "return",    // TOKEN_RETURN,
     "if",        // TOKEN_IF,
     "else",      // TOKEN_ELSE,
-    "global",      // TOKEN_GLOBAL,
-    "include",      // TOKEN_INCLUDE,
+    "global",    // TOKEN_GLOBAL,
+    "const",     // TOKEN_CONST,
+    "include",   // TOKEN_INCLUDE,
 };
 
 void TokenStream::print() {
@@ -214,12 +216,12 @@ std::string TokenStream::feed(int start, int end) {
     return out;
 }
 std::string TokenStream::getline(int index) {
-    Token* base_tok = getToken(index, nullptr, nullptr);
+    Token* base_tok = getToken(index, nullptr, nullptr, nullptr);
     int line = base_tok->line;
     
     int start = index;
     while(start - 1 >= 0) {
-        auto tok = getToken(start - 1, nullptr, nullptr);
+        auto tok = getToken(start - 1, nullptr, nullptr, nullptr);
         if(tok->line != line)
             break;
         start--;
@@ -227,7 +229,7 @@ std::string TokenStream::getline(int index) {
     
     int end = index;
     while(end + 1 < tokens.size()) {
-        auto tok = getToken(end + 1, nullptr, nullptr);
+        auto tok = getToken(end + 1, nullptr, nullptr, nullptr);
         if(tok->line != line)
             break;
         end++;

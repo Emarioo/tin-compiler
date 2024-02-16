@@ -29,8 +29,9 @@ struct ASTExpression {
         GREATER,
         LESS_EQUAL,
         GREATER_EQUAL,
-        REFER, //  
-        DEREF,
+        REFER, // take reference
+        DEREF, // dereference
+        INDEX, // index operator
     };
     Type type;
 

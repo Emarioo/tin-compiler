@@ -20,8 +20,8 @@ struct ParseContext {
     Token* gettok(std::string* str, int off = 0) {
         return stream->getToken(head + off, str, nullptr);
     }
-    Token* gettok(std::string* str, int* num, int off = 0) {
-        return stream->getToken(head + off, str, num);
+    Token* gettok(std::string* str, int* num, float* dec, int off = 0) {
+        return stream->getToken(head + off, str, num, dec);
     }
     void advance(int n = 1) {
         head += n;

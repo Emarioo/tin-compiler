@@ -11,6 +11,7 @@ enum TokenType {
     TOKEN_EOF = 256,
     TOKEN_ID,
     TOKEN_LITERAL_INTEGER,
+    TOKEN_LITERAL_FLOAT,
     TOKEN_LITERAL_STRING,
     TOKEN_STRUCT,
     TOKEN_FUNCTION,
@@ -21,6 +22,7 @@ enum TokenType {
     TOKEN_IF,
     TOKEN_ELSE,
     TOKEN_GLOBAL,
+    TOKEN_CONST,
     TOKEN_INCLUDE,
 };
 
@@ -45,8 +47,9 @@ struct TokenStream {
     std::vector<Token> tokens;
     std::vector<std::string> strings;
     std::vector<int> integers;
+    std::vector<float> floats;
 
-    Token* getToken(int index, std::string* str, int* num) {
+    Token* getToken(int index, std::string* str, int* num, float* dec) {
         static Token eof{TOKEN_EOF};
         if(tokens.size() <= index)
             return &eof;
@@ -55,10 +58,12 @@ struct TokenStream {
             *str = strings[tokens[index].data_index];
         else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
+        else if(num && tokens[index].type == TOKEN_LITERAL_FLOAT) 
+            *num = floats[tokens[index].data_index];
         return &tokens[index];
     }
-    Token* getToken(SourceLocation loc, std::string* str = nullptr, int* num = nullptr) {
-        return getToken(loc.token_index, str, num);
+    Token* getToken(SourceLocation loc, std::string* str = nullptr, int* num = nullptr, float* dec = nullptr) {
+        return getToken(loc.token_index, str, num, dec);
     }
 
     void add(TokenType t, int line, int column) {
@@ -86,6 +91,16 @@ struct TokenStream {
         int index = integers.size();
         integers.push_back(number);
         tokens.push_back({TOKEN_LITERAL_INTEGER, index});
+
+        auto& tok = tokens.back();
+        tok.line = line;
+        tok.column = column;
+        tok.file = &path;
+    }
+    void add_int(float number, int line, int column) {
+        int index = integers.size();
+        floats.push_back(number);
+        tokens.push_back({TOKEN_LITERAL_FLOAT, index});
 
         auto& tok = tokens.back();
         tok.line = line;

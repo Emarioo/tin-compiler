@@ -54,8 +54,9 @@ ASTExpression* ParseContext::parseExpression() {
     bool is_operator = false;
     std::string name="";
     int number = 0;
+    float decimal;
     while(true) {
-        Token* token = gettok(&name, &number);
+        Token* token = gettok(&name, &number, &decimal);
         Token* token2 = gettok(1);
 
         bool ending = false;
@@ -93,6 +94,19 @@ ASTExpression* ParseContext::parseExpression() {
             } else if (token->type == '|' && token2->type == '|') {
                 advance(2);
                 operations.push_back(ASTExpression::OR);
+            } else if (token->type == '[') {
+                advance();
+                operations.push_back(ASTExpression::INDEX);
+                
+                auto index_expr = parseExpression();
+                
+                token = gettok();
+                if(token->type != ']') {
+                    reporter->err(token,"Expected closing bracket for index operator.");
+                    return nullptr;
+                }
+                
+                expressions.push_back(index_expr);
             } else {
                 ending = true; // no valid operation, end of expression
             }
@@ -165,6 +179,11 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
                 expr->literal_integer = number;
+                expressions.push_back(expr);
+            } else if(token->type == TOKEN_LITERAL_FLOAT) {
+                advance();
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
+                expr->literal_float = name;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_STRING) {
                 advance();
