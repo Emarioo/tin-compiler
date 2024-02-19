@@ -1,7 +1,5 @@
 fun main() {
     n: int = 4;
-    
     p: int* = &n;
-    
-    a: int = *p;
+    printi(*p);
 }

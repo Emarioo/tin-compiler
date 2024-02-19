@@ -17,7 +17,6 @@ parameters ::= id ":" type { "," id ":" type "," } *
 statements ::= { while | if | return | function_call | constant | declaration | assignment } *
 
 declaration ::= id ":" type [ "=" expression ] ";"
-assignment ::= id "=" expression ";"
 
 loop_statements ::= statements | { "break" | "continue" } *
 
@@ -29,11 +28,12 @@ else ::= "else" [ if | "{" statements "}" ]
 function_call ::= id "(" [ arguments ] ")"
 arguments ::= expression { "," expression } *
 
-expression ::= comparison { ( "||" | "&&" ) expression } *
+expression ::= logical { "=" expression } *
+logical ::= comparison { ( "||" | "&&" ) logical } *
 comparison ::= arithmetic_low { ( "==" | "<" | ">" | "<=" | ">=" ) comparison } *
 arithmetic_low ::= arithmetic_high { ( "+" | "-" ) arithmetic_low } *
 arithmetic_high ::= unary_operation { ( "*" | "/" ) arithmetic_high } *
-unary_operation ::= "!" unary_operation | "*" unary_operation | "&" id | "sizeof" type | index_operation
+unary_operation ::= "!" unary_operation | "*" index_operation | "&" id | "sizeof" type | index_operation
 index_operation ::= value { "[" expression "]" } *
 value ::= "(" expression ")" | id | number | function_call | string
 

@@ -10,8 +10,8 @@ if !errorlevel!==0 (
 @REM      NO MAKE
 @REM #################
 
-@REM @REM Toggle comments on the variables below to change compiler
-@REM @REM SET USE_MSVC=1
+@REM Toggle comments on the variables below to change compiler
+@REM SET USE_MSVC=1
 @REM SET USE_GCC=1
 
 @REM SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp Interpreter.cpp Lexer.cpp main.cpp Parser.cpp Util.cpp
@@ -31,6 +31,10 @@ if !errorlevel!==0 (
 @REM     SET error=!errorlevel!
 @REM )
 
-@REM if !error!==0 (
+@REM if !errorlevel!==0 (
 @REM     app
 @REM )
+
+@REM Look into:
+@REM  Makefile
+@REM  DLLs

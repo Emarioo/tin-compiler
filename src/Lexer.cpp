@@ -23,9 +23,13 @@ TokenStream* lex_file(const std::string& path) {
     
     bool is_id = false;
     bool is_num = false;
+    bool is_decimal = false;
     bool is_str = false;
     bool is_comment = false;
     bool is_multicomment = false;
+
+    int start_ln = 0;
+    int start_col = 0;
 
     int line=1;
     int column=0;
@@ -39,6 +43,9 @@ TokenStream* lex_file(const std::string& path) {
         if(index+1 < filesize)
             nextChr = text[index+1];
         index++;
+
+        int col = column;
+        int ln = line;
 
         if(chr == '\t')
             column+=4;
@@ -78,11 +85,13 @@ TokenStream* lex_file(const std::string& path) {
             if(!is_str) {
                 is_str = true;
                 data_start = index;
+                start_col = col;
+                start_ln = ln;
                 continue;
             }
             int data_end = index-1 - data_start;
             auto str = std::string(text + data_start, data_end);
-            stream->add_string(str, line, column);
+            stream->add_string(str, start_ln, start_col);
             is_str = false;
             continue;
         }
@@ -90,30 +99,60 @@ TokenStream* lex_file(const std::string& path) {
             continue;
 
         if((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_') {
-            if(!is_id)
+            if(!is_id) {
+                is_id = true;
                 data_start = index-1;
-            is_id = true;
+                start_col = col;
+                start_ln = ln;
+            }
             if(!ending)
                 continue;
         }
 
         if((chr >= '0' && chr <= '9')) {
             if(!is_id) {
-                if(!is_num)
+                if(!is_num && !is_decimal) {
                     data_start = index-1;
-                is_num = true;
+                    is_num = true;
+                    start_col = col;
+                    start_ln = ln;
+                }
             }
             if(!ending)
                 continue;
         }
-
+        if((chr == '.' && (is_num || (nextChr >= '0' && nextChr <= '9')))) {
+            // if we find . then switch state to decimal
+            if(!is_decimal) {
+                if(!is_num) {
+                    data_start = index-1; // don't set start if is_num code parsed the early digits
+                    start_col = col;
+                    start_ln = ln;
+                }
+                is_decimal = true;
+                is_num = false;
+            }
+            if(!ending)
+                continue;
+        }
+        if(is_decimal) {
+            int data_end = index-1 - data_start;
+            if(ending)
+                data_end++;
+            auto str = std::string(text + data_start, data_end);
+            double num = atof(str.c_str());
+            stream->add_float(num, start_ln, start_col);
+            is_decimal = false;
+            if(ending)
+                continue;
+        }
         if(is_num) {
             int data_end = index-1 - data_start;
             if(ending)
                 data_end++;
             auto str = std::string(text + data_start, data_end);
             int num = atoi(str.c_str());
-            stream->add_int(num, line, column);
+            stream->add_int(num, start_ln, start_col);
             is_num = false;
             if(ending)
                 continue;
@@ -125,7 +164,7 @@ TokenStream* lex_file(const std::string& path) {
                 data_end++;
             auto str = std::string(text + data_start, data_end);
 
-            #define CASE(T) if(str == NAME_OF_TOKEN(T)) stream->add(T, line, column);
+            #define CASE(T) if(str == NAME_OF_TOKEN(T)) stream->add(T, start_ln, start_col);
             
             CASE(TOKEN_STRUCT)
             else CASE(TOKEN_FUNCTION)
@@ -136,10 +175,16 @@ TokenStream* lex_file(const std::string& path) {
             else CASE(TOKEN_IF)
             else CASE(TOKEN_ELSE)
             else CASE(TOKEN_GLOBAL)
+            else CASE(TOKEN_CONST)
             else CASE(TOKEN_INCLUDE)
+            else CASE(TOKEN_CAST)
+            else CASE(TOKEN_SIZEOF)
+            else CASE(TOKEN_TRUE)
+            else CASE(TOKEN_FALSE)
+            else CASE(TOKEN_NULL)
             else {
 
-                stream->add_id(str, line, column);
+                stream->add_id(str, start_ln, start_col);
             }
             is_id = false;
             if(ending)
@@ -149,7 +194,9 @@ TokenStream* lex_file(const std::string& path) {
         if(delim)
             continue;
 
-        stream->add((TokenType)chr, line, column);
+        start_col = col;
+        start_ln = ln;
+        stream->add((TokenType)chr, start_ln, start_col);
     }
 
     free(text);
@@ -174,6 +221,11 @@ const char* token_names[] {
     "global",    // TOKEN_GLOBAL,
     "const",     // TOKEN_CONST,
     "include",   // TOKEN_INCLUDE,
+    "cast",   // TOKEN_CAST,
+    "sizeof",   // TOKEN_SIZEOF,
+    "true",   // ,
+    "false",   // ,
+    "null",   // ,
 };
 
 void TokenStream::print() {
@@ -186,6 +238,8 @@ void TokenStream::print() {
             printf("%s (str) ",strings[tok.data_index].c_str());
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             printf("%d (int) ",integers[tok.data_index]);
+        } else if(tok.type == TOKEN_LITERAL_FLOAT) {
+            printf("%f (float) ",floats[tok.data_index]);
         } else {
             printf("%s ",NAME_OF_TOKEN(tok.type));
         }
@@ -196,21 +250,35 @@ std::string TokenStream::feed(int start, int end) {
     std::string out = "";
     for(int i=start;i<end;i++) {
         auto& tok = tokens[i];
+        int len0 = out.length();
         if(tok.type < 256) {
             out += (char)tok.type;
-            out += " ";
         } else if(tok.type == TOKEN_ID){
             out += strings[tok.data_index];
-            out += " ";
         } else if(tok.type == TOKEN_LITERAL_STRING){
+            out += "\"";
             out += strings[tok.data_index];
-            out += " ";
+            out += "\"";
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             out += std::to_string(integers[tok.data_index]);
-            out += " ";
+        } else if(tok.type == TOKEN_LITERAL_FLOAT) {
+            out += std::to_string(floats[tok.data_index]);
         } else {
             out += NAME_OF_TOKEN(tok.type);
-            out += " ";
+        }
+        int len1 = out.length();
+
+        if(i+1 < end) {
+            auto& next_tok = tokens[i+1];
+            for(int j=0;j<next_tok.line - tok.line;j++) {
+                out += "\n";
+            }
+            if(next_tok.line == tok.line) {
+                int spaces = next_tok.column - tok.column - (len1 - len0);
+                for(int j=0;j<spaces;j++) {
+                    out += " ";
+                }
+            }
         }
     }
     return out;

@@ -176,7 +176,7 @@ void Interpreter::execute() {
                 printed_newline = true;
                 LOG(printf("\n");) // native call may print something so we should print newline here
                 
-                run_native_call(imm);
+                run_native_call((NativeCalls)(imm + NATIVE_MAX));
                 break;
             }
             
@@ -248,19 +248,20 @@ void Interpreter::execute() {
             }
             break;
         }
-        case INST_ADD: registers[inst.op0] = registers[inst.op0] + registers[inst.op1]; break;
-        case INST_SUB: registers[inst.op0] = registers[inst.op0] - registers[inst.op1]; break;
-        case INST_MUL: registers[inst.op0] = registers[inst.op0] * registers[inst.op1]; break;
-        case INST_DIV: registers[inst.op0] = registers[inst.op0] / registers[inst.op1]; break;
+        #define CASEF(T,OP) case T: if ((bool)inst.op2) *(float*)&registers[inst.op0] = *(float*)&registers[inst.op0] OP *(float*)&registers[inst.op1]; else registers[inst.op0] = registers[inst.op0] OP registers[inst.op1]; break;
+        CASEF(INST_ADD, +)
+        CASEF(INST_SUB, -)
+        CASEF(INST_MUL, *)
+        CASEF(INST_DIV, /)
         case INST_AND: registers[inst.op0] = registers[inst.op0] && registers[inst.op1]; break;
         case INST_OR:  registers[inst.op0] = registers[inst.op0] || registers[inst.op1]; break;
         case INST_NOT: registers[inst.op0] = !registers[inst.op1]; break;
-        case INST_EQUAL:            registers[inst.op0] = registers[inst.op0] == registers[inst.op1]; break;
-        case INST_NOT_EQUAL:        registers[inst.op0] = registers[inst.op0] != registers[inst.op1]; break;
-        case INST_LESS:             registers[inst.op0] = registers[inst.op0] < registers[inst.op1]; break;
-        case INST_GREATER:          registers[inst.op0] = registers[inst.op0] > registers[inst.op1]; break;
-        case INST_LESS_EQUAL:       registers[inst.op0] = registers[inst.op0] <= registers[inst.op1]; break;
-        case INST_GREATER_EQUAL:    registers[inst.op0] = registers[inst.op0] >= registers[inst.op1]; break;
+        CASEF(INST_EQUAL, ==)
+        CASEF(INST_NOT_EQUAL, !=)
+        CASEF(INST_LESS, <)
+        CASEF(INST_LESS_EQUAL, <=)
+        CASEF(INST_GREATER, >)
+        CASEF(INST_GREATER_EQUAL, >=)
         default: Assert(("Incomplete instruction",false));
         }
         
@@ -352,7 +353,7 @@ void Interpreter::print_stack() {
         log_color(Color::NO_COLOR);
     }
 }
-void Interpreter::run_native_call(int imm) {
+void Interpreter::run_native_call(NativeCalls callType) {
     // auto inst_pop = [&](Register reg) {
     //     Assert(reg >= REG_T0 && reg <= REG_T1);
     //     registers[reg] = *(i64*)registers[REG_SP];
@@ -365,12 +366,19 @@ void Interpreter::run_native_call(int imm) {
     //     CHECK_STACK
     //     *(i64*)registers[REG_SP] = registers[reg];
     // };
-    switch(imm) {
+    switch(callType) {
     case NATIVE_printi: {
         i64 arg0 = *(i64*)(registers[REG_SP] + 0);
         
         printf("%lld\n", arg0);
         break;
-    }   
+    }
+    case NATIVE_printf: {
+        float arg0 = *(float*)(registers[REG_SP] + 0);
+        
+        printf("%f\n", arg0);
+        break;
+    }
+    default: Assert(false);   
     }
 }

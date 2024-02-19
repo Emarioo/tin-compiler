@@ -2,57 +2,111 @@
 
 #define REPORT(L, ...) reporter->err(function->origin_stream, L, __VA_ARGS__)
 
-bool GeneratorContext::generateReference(ASTExpression* expr) {
+
+void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
+    auto info = ast->getType(type);
+    int size = ast->sizeOfType(type);
+    if(type.pointer_level() > 0 || !info->ast_struct) {
+        piece->emit_pop(REG_A);
+        piece->emit_mov_mr_disp(reg, REG_A, size, offset);
+    } else {
+        for(int i=0;i<info->ast_struct->members.size();i++) {
+            auto& mem = info->ast_struct->members[i];
+            generatePop(reg, offset + mem.offset, mem.typeId);
+        }
+    }
+}
+void GeneratorContext::generatePush(Register reg, int offset, TypeId type) {
+    auto info = ast->getType(type);
+    int size = ast->sizeOfType(type);
+    if(type.pointer_level() > 0 || !info->ast_struct) {
+        piece->emit_mov_rm_disp(REG_A, reg, size, offset);
+        piece->emit_push(REG_A);
+    } else {
+        for(int i=0;i<info->ast_struct->members.size();i++) {
+            auto& mem = info->ast_struct->members[i];
+            generatePush(reg, offset + mem.offset, mem.typeId);
+        }
+    }
+}
+
+TypeId GeneratorContext::generateReference(ASTExpression* expr) {
     std::vector<ASTExpression*> exprs;
     
     while(expr) {
-        if(expr->type == ASTExpression::IDENTIFIER) {
-            exprs.push_back(expr);            
-            expr = expr->left;
-            continue;
+        switch(expr->kind()) {
+            case ASTExpression::IDENTIFIER: {
+                exprs.push_back(expr);            
+                expr = expr->left;
+            } break;
+            case ASTExpression::MEMBER: {
+                exprs.push_back(expr);            
+                expr = expr->left;
+            } break;
+            default: Assert(false);
         }
-        // else if(expr->type == ASTExpression::MEMBER) {
-        //     expr = expr->left;
-        // }
-        
-        // expr type not allowed when referencing
-        return false;
     }
-    
+    TypeId out = TYPE_VOID;
+    int frame_offset = 0;
     for(int i=exprs.size()-1;i>=0;i--) {
-        auto e = exprs[i];
+        auto expr = exprs[i];
         
-        if(e->type == ASTExpression::IDENTIFIER) {
-            auto variable = findVariable(e->name);
-            if(!variable) {
-                REPORT(expr->location, std::string() + "Variable '" + e->name + "' does not exist.");
-                return false;
-            }
-            int var_offset = variable->frame_offset;
-            // get the address of the variable
-            // a local variable exists on the stack
-            // with an offset from the base pointer
-            piece->emit_li(REG_B, var_offset);
-            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
-            
-            piece->emit_push(REG_B); // push pointer
-            break;
+        switch(expr->kind()) {
+            case ASTExpression::IDENTIFIER: {
+                auto variable = findVariable(expr->name);
+                if(!variable) {
+                    REPORT(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
+                    return TYPE_VOID;
+                }
+                frame_offset = variable->frame_offset;
+                out = variable->typeId;
+            } break;
+            case ASTExpression::MEMBER: {
+                auto prev_expr = exprs[i+1];
+                auto info = ast->getType(out);
+                if(!info->ast_struct) {
+                    REPORT(expr->location, std::string() + "Member access is only allowed on structure types. '"+prev_expr->name+"' is '"+ast->nameOfType(out) + "'.");
+                    return TYPE_VOID;
+                }
+                auto mem = info->ast_struct->findMember(expr->name);
+                if(!mem) {
+                    REPORT(expr->location, std::string() + "'"+ expr->name+"' is not a member of '"+ast->nameOfType(out) + "'.");
+                    return TYPE_VOID;
+                }
+                frame_offset += mem->offset;
+                out = mem->typeId;
+            } break;
+            default: Assert(false);
         }
     }
-    return true;
+    piece->emit_li(REG_B, frame_offset);
+    piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+    
+    piece->emit_push(REG_B); // push pointer
+    return out;
 }
-bool GeneratorContext::generateExpression(ASTExpression* expr) {
+TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
     Assert(expr);
-    switch(expr->type) {
+    switch(expr->kind()) {
         case ASTExpression::LITERAL_INT: {
             piece->emit_li(REG_A, expr->literal_integer);
             piece->emit_push(REG_A);
+            return TYPE_INT;
             break;
         }
-         case ASTExpression::LITERAL_STR: {
+        case ASTExpression::LITERAL_FLOAT: {
+            piece->emit_li(REG_A, *(int*)&expr->literal_float);
+            piece->emit_push(REG_A);
+            return TYPE_FLOAT;
+            break;
+        }
+        case ASTExpression::LITERAL_STR: {
             // TODO: How do we do this?
             piece->emit_li(REG_A, 0);
             piece->emit_push(REG_A);
+            TypeId type = TYPE_CHAR;
+            type.set_pointer_level(1);
+            return type;
             break;
         }
         case ASTExpression::IDENTIFIER: {
@@ -71,17 +125,52 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             // get the value of the variable
             piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
             piece->emit_push(REG_A);
+            return variable->typeId;
             break;
         }
         case ASTExpression::FUNCTION_CALL: {
+            auto function = ast->findFunction(expr->name, current_scopeId);
+            if(!function) {
+                REPORT(expr->location, std::string() + "Function '"+expr->name+"' does not exist.");
+                return TYPE_VOID;
+            }
+
+            piece->emit_incr(REG_SP, -function->parameters_size);
+            int arg_offset = piece->virtual_sp;
+
+            std::vector<TypeId> argument_types;
             for(int i=0;i<expr->arguments.size(); i++) {
                 auto arg = expr->arguments[i];
-                generateExpression(arg);
+                auto type = generateExpression(arg);
+                argument_types.push_back(type);
+            }
+
+            if(function->parameters.size() != argument_types.size()) {
+                REPORT(expr->location, std::string() + "The function call has " + std::to_string(argument_types.size()) + " arguments but the function '"+expr->name+"' requires " + std::to_string(function->parameters.size()) + ".");
+                return TYPE_VOID;
+            }
+            bool fail=false;
+            for(int i=0;i<argument_types.size();i++) {
+                if(function->parameters[i].typeId != argument_types[i]) {
+                    fail = true;
+                    REPORT(expr->location, std::string() + "The "+std::to_string(i)+" argument is of type '"+ast->nameOfType(argument_types[i])+"' but the parameter '" + function->parameters[i].name + "' requires '" + ast->nameOfType(function->parameters[i].typeId) + "'.");
+                }
+            }
+            if(fail)
+                return TYPE_VOID;
+
+            int arg_diff = piece->virtual_sp - arg_offset;
+
+            piece->emit_mov_rr(REG_B, REG_SP);
+            for(int i=function->parameters.size();i>=0; i--) {
+                auto& param = function->parameters[i];
+                
+                generatePop(REG_B, param.offset - 16 - arg_offset, param.typeId);
             }
 
             int relocation_index = 0;
             piece->emit_call(&relocation_index);
-            
+
             // how about native calls
             piece->relocations.push_back({expr->name, relocation_index});
             
@@ -94,6 +183,7 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             
             // TODO: Some functions do not return a value. Handle it.
             piece->emit_push(REG_A); // push return value
+            return TYPE_VOID;
             break;
         }
         case ASTExpression::ADD:
@@ -108,25 +198,30 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::GREATER:
         case ASTExpression::LESS_EQUAL:
         case ASTExpression::GREATER_EQUAL: {
-            generateExpression(expr->left);
-            generateExpression(expr->right);
+            TypeId ltype = generateExpression(expr->left);
+            TypeId rtype = generateExpression(expr->right);
             
+            bool is_float = false;
+            if(ltype == TYPE_FLOAT || rtype == TYPE_FLOAT) {
+                is_float = true;
+            }
+
             piece->emit_pop(REG_D);
             piece->emit_pop(REG_A);
             
-            switch(expr->type) {
-                case ASTExpression::ADD: piece->emit_add(REG_A, REG_D); break;
-                case ASTExpression::SUB: piece->emit_sub(REG_A, REG_D); break;
-                case ASTExpression::MUL: piece->emit_mul(REG_A, REG_D); break;
-                case ASTExpression::DIV: piece->emit_div(REG_A, REG_D); break;
+            switch(expr->kind()) {
+                case ASTExpression::ADD: piece->emit_add(REG_A, REG_D, is_float); break;
+                case ASTExpression::SUB: piece->emit_sub(REG_A, REG_D, is_float); break;
+                case ASTExpression::MUL: piece->emit_mul(REG_A, REG_D, is_float); break;
+                case ASTExpression::DIV: piece->emit_div(REG_A, REG_D, is_float); break;
                 case ASTExpression::AND: piece->emit_and(REG_A, REG_D); break;
                 case ASTExpression::OR:  piece->emit_or (REG_A, REG_D); break;
-                case ASTExpression::EQUAL:          piece->emit_eq(REG_A, REG_D); break;
-                case ASTExpression::NOT_EQUAL:      piece->emit_neq(REG_A, REG_D); break;
-                case ASTExpression::LESS:           piece->emit_less(REG_A, REG_D); break;
-                case ASTExpression::GREATER:        piece->emit_greater(REG_A, REG_D); break;
-                case ASTExpression::LESS_EQUAL:     piece->emit_less_equal(REG_A, REG_D); break;
-                case ASTExpression::GREATER_EQUAL:  piece->emit_greater_equal(REG_A, REG_D); break;
+                case ASTExpression::EQUAL:          piece->emit_eq(REG_A, REG_D, is_float); break;
+                case ASTExpression::NOT_EQUAL:      piece->emit_neq(REG_A, REG_D, is_float); break;
+                case ASTExpression::LESS:           piece->emit_less(REG_A, REG_D, is_float); break;
+                case ASTExpression::GREATER:        piece->emit_greater(REG_A, REG_D, is_float); break;
+                case ASTExpression::LESS_EQUAL:     piece->emit_less_equal(REG_A, REG_D, is_float); break;
+                case ASTExpression::GREATER_EQUAL:  piece->emit_greater_equal(REG_A, REG_D, is_float); break;
                 default: Assert(false);
             }
             
@@ -134,32 +229,174 @@ bool GeneratorContext::generateExpression(ASTExpression* expr) {
             break;
         }
         case ASTExpression::NOT: {
-            generateExpression(expr->left);
+            auto type = generateExpression(expr->left);
             
             piece->emit_pop(REG_A);
             piece->emit_not(REG_A, REG_A);
             piece->emit_push(REG_A);
+            return type;
             break;   
         }
         case ASTExpression::REFER: {
-            bool yes = generateReference(expr->left);
+            TypeId type = generateReference(expr->left);
+            return type;
             break;   
         }
         case ASTExpression::DEREF: {
-            bool yes = generateExpression(expr->left);
+            TypeId type = generateExpression(expr->left);
+            if(type.pointer_level() == 0) {
+                REPORT(expr->left->location, "Cannot dereference non-pointer types.");
+                return TYPE_VOID;
+            }
+
+            piece->emit_pop(REG_B);
+            piece->emit_mov_rm(REG_A, REG_B, 4);
+            piece->emit_push(REG_A);
+
+            type.set_pointer_level(type.pointer_level()-1);
+            return type;
+            break;   
+        }
+        case ASTExpression::MEMBER: {
+            TypeId type = generateReference(expr);
+
+            piece->emit_pop(REG_B);
+            piece->emit_mov_rm(REG_A, REG_B, 4);
+            piece->emit_push(REG_A);
+            break;   
+        }
+        case ASTExpression::INDEX: {
+            Assert(false);
+            TypeId type = generateExpression(expr->left);
             
             piece->emit_pop(REG_B);
             piece->emit_mov_rm(REG_A, REG_B, 4);
             piece->emit_push(REG_A);
             break;   
         }
+        case ASTExpression::CAST: {
+            Assert(false);
+            TypeId type = generateExpression(expr->left);
+            
+            piece->emit_pop(REG_B);
+            piece->emit_mov_rm(REG_A, REG_B, 4);
+            piece->emit_push(REG_A);
+            break;   
+        }
+        case ASTExpression::SIZEOF: {
+            TypeId type = ast->convertFullType(expr->name, current_scopeId);
+            if(!type.valid()) {
+                Assert(false); // find variable name instead of type?
+            }
+            int size = ast->sizeOfType(type);
+            piece->emit_li(REG_A, size);
+            piece->emit_push(REG_A);
+            return TYPE_INT;
+        } break;   
+        case ASTExpression::ASSIGN: {
+            TypeId rtype = generateExpression(expr->right);
+            TypeId ltype = generateReference(expr->left);
+            if(!ltype.valid() || !rtype.valid()) {
+                return false; // error should be reported already
+            }
+
+            if(rtype != ltype) {
+                REPORT(expr->location, "The expression and reference has mismatching types.");
+                // TODO: Implicit casting
+                return false;
+            }
+            
+            piece->emit_pop(REG_B); // pointer to reference/value/variable
+            
+            piece->emit_pop(REG_A);
+            piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
+
+            piece->emit_push(REG_A);
+            return ltype;
+        } break;   
+        case ASTExpression::PRE_INCREMENT:
+        case ASTExpression::POST_INCREMENT:
+        case ASTExpression::PRE_DECREMENT:
+        case ASTExpression::POST_DECREMENT: {
+            if(expr->left->kind() != ASTExpression::IDENTIFIER) {
+                REPORT(expr->left->location, "Increment/decrement operation is only allowed on identifiers.");
+                return TYPE_VOID;
+            }
+
+            auto variable = findVariable(expr->left->name);
+            if(!variable) {
+                REPORT(expr->left->location, std::string() + "Variable '" + expr->left->name + "' does not exist.");
+                return TYPE_VOID;
+            }
+
+            if(variable->typeId != TYPE_INT) {
+                REPORT(expr->left->location, std::string() + "Increment/decrement is limited to integer types. Variable '" + expr->left->name + "' is of type '" + ast->nameOfType(variable->typeId) + "'.");
+                return TYPE_VOID;
+            }
+
+            int var_offset = variable->frame_offset;
+            // get the address of the variable
+            // a local variable exists on the stack
+            // with an offset from the base pointer
+            piece->emit_li(REG_B, var_offset);
+            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+            
+            // get the value of the variable
+            piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
+
+            switch(expr->kind()){
+            case ASTExpression::PRE_INCREMENT:
+                piece->emit_incr(REG_A, 1);
+                piece->emit_push(REG_A);
+                break;
+            case ASTExpression::PRE_DECREMENT:
+                piece->emit_incr(REG_A, 1);
+                piece->emit_push(REG_A);
+                break;
+            case ASTExpression::POST_INCREMENT:
+                piece->emit_push(REG_A);
+                piece->emit_incr(REG_A, 1);
+                break;
+            case ASTExpression::POST_DECREMENT:
+                piece->emit_push(REG_A);
+                piece->emit_incr(REG_A, -1);
+                break;
+            default: Assert(false);
+            }
+            piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
+
+            return variable->typeId;
+        } break;
+        case ASTExpression::TRUE: {
+            piece->emit_li(REG_A, 1);
+            piece->emit_push(REG_A);
+            return TYPE_BOOL;
+        } break;
+        case ASTExpression::FALSE: {
+            piece->emit_li(REG_A, 0);
+            piece->emit_push(REG_A);
+            return TYPE_BOOL;
+        } break;
+        case ASTExpression::LITERAL_NULL: {
+            piece->emit_li(REG_A, 0);
+            piece->emit_push(REG_A);
+            TypeId p = TYPE_VOID;
+            p.set_pointer_level(1);
+            return p;
+        } break;
         default: Assert(false);
     }
-    return true;
+    return TYPE_VOID;
 }
 bool GeneratorContext::generateBody(ASTBody* body) {
+    auto prev_scope = current_scopeId;
+    current_scopeId = body->scopeId;
+    defer {
+        current_scopeId = prev_scope;
+    };
+
     Assert(body);
-    int prev_frame_offset = current_frame_offset;
+    int prev_frame_offset = current_frameOffset;
     for(auto stmt : body->statements) {
         // debug line information
         std::string text = function->origin_stream->getline(stmt->location);
@@ -167,9 +404,9 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         piece->push_line(line, text);
         
         bool stop = false;
-        switch(stmt->type){
+        switch(stmt->kind()){
         case ASTStatement::EXPRESSION: {
-            generateExpression(stmt->expression);
+            auto type = generateExpression(stmt->expression);
             piece->emit_pop(REG_A); // we don't care about the value
             break;   
         }
@@ -191,15 +428,26 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
                     break;
                 }
+                variable->typeId = ast->convertFullType(stmt->declaration_type, current_scopeId);
+                if(!variable->typeId.valid()) {
+                    REPORT(stmt->location, "Type in declaration could not be found.");
+                    return false;
+                }
                 // make space on stack for local variable
-                // piece->emit_li(REG_B, 8);
-                // piece->emit_sub(REG_SP, REG_B); // sp -= 8
                 piece->emit_incr(REG_SP, -8);
             }
             
             int var_offset = variable->frame_offset;
             if(stmt->expression) {
-                generateExpression(stmt->expression);
+                TypeId type = generateExpression(stmt->expression);
+                if(!type.valid()) {
+                    return false; // error should be reported already
+                }
+                if(type != variable->typeId) {
+                    REPORT(stmt->location, "The expression and variable has mismatching types.");
+                    // TODO: Implicit casting
+                    return false;
+                }
                 piece->emit_pop(REG_A);
             } else {
                 // zero initialize the variable if expression wasn't specified
@@ -219,13 +467,13 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         case ASTStatement::WHILE: {
             int pc_loop = piece->get_pc();
             
-            generateExpression(stmt->expression);
+            TypeId type = generateExpression(stmt->expression);
             piece->emit_pop(REG_A);
             
             int reloc_while = 0;
             piece->emit_jz(REG_A, &reloc_while);
             
-            generateBody(stmt->body);
+            bool yes = generateBody(stmt->body);
             
             piece->emit_jmp(pc_loop);
             
@@ -257,20 +505,22 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         }
         case ASTStatement::RETURN: {
             if(stmt->expression) {
-                generateExpression(stmt->expression);
+                auto type = generateExpression(stmt->expression);
+                if(!type.valid())
+                    return false;
                 piece->emit_pop(REG_A);
             }
-            if(current_frame_offset != prev_frame_offset) {
-                // piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+            if(current_frameOffset != prev_frame_offset) {
+                // piece->emit_li(REG_B, current_frameOffset - prev_frame_offset);
                 // piece->emit_sub(REG_SP, REG_B);
-                piece->emit_incr(REG_SP, - (current_frame_offset - prev_frame_offset));
+                piece->emit_incr(REG_SP, - (current_frameOffset - prev_frame_offset));
             }
             piece->emit_ret();
             
             stop = true; // return statement makes the rest of the statments useless
             
             if(stop)
-                current_frame_offset = prev_frame_offset;
+                current_frameOffset = prev_frame_offset;
             break;
         }
         default: Assert(false);
@@ -279,18 +529,86 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         if(stop)
             break;
     }
-    if(current_frame_offset != prev_frame_offset) {
+    if(current_frameOffset != prev_frame_offset) {
         // This also happens in the return statement
         // "free" local variables from stack
-        // piece->emit_li(REG_B, current_frame_offset - prev_frame_offset);
+        // piece->emit_li(REG_B, current_frameOffset - prev_frame_offset);
         // piece->emit_sub(REG_SP, REG_B);
-        piece->emit_incr(REG_SP, - (current_frame_offset - prev_frame_offset));
-        current_frame_offset = prev_frame_offset;
+        piece->emit_incr(REG_SP, - (current_frameOffset - prev_frame_offset));
+        current_frameOffset = prev_frame_offset;
     }
     
     return true;
 }
+bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
+    /* BUG SCENARIO
+        struct A { }
+        fun main() {
+            struct B {
+                a: A;
+            }
+            struct A {}
+        }
+    Description:
+        Type A in B will use the global A when it should use the local A (language is order-independent and looks at types in current scope first).
+        What the code does however is create global types first then go through the local ones one by one. The local A won't have been created before B searches for A.
+    Solution:
+        We need a first pass to create all struct types.
+        Then a second pass to evaluate all types.
 
+        This will be especially hard in a global scope where threads adds types here and there as they are parsed and generated.
+    */
+    if(astStruct->complete)
+        return true;
+
+    if(!astStruct->created_type) {
+        astStruct->created_type = true;
+        TypeInfo* type = ast->createType(astStruct->name, current_scopeId);
+        type->ast_struct = astStruct;
+        astStruct->typeInfo = type;
+    }
+    int offset = 0;
+    int alignment = 1;
+    for(int j=0;j<astStruct->members.size();j++) {
+        auto& mem = astStruct->members[j];
+        TypeId type = ast->convertFullType(mem.typeString, current_scopeId);
+        if(!type.valid()) {
+            Assert(false);
+            // error, type doesn't exist.
+            return false;
+        }
+        mem.typeId = type;
+        auto size = ast->sizeOfType(type);
+        Assert(size != 0); // throw error instead?
+
+        int aligned_size = 1;
+        if(size == 2) aligned_size = 2;
+        else if(size <= 4) aligned_size = 4;
+        else aligned_size = 8;
+        if(alignment < aligned_size)
+            alignment = aligned_size;
+        offset = (offset + (aligned_size-1)) & ~(aligned_size-1);
+
+        mem.offset = offset;
+        offset += size;
+    }
+
+    offset = (offset + (alignment-1)) & ~(alignment-1);
+
+    astStruct->typeInfo->size = offset;
+    astStruct->complete = true;
+    return true;
+}
+void GenerateStructs(AST* ast, Reporter* reporter) {
+    GeneratorContext context{};
+    context.ast = ast;
+    context.reporter = reporter;
+    
+    for(int i=0;i<ast->structures.size();i++) {
+        auto st = ast->structures[i];
+        bool yes = context.generateStruct(st);
+    }
+}
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
     GeneratorContext context{};
     context.ast = ast;
@@ -298,6 +616,7 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     context.code = code;
     context.piece = code->createPiece();
     context.reporter = reporter;
+    context.current_scopeId = AST::GLOBAL_SCOPE;
     
     context.piece->name = function->name;
     
@@ -305,17 +624,30 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     // context.piece->emit_push(REG_BP);
     // context.piece->emit_mov_rr(REG_BP, REG_SP);
 
+    int param_offset = 16;
     GeneratorContext::Variable* variable = nullptr;
-    for(int i=0;i < function->parameters.size(); i++) {
+    for(int i=function->parameters.size()-1; i>=0; i--) {
         auto& param = function->parameters[i];
-        int frame_offset = 16 // 16 bytes for the call frame (pc, bp)
-            + (function->parameters.size()-1-i)*8; // param.size-1-i BECAUSE first argument is pushed first and is the furthest away
+        param.typeId = ast->convertFullType(param.typeString, context.current_scopeId);
+        
+        int size = ast->sizeOfType(param.typeId);
 
-        auto variable = context.addVariable(param.name, frame_offset);
+        int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
+        param_offset = (param_offset + alignment) & ~alignment;
+
+        auto variable = context.addVariable(param.name, param_offset);
+        if(!variable) {
+            reporter->err(function->origin_stream, function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+        }
         Assert(("Parameter could not be created. Compiler bug!",variable));
+        variable->typeId = param.typeId;
 
-        // TODO: Set type of variable
+        param.offset = param_offset;
+        param_offset += size;
     }
+    int alignment = (function->parameters_size <= 1 ? 1 : function->parameters_size <= 2 ? 2 : function->parameters_size <= 4 ? 4 : 8) - 1;
+        param_offset = (param_offset + alignment) & ~alignment;
+    function->parameters_size = param_offset - 16;
     
     context.generateBody(function->body);
  
@@ -335,8 +667,8 @@ GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& nam
     ptr->name = name;
     local_variables[name] = ptr;
     if(frame_offset == 0) {
-        current_frame_offset -= 8;
-        ptr->frame_offset = current_frame_offset;
+        current_frameOffset -= 8;
+        ptr->frame_offset = current_frameOffset;
     } else {
         ptr->frame_offset = frame_offset;
     }

@@ -83,6 +83,7 @@ struct CodePiece {
         lines.push_back({line, text});
     }
     
+    int virtual_sp=0;
     struct Relocation {
         std::string func_name;
         int index_of_immediate; // immediate of INST_CALL instruction
@@ -97,21 +98,23 @@ struct CodePiece {
     void emit_mov_rr(Register to_reg, Register from_reg);
     void emit_mov_mr(Register to_reg, Register from_reg, u8 size);
     void emit_mov_rm(Register to_reg, Register from_reg, u8 size);
+    void emit_mov_mr_disp(Register to_reg, Register from_reg, u8 size, int offset);
+    void emit_mov_rm_disp(Register to_reg, Register from_reg, u8 size, int offset);
 
-    void emit_add(Register to_from_reg, Register from_reg);
-    void emit_sub(Register to_from_reg, Register from_reg);
-    void emit_mul(Register to_from_reg, Register from_reg);
-    void emit_div(Register to_from_reg, Register from_reg);
+    void emit_add(Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_sub(Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_mul(Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_div(Register to_from_reg, Register from_reg, bool is_float = false);
     void emit_and(Register to_from_reg, Register from_reg);
     void emit_or(Register to_from_reg, Register from_reg);
     void emit_not(Register to_reg, Register from_reg);
 
-    void emit_eq(Register to_from_reg, Register from_reg);
-    void emit_neq(Register to_from_reg, Register from_reg);
-    void emit_less(Register to_from_reg, Register from_reg);
-    void emit_greater(Register to_from_reg, Register from_reg);
-    void emit_less_equal(Register to_from_reg, Register from_reg);
-    void emit_greater_equal(Register to_from_reg, Register from_reg);
+    void emit_eq            (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_neq           (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_less          (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_greater       (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_less_equal    (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_greater_equal (Register to_from_reg, Register from_reg, bool is_float = false);
     
     void emit_jmp(int pc);
     void emit_jmp(int* out_index_of_imm);
@@ -167,8 +170,9 @@ struct Code {
 };
 
 enum NativeCalls {
-    NATIVE_START = -200,
-    NATIVE_printi = NATIVE_START,
+    NATIVE_printi = 0,
+    NATIVE_printf,
+    NATIVE_MAX,
 };
-#define NAME_OF_NATIVE(X) native_names[X - NATIVE_START]
+#define NAME_OF_NATIVE(X) native_names[X]
 extern const char* native_names[];

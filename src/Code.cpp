@@ -1,6 +1,7 @@
 #include "Code.h"
 
 #define DEF_EMIT2(FN,OP) void CodePiece::emit_##FN(Register r0, Register r1) { emit({INST_##OP, r0, r1}); }
+#define DEF_EMIT2F(FN,OP) void CodePiece::emit_##FN(Register r0, Register r1, bool is_float) { emit({INST_##OP, r0, r1, (Register)is_float}); }
 #define DEF_EMIT1(FN,OP) void CodePiece::emit_##FN(Register r0) { emit({INST_##OP, r0}); }
 #define DEF_EMIT0(FN,OP) void CodePiece::emit_##FN() { emit({INST_##OP}); }
 
@@ -10,6 +11,7 @@ void CodePiece::emit_li(Register reg, int imm) {
 }
 void CodePiece::emit_push(Register r0) {
     emit({INST_PUSH, r0});
+    virtual_sp -= 8;
 }
 void CodePiece::emit_pop(Register r0) {
     // This code will remove redundant push and pop.
@@ -23,11 +25,14 @@ void CodePiece::emit_pop(Register r0) {
     }
     
     emit({INST_POP, r0});
+    virtual_sp += 8;
 }
 void CodePiece::emit_incr(Register reg, int imm) {
     // Assert((imm >> 16) == 0);
     // BUG HERE, 32 bits truncated to 16 bits
     emit({INST_INCR, reg, (Register)(imm&0xFF), (Register)(imm >> 8) }); // we cast to register but it's not actually registers, it's immediate values
+    if(reg == REG_SP)
+        virtual_sp += imm;
 }
 
 DEF_EMIT2(mov_rr,MOV_RR)
@@ -40,20 +45,41 @@ void CodePiece::emit_mov_rm(Register r0, Register r1, u8 size) {
     Assert(size != 0);
     emit({INST_MOV_RM, r0, r1, (Register)size});
 }
+void CodePiece::emit_mov_mr_disp(Register to_reg, Register from_reg, u8 size, int offset) {
+    Assert(size != 0);
+    if(offset == 0) {
+        emit_mov_mr(to_reg, from_reg, size);
+    } else {
+        emit_li(REG_T0, offset);
+        emit_add(REG_T0, to_reg);
+        emit_mov_mr(REG_T0, from_reg, size);
+    }
+}
+void CodePiece::emit_mov_rm_disp(Register to_reg, Register from_reg, u8 size, int offset) {
+    Assert(size != 0);
+    Assert(size != 0);
+    if(offset == 0) {
+        emit_mov_rm(to_reg, from_reg, size);
+    } else {
+        emit_li(REG_T0, offset);
+        emit_add(REG_T0, from_reg);
+        emit_mov_rm(to_reg, REG_T0, size);
+    }
+}
 
-DEF_EMIT2(add, ADD)
-DEF_EMIT2(sub, SUB)
-DEF_EMIT2(mul, MUL)
-DEF_EMIT2(div, DIV)
+DEF_EMIT2F(add, ADD)
+DEF_EMIT2F(sub, SUB)
+DEF_EMIT2F(mul, MUL)
+DEF_EMIT2F(div, DIV)
 DEF_EMIT2(and, AND)
 DEF_EMIT2(or , OR)
 DEF_EMIT2(not, NOT)
-DEF_EMIT2(eq, EQUAL)
-DEF_EMIT2(neq, NOT_EQUAL)
-DEF_EMIT2(less, LESS)
-DEF_EMIT2(greater, GREATER)
-DEF_EMIT2(less_equal, LESS_EQUAL)
-DEF_EMIT2(greater_equal, GREATER_EQUAL)
+DEF_EMIT2F(eq, EQUAL)
+DEF_EMIT2F(neq, NOT_EQUAL)
+DEF_EMIT2F(less, LESS)
+DEF_EMIT2F(greater, GREATER)
+DEF_EMIT2F(less_equal, LESS_EQUAL)
+DEF_EMIT2F(greater_equal, GREATER_EQUAL)
 
 void CodePiece::emit_jmp(int pc) {
     emit({INST_JMP});
@@ -169,7 +195,7 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
             if(code && inst.opcode == INST_CALL) {
                 log_color(Color::GREEN);
                 if(imm < 0) {
-                    printf(" %s", NAME_OF_NATIVE(imm));
+                    printf(" %s", NAME_OF_NATIVE(imm + NATIVE_MAX));
                 } else {
                     printf(" %s", code->pieces[imm-1]->name.c_str());
                 }
@@ -210,14 +236,23 @@ void Code::apply_relocations() {
             for(int i=0;i<pieces.size();i++) {
                 if(rel.func_name == pieces[i]->name) {
                     piece_index = i;
-                    break;   
+                    break; 
                 }
             }
             if(piece_index != -1) {
                 *(int*)&p->instructions[rel.index_of_immediate] = piece_index + 1; // +1 because 0 is seen as invalid
-            } else if(rel.func_name == "printi") {
-                *(int*)&p->instructions[rel.index_of_immediate] = NATIVE_printi;
             } else {
+                int found = -1;
+                for(int j=0;j<NATIVE_MAX;j++) {
+                    if(!strcmp(native_names[j], rel.func_name.c_str())) {
+                        found = j;
+                        break;
+                    }
+                }
+                if(found != -1) {
+                    *(int*)&p->instructions[rel.index_of_immediate] = found - NATIVE_MAX;
+                    continue;
+                }
                 // Probably caused by an error in which case we don't need
                 //  to print a message here since it's probably already covered
                 printf("'%s' is not a function and relocations to it cannot be applied\n", rel.func_name.c_str());
@@ -227,4 +262,5 @@ void Code::apply_relocations() {
 }
 const char* native_names[] {
     "printi", // NATIVE_printi
+    "printf", // NATIVE_printf
 };

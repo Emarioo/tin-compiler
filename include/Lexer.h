@@ -24,10 +24,15 @@ enum TokenType {
     TOKEN_GLOBAL,
     TOKEN_CONST,
     TOKEN_INCLUDE,
+    TOKEN_CAST,
+    TOKEN_SIZEOF,
+    TOKEN_TRUE,
+    TOKEN_FALSE,
+    TOKEN_NULL,
 };
 
 struct Token {
-    TokenType type;
+    TokenType type; // don't rearrange, token initializer assume {type, data_index}
     int data_index;
 
     int line;
@@ -58,8 +63,8 @@ struct TokenStream {
             *str = strings[tokens[index].data_index];
         else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
-        else if(num && tokens[index].type == TOKEN_LITERAL_FLOAT) 
-            *num = floats[tokens[index].data_index];
+        else if(dec && tokens[index].type == TOKEN_LITERAL_FLOAT) 
+            *dec = floats[tokens[index].data_index];
         return &tokens[index];
     }
     Token* getToken(SourceLocation loc, std::string* str = nullptr, int* num = nullptr, float* dec = nullptr) {
@@ -97,8 +102,8 @@ struct TokenStream {
         tok.column = column;
         tok.file = &path;
     }
-    void add_int(float number, int line, int column) {
-        int index = integers.size();
+    void add_float(float number, int line, int column) {
+        int index = floats.size();
         floats.push_back(number);
         tokens.push_back({TOKEN_LITERAL_FLOAT, index});
 

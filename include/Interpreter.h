@@ -22,5 +22,5 @@ struct Interpreter {
     void print_frame(int high, int low);
     
 private:
-    void run_native_call(int imm);
+    void run_native_call(NativeCalls callType);
 };

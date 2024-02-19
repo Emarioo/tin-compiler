@@ -2,6 +2,12 @@
 
 #define Assert(E) ((bool)(E) || (fprintf(stderr,"[ASSERT %s:%d]: %s\n",__FILE__, __LINE__, #E), (bool)(*(int*)nullptr = 9)))
 
+struct DeferFunc {
+    ~DeferFunc() { f(); }
+    std::function<void()> f;
+};
+#define defer DeferFunc _defer; _defer.f = [&]()
+
 enum Color : u8 {
     BLACK = 0x00,
     NAVY = 0x01,

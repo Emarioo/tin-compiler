@@ -1,1 +1,24 @@
 
+struct Vec {
+    x: float,
+    y: float,
+}
+fun main() {
+    a: Vec;
+    a.x = 9.4;
+    a.y = 1.3;
+    b: Vec;
+    b.x = 2.5;
+    b.y = 0.5;
+
+    o: Vec = add(a, b);
+    printf(o.x);
+    printf(o.y);
+}
+
+fun add(a: Vec, b: Vec): Vec {
+    o: Vec;
+    o.x = a.x + b.x;
+    o.y = a.y + b.y;
+    return o;
+}

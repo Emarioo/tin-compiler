@@ -23,33 +23,38 @@ std::string ParseContext::parseType() {
     }
     return out;
 }
-int GetPrecedence(ASTExpression::Type type) {
-    switch(type) {
-        case ASTExpression::Type::MUL:
-        case ASTExpression::Type::DIV:
+int GetPrecedence(ASTExpression::Kind kind) {
+    switch(kind) {
+        case ASTExpression::Kind::MEMBER:
+        case ASTExpression::Kind::INDEX:
+            return 15;
+        case ASTExpression::Kind::MUL:
+        case ASTExpression::Kind::DIV:
             return 10;
-        case ASTExpression::Type::ADD:
-        case ASTExpression::Type::SUB:
+        case ASTExpression::Kind::ADD:
+        case ASTExpression::Kind::SUB:
             return 5;
-        case ASTExpression::Type::AND:
-        case ASTExpression::Type::OR:
+        case ASTExpression::Kind::AND:
+        case ASTExpression::Kind::OR:
             return -5;
+        case ASTExpression::Kind::ASSIGN:
+            return -10;
         default: Assert(false);
     }
     return 0;
 }
-ASTExpression::Type CharToExprType(char chr) {
+ASTExpression::Kind CharToExprType(char chr) {
     switch(chr) {
-        case '+': return ASTExpression::Type::ADD;
-        case '-': return ASTExpression::Type::SUB;
-        case '*': return ASTExpression::Type::MUL;
-        case '/': return ASTExpression::Type::DIV;
+        case '+': return ASTExpression::Kind::ADD;
+        case '-': return ASTExpression::Kind::SUB;
+        case '*': return ASTExpression::Kind::MUL;
+        case '/': return ASTExpression::Kind::DIV;
     }
     return ASTExpression::INVALID;
 }
 ASTExpression* ParseContext::parseExpression() {
     std::vector<ASTExpression*> expressions;
-    std::vector<ASTExpression::Type> operations;
+    std::vector<ASTExpression::Kind> operations;
 
     bool is_operator = false;
     std::string name="";
@@ -62,7 +67,7 @@ ASTExpression* ParseContext::parseExpression() {
         bool ending = false;
         // TODO: Handle eof
         if(is_operator) {
-            ASTExpression::Type operationType = CharToExprType((char)token->type);
+            ASTExpression::Kind operationType = CharToExprType((char)token->type);
             if(operationType != ASTExpression::INVALID) {
                 advance();
                 operations.push_back(operationType);
@@ -94,6 +99,35 @@ ASTExpression* ParseContext::parseExpression() {
             } else if (token->type == '|' && token2->type == '|') {
                 advance(2);
                 operations.push_back(ASTExpression::OR);
+            } else if (token->type == '.') {
+                advance();
+                // operations.push_back(ASTExpression::MEMBER);
+                ASTExpression* expr = ast->createExpression(ASTExpression::MEMBER);
+
+                expr->location = getloc();
+                token = gettok(&expr->name);
+                if(token->type != TOKEN_ID) {
+                    reporter->err(token, "Member access operator expects and identifier after '.'.");
+                    return nullptr;
+                }
+                advance();
+                // can we just pop expression like this?
+                expr->left = expressions.back();
+                expressions.pop_back();
+
+                expressions.push_back(expr);
+                is_operator = !is_operator;
+            } else if (token->type == '=') {
+                advance();
+                operations.push_back(ASTExpression::ASSIGN);
+            } else if(token->type == '+' && token2->type == '+') {
+                advance(2);
+                operations.push_back(ASTExpression::POST_INCREMENT);
+                is_operator = !is_operator;
+            } else if(token->type == '-' && token2->type == '-') {
+                advance(2);
+                operations.push_back(ASTExpression::POST_DECREMENT);
+                is_operator = !is_operator;
             } else if (token->type == '[') {
                 advance();
                 operations.push_back(ASTExpression::INDEX);
@@ -124,6 +158,21 @@ ASTExpression* ParseContext::parseExpression() {
             if(token->type == '*') {
                 operations.push_back(ASTExpression::DEREF);
                 advance();
+                continue;
+            }
+            if(token->type == TOKEN_CAST) {
+                operations.push_back(ASTExpression::CAST);
+                advance();
+                continue;
+            }
+            if(token->type == '+' && token2->type == '+') {
+                operations.push_back(ASTExpression::PRE_INCREMENT);
+                advance(2);
+                continue;
+            }
+            if(token->type == '-' && token2->type == '-') {
+                operations.push_back(ASTExpression::PRE_DECREMENT);
+                advance(2);
                 continue;
             }
             
@@ -175,6 +224,21 @@ ASTExpression* ParseContext::parseExpression() {
                     expr->location = location;
                     expressions.push_back(expr);
                 }
+            } else if(token->type == TOKEN_TRUE) {
+                advance();
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
+                expr->literal_integer = number;
+                expressions.push_back(expr);
+            } else if(token->type == TOKEN_TRUE) {
+                advance();
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
+                expr->literal_integer = number;
+                expressions.push_back(expr);
+            } else if(token->type == TOKEN_TRUE) {
+                advance();
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
+                expr->literal_integer = number;
+                expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_INTEGER) {
                 advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
@@ -183,12 +247,18 @@ ASTExpression* ParseContext::parseExpression() {
             } else if(token->type == TOKEN_LITERAL_FLOAT) {
                 advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
-                expr->literal_float = name;
+                expr->literal_float = decimal;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_STRING) {
                 advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_STR);
                 expr->literal_string = name;
+                expressions.push_back(expr);
+            } else if(token->type == TOKEN_SIZEOF) {
+                advance();
+                ASTExpression* expr = ast->createExpression(ASTExpression::SIZEOF);
+                std::string type = parseType();
+                expr->name = type;
                 expressions.push_back(expr);
             } else if(token->type == '(') {
                 advance();
@@ -215,7 +285,7 @@ ASTExpression* ParseContext::parseExpression() {
             // fix unary operators (like NOT)
             while(operations.size() > 0) {
                 auto op = operations.back();
-                if(op != ASTExpression::NOT && op != ASTExpression::REFER && op != ASTExpression::DEREF) {
+                if(op != ASTExpression::NOT && op != ASTExpression::REFER && op != ASTExpression::DEREF && op != ASTExpression::CAST && op != ASTExpression::PRE_INCREMENT && op != ASTExpression::PRE_DECREMENT && op != ASTExpression::POST_INCREMENT && op != ASTExpression::POST_DECREMENT) {
                     break;
                 }
                 operations.pop_back();
@@ -272,7 +342,7 @@ ASTExpression* ParseContext::parseExpression() {
     STATEMENTS
 ##################*/
 ASTStatement * ParseContext::parseWhile(){
-    ASTStatement* out = ast->createStatement(ASTStatement::Type::WHILE);
+    ASTStatement* out = ast->createStatement(ASTStatement::Kind::WHILE);
     
     // out->location = getloc();
     Token* token = gettok();
@@ -281,7 +351,7 @@ ASTStatement * ParseContext::parseWhile(){
         return nullptr;
     }
     advance();
-    ASTExpression * expr= parseExpression();
+    ASTExpression * expr = parseExpression();
     if (!expr){
         return nullptr;
         // printf("Error in Expresion!");
@@ -298,7 +368,7 @@ ASTStatement * ParseContext::parseWhile(){
 ASTStatement* ParseContext::parseIf() {
     // if expression { } else expression
     
-    ASTStatement* out = ast->createStatement(ASTStatement::Type::IF);
+    ASTStatement* out = ast->createStatement(ASTStatement::Kind::IF);
     
     // out->location = getloc();
     
@@ -323,7 +393,7 @@ ASTStatement* ParseContext::parseIf() {
     // TODO: Don't handle else if recursively
     token = gettok();
     if(token->type == TOKEN_IF) {
-        ASTBody* body = ast->createBody();
+        ASTBody* body = ast->createBodyWithSharedScope(current_scopeId);
         
         ASTStatement* stmt = parseIf();
         if(!stmt)
@@ -338,7 +408,6 @@ ASTStatement* ParseContext::parseIf() {
     return out;
 }
 ASTStatement* ParseContext::parseVarDeclaration() {
-    // if expression { } else expression
     
     ASTStatement* out = ast->createStatement(ASTStatement::VAR_DECLARATION);
 
@@ -353,17 +422,18 @@ ASTStatement* ParseContext::parseVarDeclaration() {
     // out->location = token; // for error messages in generator
     
     token = gettok();
-    if(token->type == ':') {
-        advance();
-        
-        std::string type = parseType();
-        if(type.empty()) {
-            reporter->err(token, "Invalid syntax for type.");
-            return nullptr;
-        }
-        
-        out->declaration_type = type;
+    if(token->type != ':') {
+        reporter->err(token, "Expected ':' for variable declarations.");
+        return nullptr;
     }
+    advance();
+        
+    std::string type = parseType();
+    if(type.empty()) {
+        reporter->err(token, "Invalid syntax for type.");
+        return nullptr;
+    }
+    out->declaration_type = type;
     
     token = gettok();
     if(token->type != '=') {
@@ -386,7 +456,13 @@ ASTStatement* ParseContext::parseVarDeclaration() {
 }
 
 ASTBody* ParseContext::parseBody() {
-    ASTBody* out = ast->createBody();
+    ASTBody* out = ast->createBody(current_scopeId);
+
+    auto prev_scope = current_scopeId;
+    current_scopeId = out->scopeId;
+    defer {
+        current_scopeId = prev_scope;
+    };
 
     Token* token = gettok();
     if(token->type != '{') {
@@ -434,7 +510,8 @@ ASTBody* ParseContext::parseBody() {
             }
             default: {
                 auto token2 = gettok(1);
-                if(token->type == TOKEN_ID && (token2->type == ':' || token2->type == '='))  {
+                // v.x.y = 23; is an assignment, checkin for id, colon, and equals tokens won't work
+                if(token->type == TOKEN_ID && token2->type == ':')  {
                     stmt = parseVarDeclaration();
                     if(!stmt)
                         return nullptr;
@@ -532,7 +609,7 @@ ASTFunction* ParseContext::parseFunction() {
         }
         ASTFunction::Parameter param{};
         param.name = param_name;
-        param.type = type;
+        param.typeString = type;
         out->parameters.push_back(param);
 
         token = gettok();
@@ -554,7 +631,7 @@ ASTFunction* ParseContext::parseFunction() {
             reporter->err(token, "Invalid syntax for type.");
             return nullptr;
         }
-        out->returnType = return_type;
+        out->return_typeString = return_type;
     }
 
     ASTBody* body = parseBody();
@@ -620,7 +697,7 @@ ASTStructure* ParseContext::parseStruct() {
         }
         ASTStructure::Member member{};
         member.name = member_name;
-        member.type = type;
+        member.typeString = type;
         out->members.push_back(member);
 
         token = gettok();
@@ -641,6 +718,7 @@ void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
     context.reporter = reporter;
     context.stream = stream;
     context.ast = ast;
+    context.current_scopeId = AST::GLOBAL_SCOPE;
 
     bool running = true;
     while(running) {

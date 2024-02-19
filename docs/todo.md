@@ -6,9 +6,10 @@
 - Reference, dereference operator (since we have pointers)
 - sizeof TYPE
 - Multithreading
+- Native functions (print, read, write file)
+- Procedural source code generation (test compiler performance with large data)
 
 # Extra
-- More native functions (read, write file)
 - Index operator `ptr[4]` instead of `*(ptr + 4)`
 
 # Details about overview

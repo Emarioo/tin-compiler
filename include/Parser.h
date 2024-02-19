@@ -14,11 +14,13 @@ struct ParseContext {
     int head = 0;
     TokenStream* stream = nullptr;
 
+    ScopeId current_scopeId;
+
     Token* gettok(int off = 0) {
-        return stream->getToken(head + off, nullptr, nullptr);
+        return stream->getToken(head + off, nullptr, nullptr, nullptr);
     }
     Token* gettok(std::string* str, int off = 0) {
-        return stream->getToken(head + off, str, nullptr);
+        return stream->getToken(head + off, str, nullptr, nullptr);
     }
     Token* gettok(std::string* str, int* num, float* dec, int off = 0) {
         return stream->getToken(head + off, str, num, dec);
