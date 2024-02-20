@@ -23,4 +23,9 @@ struct Interpreter {
     
 private:
     void run_native_call(NativeCalls callType);
+    
+    struct Allocation {
+        int size;  
+    };
+    std::unordered_map<void*, Allocation> allocations;
 };

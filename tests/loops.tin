@@ -2,6 +2,6 @@ fun main() {
     i: int = 0;
     while i < 5 {
         printi(i);
-        i=i+1;   
+        i++;
     }
 }

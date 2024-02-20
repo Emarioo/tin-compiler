@@ -20,14 +20,14 @@
 		{
 			"include": "#operators"
 		},
+        {
+            "include": "#types"
+        },
 		{
 			"include": "#numbers"
 		},
 		{
 			"include": "#functions"
-		},
-		{
-			"include": "#types"
 		}
 	],
 	"repository": {
@@ -44,7 +44,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control",
-				"match": "\\b(if|else|while|break|continue|global|fun|struct|return|cast|include)\\b"
+				"match": "\\b(if|else|while|break|continue|global|const|fun|struct|return|cast|include)\\b"
 			}
 			
 			]
@@ -69,33 +69,27 @@
 				"match": "\\w+\\("
 			}]
 		},
-		"types":{
-			"patterns": [{
-				"name":"entity.name.type",
-				"match": "((?<=\\w+\\s*:\\s*)|(?<=\\)\\s*:\\s*))(?<base>(\\w+::)*(\\w+)(\\<(\\g'base')(,\\g'base')*\\>)?)"
-			}]
-		},
 		"strings": {
-			"name": "string.quoted.double.tin",
+            "name": "string.quoted.double.tin",
 			"begin": "\"",
 			"end": "\"",
 			"patterns": [
 				{
-					"name": "constant.character.escape.tin",
+                    "name": "constant.character.escape.tin",
 					"match": "\\\\."
 				}
 			]
 		},
 		"strings1": {
-			"patterns": [
+            "patterns": [
 				{
-					"name": "string.quoted.single.tin",
+                    "name": "string.quoted.single.tin",
 					"match": "'((.)|(\\\\.))'"
 				}
 			]
 		},
 		"operators":{
-			"name":"keyword.operator",
+            "name":"keyword.operator",
 			"patterns": [
 				{
 					"name": "keyword.operator",
@@ -104,14 +98,20 @@
 			]
 		},
 		"numbers": {
-			"name": "constant.numeric",
+            "name": "constant.numeric",
 			"patterns": [
 				{
-					"name": "constant.numeric",
+                    "name": "constant.numeric",
 					"match": "\\b\\d+(\\.\\d+)?d?u?s?\\b|\\b0x[0-9A-F_]+\\b|(false)|(true)|(null)"
 				}
 			]
-		}
+		},
+        "types":{
+            "patterns": [{
+                "name":"entity.name.type",
+                "match": "((?<=\\w+\\s*:\\s*)|(?<=\\)\\s*:\\s*)|(?<=cast\\s*))(?<base>(\\w+::)*(\\w+)(\\<(\\g'base')(,\\g'base')*\\>)?)"
+            }]
+        }
 	},
 	"scopeName": "source.tin"
 }

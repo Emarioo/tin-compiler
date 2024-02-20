@@ -2,10 +2,13 @@
 
 #include "Util.h"
 
+struct ASTFunction;
+
 enum Opcode : u8 {
     INST_HALT=0,
     INST_NOP,
 
+    INST_CAST,
     INST_MOV_RR, // reg <- reg
     INST_MOV_MR, // memory <- reg
     INST_MOV_RM, // reg <- memory
@@ -21,6 +24,7 @@ enum Opcode : u8 {
     INST_AND,
     INST_OR,
     INST_NOT,
+    
     INST_EQUAL,
     INST_NOT_EQUAL,
     INST_LESS,
@@ -29,6 +33,7 @@ enum Opcode : u8 {
     INST_GREATER_EQUAL,
 
     INST_RET, // return
+    INST_MEMZERO,
     
     // instructions with immediates
     INST_IMMEDIATES,
@@ -37,6 +42,12 @@ enum Opcode : u8 {
     INST_JZ, // conditional jump (if zero)
     INST_CALL, // function call
     
+    INST_MOV_MR_DISP, // memory+disp <- reg
+    INST_MOV_RM_DISP, // reg <- memory+disp
+};
+enum CastType {
+    CAST_FLOAT_INT,
+    CAST_INT_FLOAT,
 };
 enum Register : u8 {
     REG_INVALID=0,
@@ -69,6 +80,7 @@ struct Instruction {
 };
 struct Code;
 struct CodePiece {
+    int code_index=0;
     std::string name;
     std::vector<Instruction> instructions;
     
@@ -85,16 +97,21 @@ struct CodePiece {
     
     int virtual_sp=0;
     struct Relocation {
-        std::string func_name;
+        // std::string func_name;
+        ASTFunction* function = nullptr;
         int index_of_immediate; // immediate of INST_CALL instruction
     };
     std::vector<Relocation> relocations;
+    void addRelocation(ASTFunction* func, int imm_index) {
+        relocations.push_back({func, imm_index});
+    }
 
     void emit_li(Register reg, int imm);
     void emit_push(Register reg);
     void emit_pop(Register reg);
     void emit_incr(Register reg, int imm);
     
+    void emit_cast(Register reg, CastType castType);
     void emit_mov_rr(Register to_reg, Register from_reg);
     void emit_mov_mr(Register to_reg, Register from_reg, u8 size);
     void emit_mov_rm(Register to_reg, Register from_reg, u8 size);
@@ -123,6 +140,8 @@ struct CodePiece {
     
     void emit_call(int* out_index_of_imm);
     void emit_ret();
+    
+    void emit_memzero(Register reg, Register reg_size);
 
     int get_pc() { return instructions.size(); }
     void fix_jump_here(int imm_index);
@@ -160,6 +179,7 @@ struct Code {
     
     CodePiece* createPiece() {
         auto ptr = new CodePiece();
+        ptr->code_index = pieces.size();
         pieces.push_back(ptr);
         return ptr;
     }
@@ -172,6 +192,8 @@ struct Code {
 enum NativeCalls {
     NATIVE_printi = 0,
     NATIVE_printf,
+    NATIVE_malloc,
+    NATIVE_mfree,
     NATIVE_MAX,
 };
 #define NAME_OF_NATIVE(X) native_names[X]

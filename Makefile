@@ -27,7 +27,9 @@ bin/%.o: src/%.cpp
 	@ rem echo $<
 	@ rem mkdir -p bin
 	@rem mkdir bin 2> nul
-	$(CC) $(GCC_WARN) $(GCC_COMPILE_OPTIONS) $(GCC_INCLUDE_DIRS) $(GCC_DEFINITIONS) -c $< -o $@ -MD -MP
+	$(CC) $(GCC_WARN) $(GCC_COMPILE_OPTIONS) $(GCC_INCLUDE_DIRS) $(GCC_DEFINITIONS) -c $< -o $@
+	@rem -MD -MP
+	
 	
 build: $(OBJ)
 	@rem echo $(OUTPUT)

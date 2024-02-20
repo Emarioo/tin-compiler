@@ -1,4 +1,5 @@
 #include "AST.h"
+#include "Code.h"
 
 AST::AST() {
     global_scope = createScope(GLOBAL_SCOPE);
@@ -13,6 +14,48 @@ AST::AST() {
     ADD(TYPE_FLOAT, 4)
     #undef ADD
     Assert(type->typeId.index() == (int)TYPE_FLOAT);
+    
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->name = "printi";
+        f->parameters.push_back({});
+        f->parameters.back().name = "v";
+        f->parameters.back().typeString = "int";
+        f->piece_code_index = NATIVE_printi - NATIVE_MAX - 1;
+        functions.push_back(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->name = "printf";
+        f->parameters.push_back({});
+        f->parameters.back().name = "v";
+        f->parameters.back().typeString = "float";
+        f->piece_code_index = NATIVE_printf - NATIVE_MAX - 1;
+        functions.push_back(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->name = "malloc";
+        f->parameters.push_back({});
+        f->parameters.back().name = "size";
+        f->parameters.back().typeString = "int";
+        f->piece_code_index = NATIVE_malloc - NATIVE_MAX - 1;
+        f->return_typeString = "void*";
+        functions.push_back(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->name = "mfree";
+        f->parameters.push_back({});
+        f->parameters.back().name = "ptr";
+        f->parameters.back().typeString = "void*";
+        f->piece_code_index = NATIVE_mfree - NATIVE_MAX - 1;
+        functions.push_back(f);
+    }
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
     auto ptr = new ASTExpression(kind);
@@ -190,7 +233,8 @@ void AST::print() {
         else
             printf("): %s\n", fn->return_typeString.c_str());
 
-        print(fn->body, 1);
+        if(fn->body)
+            print(fn->body, 1);
     }
 }
 TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
@@ -218,7 +262,7 @@ TypeId AST::convertFullType(const std::string& str, ScopeId scopeId) {
             break;
         }
     }
-    auto info = findType(str, scopeId);
+    auto info = findType(base, scopeId);
     if(!info)
         return {}; // void
     auto type = info->typeId;
@@ -229,7 +273,7 @@ TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
     ScopeInfo* scope = getScope(scopeId);
     auto type = new TypeInfo();
     type->name = str;
-    type->typeId = { (u32) typeInfos.size() };
+    type->typeId = TypeId::Make(typeInfos.size());
     typeInfos.push_back(type);
 
     scope->type_map[str] = type;
@@ -245,7 +289,9 @@ int AST::sizeOfType(TypeId typeId) {
 }
 std::string AST::nameOfType(TypeId typeId) {
     std::string out="";
-    auto type = getType(typeId);
+    TypeId base = typeId;
+    base.set_pointer_level(0);
+    auto type = getType(base);
     Assert(type);
     out += type->name;
     for(int i=0;i<typeId.pointer_level();i++)

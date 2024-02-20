@@ -55,6 +55,8 @@ ASTExpression::Kind CharToExprType(char chr) {
 ASTExpression* ParseContext::parseExpression() {
     std::vector<ASTExpression*> expressions;
     std::vector<ASTExpression::Kind> operations;
+    std::vector<std::string> cast_strings;
+    std::vector<SourceLocation> saved_locations;
 
     bool is_operator = false;
     std::string name="";
@@ -68,7 +70,15 @@ ASTExpression* ParseContext::parseExpression() {
         // TODO: Handle eof
         if(is_operator) {
             ASTExpression::Kind operationType = CharToExprType((char)token->type);
-            if(operationType != ASTExpression::INVALID) {
+            if(token->type == '+' && token2->type == '+') {
+                advance(2);
+                operations.push_back(ASTExpression::POST_INCREMENT);
+                is_operator = !is_operator;
+            } else if(token->type == '-' && token2->type == '-') {
+                advance(2);
+                operations.push_back(ASTExpression::POST_DECREMENT);
+                is_operator = !is_operator;
+            } else if(operationType != ASTExpression::INVALID) {
                 advance();
                 operations.push_back(operationType);
             } else if (token->type == '&' && token2->type == '&') {
@@ -120,14 +130,6 @@ ASTExpression* ParseContext::parseExpression() {
             } else if (token->type == '=') {
                 advance();
                 operations.push_back(ASTExpression::ASSIGN);
-            } else if(token->type == '+' && token2->type == '+') {
-                advance(2);
-                operations.push_back(ASTExpression::POST_INCREMENT);
-                is_operator = !is_operator;
-            } else if(token->type == '-' && token2->type == '-') {
-                advance(2);
-                operations.push_back(ASTExpression::POST_DECREMENT);
-                is_operator = !is_operator;
             } else if (token->type == '[') {
                 advance();
                 operations.push_back(ASTExpression::INDEX);
@@ -161,8 +163,12 @@ ASTExpression* ParseContext::parseExpression() {
                 continue;
             }
             if(token->type == TOKEN_CAST) {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::CAST);
                 advance();
+                
+                std::string type = parseType();
+                cast_strings.push_back(type);
                 continue;
             }
             if(token->type == '+' && token2->type == '+') {
@@ -226,18 +232,15 @@ ASTExpression* ParseContext::parseExpression() {
                 }
             } else if(token->type == TOKEN_TRUE) {
                 advance();
-                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
-                expr->literal_integer = number;
+                ASTExpression* expr = ast->createExpression(ASTExpression::TRUE);
                 expressions.push_back(expr);
-            } else if(token->type == TOKEN_TRUE) {
+            } else if(token->type == TOKEN_FALSE) {
                 advance();
-                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
-                expr->literal_integer = number;
+                ASTExpression* expr = ast->createExpression(ASTExpression::FALSE);
                 expressions.push_back(expr);
-            } else if(token->type == TOKEN_TRUE) {
+            } else if(token->type == TOKEN_NULL) {
                 advance();
-                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
-                expr->literal_integer = number;
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_NULL);
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_INTEGER) {
                 advance();
@@ -293,6 +296,13 @@ ASTExpression* ParseContext::parseExpression() {
                 expr->left = expressions.back();
                 expressions.pop_back();
                 expressions.push_back(expr);
+                
+                if(op == ASTExpression::CAST) {
+                    expr->name = cast_strings.back();
+                    expr->location = saved_locations.back();
+                    saved_locations.pop_back();
+                    cast_strings.pop_back();
+                }
             }
         } else {
             if(!ending) {

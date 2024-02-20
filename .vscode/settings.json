@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.cpp": "cpp",
         "unordered_map": "cpp",
         "xstring": "cpp",
         "iosfwd": "cpp",
@@ -49,6 +50,8 @@
         "xmemory": "cpp",
         "xstddef": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "functional": "cpp",
+        "iostream": "cpp"
     }
 }

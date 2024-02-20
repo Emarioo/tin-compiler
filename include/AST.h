@@ -19,8 +19,8 @@ enum PrimitiveType {
 extern const char* primitive_names[];
 struct TypeId {
     TypeId() : _index(0), _pointer_level(0) { }
-    TypeId(PrimitiveType type) : TypeId((u32)type) { }
-    TypeId(u32 index) : _index(index), _pointer_level(0) { }
+    TypeId(PrimitiveType type) : TypeId(Make(type)) { }
+    static TypeId Make(u32 index) { TypeId t{}; t._index = index; return t; }
 
     u32 index() const { return _index; }
     u32 pointer_level() const { return _pointer_level; }
@@ -34,6 +34,7 @@ struct TypeId {
     bool operator !=(TypeId type) const {
         return !(*this == type);
     }
+    
 
 private:
     u32 _index : 24;
@@ -204,8 +205,13 @@ struct ASTFunction {
     
     std::string return_typeString;
     TypeId return_type;
+    int return_offset = 0; // offset from base pointer inside the function
 
-    ASTBody* body;
+    int piece_code_index = 0;
+
+    ASTBody* body = nullptr;
+    
+    bool is_native = false;
 };
 struct ASTStructure {
     std::string name;
@@ -276,6 +282,7 @@ struct AST {
 
     TypeInfo* getType(TypeId typeId) {
         Assert(typeId.pointer_level() == 0);
+        Assert(typeId.index() < typeInfos.size());
         return typeInfos[typeId.index()];
     }
     TypeInfo* findType(const std::string& str, ScopeId scopeId);

@@ -26,16 +26,18 @@ void CompileFile(const std::string& path) {
 
     ParseTokenStream(stream, ast, reporter);
 
-    ast->print();
+    // ast->print();
     
     
     if(reporter->errors == 0) {
-        GenerateStructs(ast, reporter);
+        CheckStructs(ast, reporter);
         
+        for(auto func : ast->functions)
+            CheckFunction(ast, func, reporter);
         for(auto func : ast->functions)
             GenerateFunction(ast, func, code, reporter);
         
-        code->print();
+        // code->print();
     }
     
     if(reporter->errors == 0) {

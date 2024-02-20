@@ -20,7 +20,7 @@ void Interpreter::execute() {
     bool interactive = false;
     bool enable_logging = false;
     // interactive = true;
-    enable_logging = true;
+    // enable_logging = true;
     
     code->apply_relocations();
     
@@ -35,19 +35,19 @@ void Interpreter::execute() {
     #define CHECK_STACK if(registers[REG_SP] > (i64)stack + stack_max || registers[REG_SP] < (i64)stack) {\
         printf("\n");\
         log_color(Color::RED);\
-        printf("Interpreter: Stack overflow (sp: %lld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);\
+        printf("Interpreter: Stack overflow (d_sp: %lld, max: %d)\n", (i64)registers[REG_SP] - (i64)stack, (int)stack_max);\
         log_color(Color::NO_COLOR);\
         return;\
     }
     
     registers[REG_BP] = registers[REG_SP];
     
-    auto mov=[&](int size, void* a, void* b) {
+    auto mov=[&](int size, void* dst, void* src) {
         switch(size){
-        case 1: *(u8*)a = *(u8*)b; break;
-        case 2: *(u16*)a = *(u16*)b; break;
-        case 4: *(u32*)a = *(u32*)b; break;
-        case 8: *(u64*)a = *(u64*)b; break;
+        case 1: *( u8*)dst = *( u8*)src; break;
+        case 2: *(u16*)dst = *(u16*)src; break;
+        case 4: *(u32*)dst = *(u32*)src; break;
+        case 8: *(u64*)dst = *(u64*)src; break;
         default: Assert(false);
         }
     };
@@ -122,7 +122,7 @@ void Interpreter::execute() {
         LOG(
             if(piece->line_of_instruction.size() > prev_pc) {
                 int line_index = piece->line_of_instruction[prev_pc];
-                if(debug_last_piece != piece_index || debug_last_line != line_index) {
+                if(line_index != -1 && (debug_last_piece != piece_index || debug_last_line != line_index)) {
                     CodePiece::Line& line = piece->lines[line_index];
                     log_color(Color::AQUA);
                     printf(" %d: %s\n", line.line_number, line.text.c_str());
@@ -135,6 +135,15 @@ void Interpreter::execute() {
         )
         
         switch(inst.opcode) {
+        case INST_CAST: {
+            CastType type = (CastType)inst.op1;
+            if(type == CAST_INT_FLOAT) {
+                *(float*)&registers[inst.op0] = *(int*)&registers[inst.op0];
+            } else if(type == CAST_FLOAT_INT) {
+                *(int*)&registers[inst.op0] = *(float*)&registers[inst.op0];
+            }
+            break;
+        }
         case INST_MOV_RR: {
             registers[inst.op0] = registers[inst.op1];
             break;
@@ -145,6 +154,14 @@ void Interpreter::execute() {
         }
         case INST_MOV_RM: {
             mov(inst.op2, &registers[inst.op0], (void*)registers[inst.op1]);
+            break;
+        }
+        case INST_MOV_MR_DISP: {
+            mov(inst.op2, (void*)(registers[inst.op0] + imm), &registers[inst.op1]);
+            break;
+        }
+        case INST_MOV_RM_DISP: {
+            mov(inst.op2, &registers[inst.op0], (void*)(registers[inst.op1] + imm));
             break;
         }
         case INST_LI: {
@@ -238,6 +255,10 @@ void Interpreter::execute() {
             piece = code->pieces[piece_index];
             break;
         }
+        case INST_MEMZERO: {
+            memset((void*)registers[inst.op0],0, registers[inst.op1]);
+            break;
+        }
         case INST_JMP: {
             registers[REG_PC] += imm -1; // -1 because imm is relative to the immediates address and not the end of the jump instruction. See CodePiece::fix_jump_here for specifics.
             break;
@@ -266,9 +287,9 @@ void Interpreter::execute() {
         }
         
         if(inst.op0 != REG_INVALID) {
-            if(inst.opcode == INST_MOV_MR) {
+            if(inst.opcode == INST_MOV_MR || inst.opcode == INST_MOV_MR_DISP) {
                 i64 tmp = 0;
-                mov((u8)inst.op2, &tmp, (void*)registers[inst.op0]);
+                mov((u8)inst.op2, &tmp, (void*)(registers[inst.op0] + imm));
                 LOG(
                     log_color(GRAY);
                     printf("  *%s = %lld ", register_names[inst.op0], tmp);
@@ -289,6 +310,60 @@ void Interpreter::execute() {
             LOG(printf("\n");)
     }
     print_registers();
+}
+void Interpreter::run_native_call(NativeCalls callType) {
+    // auto inst_pop = [&](Register reg) {
+    //     Assert(reg >= REG_T0 && reg <= REG_T1);
+    //     registers[reg] = *(i64*)registers[REG_SP];
+    //     registers[REG_SP] += 8;
+    //     CHECK_STACK
+    // };
+    // auto inst_push = [&](Register reg) {
+    //     Assert(reg >= REG_T0 && reg <= REG_T1);
+    //     registers[REG_SP] -= 8;
+    //     CHECK_STACK
+    //     *(i64*)registers[REG_SP] = registers[reg];
+    // };
+    switch(callType) {
+    case NATIVE_printi: {
+        int arg0 = *(int*)(registers[REG_SP] + 0);
+        
+        printf("%d\n", arg0);
+    } break;
+    case NATIVE_printf: {
+        float arg0 = *(float*)(registers[REG_SP] + 0);
+        
+        printf("%f\n", arg0);
+    } break;
+    case NATIVE_malloc: {
+        int arg0 = *(int*)(registers[REG_SP] + 0);
+        // void* arg1 = *(void**)(registers[REG_SP] + 8);
+        // int arg2 = *(int*)(registers[REG_SP] + 12);
+        void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
+        
+        ret = malloc(arg0);
+        if(!ret) {
+            allocations[ret] = {arg0};
+        }
+    } break;
+     case NATIVE_mfree: {
+        void* arg0 = *(void**)(registers[REG_SP] + 0);
+        // void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
+        
+        if(!arg0) {
+            auto pair = allocations.find(arg0);
+            if(pair == allocations.end()) {
+                log_color(Color::RED);
+                printf("INTERPRETER: mfree was called with a pointer that wasn't allocated\n");
+                log_color(Color::NO_COLOR);
+            } else {
+                free(arg0);
+                allocations.erase(arg0);
+            }
+        }
+    } break;
+    default: Assert(false);   
+    }
 }
 void Interpreter::print_registers(bool subtle) {
     log_color(Color::GOLD);
@@ -351,34 +426,5 @@ void Interpreter::print_stack() {
         log_color(Color::GREEN);
         printf("%lld\n", val);
         log_color(Color::NO_COLOR);
-    }
-}
-void Interpreter::run_native_call(NativeCalls callType) {
-    // auto inst_pop = [&](Register reg) {
-    //     Assert(reg >= REG_T0 && reg <= REG_T1);
-    //     registers[reg] = *(i64*)registers[REG_SP];
-    //     registers[REG_SP] += 8;
-    //     CHECK_STACK
-    // };
-    // auto inst_push = [&](Register reg) {
-    //     Assert(reg >= REG_T0 && reg <= REG_T1);
-    //     registers[REG_SP] -= 8;
-    //     CHECK_STACK
-    //     *(i64*)registers[REG_SP] = registers[reg];
-    // };
-    switch(callType) {
-    case NATIVE_printi: {
-        i64 arg0 = *(i64*)(registers[REG_SP] + 0);
-        
-        printf("%lld\n", arg0);
-        break;
-    }
-    case NATIVE_printf: {
-        float arg0 = *(float*)(registers[REG_SP] + 0);
-        
-        printf("%f\n", arg0);
-        break;
-    }
-    default: Assert(false);   
     }
 }

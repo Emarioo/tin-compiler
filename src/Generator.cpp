@@ -4,22 +4,24 @@
 
 
 void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
-    auto info = ast->getType(type);
+    if(type == TYPE_VOID) return;
     int size = ast->sizeOfType(type);
-    if(type.pointer_level() > 0 || !info->ast_struct) {
+    TypeInfo* info = nullptr;
+    if(type.pointer_level() > 0 || (info = ast->getType(type), !info->ast_struct)) {
         piece->emit_pop(REG_A);
-        piece->emit_mov_mr_disp(reg, REG_A, size, offset);
+        if(reg != REG_INVALID)
+            piece->emit_mov_mr_disp(reg, REG_A, size, offset);
     } else {
-        for(int i=0;i<info->ast_struct->members.size();i++) {
+        for(int i=info->ast_struct->members.size()-1;i>=0;i--) {
             auto& mem = info->ast_struct->members[i];
             generatePop(reg, offset + mem.offset, mem.typeId);
         }
     }
 }
 void GeneratorContext::generatePush(Register reg, int offset, TypeId type) {
-    auto info = ast->getType(type);
     int size = ast->sizeOfType(type);
-    if(type.pointer_level() > 0 || !info->ast_struct) {
+    TypeInfo* info = nullptr;
+    if(type.pointer_level() > 0 || (info = ast->getType(type), !info->ast_struct)) {
         piece->emit_mov_rm_disp(REG_A, reg, size, offset);
         piece->emit_push(REG_A);
     } else {
@@ -31,6 +33,12 @@ void GeneratorContext::generatePush(Register reg, int offset, TypeId type) {
 }
 
 TypeId GeneratorContext::generateReference(ASTExpression* expr) {
+    if(expr->kind() == ASTExpression::DEREF) {
+        TypeId type = generateExpression(expr->left);
+        type.set_pointer_level(type.pointer_level() - 1);
+        return type;
+    }
+    
     std::vector<ASTExpression*> exprs;
     
     while(expr) {
@@ -43,7 +51,11 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
                 exprs.push_back(expr);            
                 expr = expr->left;
             } break;
-            default: Assert(false);
+            default: {
+                REPORT(expr->location, "Invalid expression as a reference.");
+                return TYPE_VOID;
+                // Assert(false);
+            }
         }
     }
     TypeId out = TYPE_VOID;
@@ -119,23 +131,26 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             // get the address of the variable
             // a local variable exists on the stack
             // with an offset from the base pointer
-            piece->emit_li(REG_B, var_offset);
-            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+            // piece->emit_li(REG_B, var_offset);
+            // piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
             
-            // get the value of the variable
-            piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
-            piece->emit_push(REG_A);
+            // // get the value of the variable
+            // piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
+            // piece->emit_push(REG_A);
+            
+            piece->emit_mov_rr(REG_B, REG_BP);
+            generatePush(REG_B, var_offset, variable->typeId);
             return variable->typeId;
             break;
         }
         case ASTExpression::FUNCTION_CALL: {
-            auto function = ast->findFunction(expr->name, current_scopeId);
-            if(!function) {
+            auto fun = ast->findFunction(expr->name, current_scopeId);
+            if(!fun) {
                 REPORT(expr->location, std::string() + "Function '"+expr->name+"' does not exist.");
                 return TYPE_VOID;
             }
 
-            piece->emit_incr(REG_SP, -function->parameters_size);
+            piece->emit_incr(REG_SP, -fun->parameters_size);
             int arg_offset = piece->virtual_sp;
 
             std::vector<TypeId> argument_types;
@@ -145,15 +160,15 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 argument_types.push_back(type);
             }
 
-            if(function->parameters.size() != argument_types.size()) {
-                REPORT(expr->location, std::string() + "The function call has " + std::to_string(argument_types.size()) + " arguments but the function '"+expr->name+"' requires " + std::to_string(function->parameters.size()) + ".");
+            if(fun->parameters.size() != argument_types.size()) {
+                REPORT(expr->location, std::string() + "The function call has " + std::to_string(argument_types.size()) + " arguments but the function '"+expr->name+"' requires " + std::to_string(fun->parameters.size()) + ".");
                 return TYPE_VOID;
             }
             bool fail=false;
             for(int i=0;i<argument_types.size();i++) {
-                if(function->parameters[i].typeId != argument_types[i]) {
+                if(fun->parameters[i].typeId != argument_types[i]) {
                     fail = true;
-                    REPORT(expr->location, std::string() + "The "+std::to_string(i)+" argument is of type '"+ast->nameOfType(argument_types[i])+"' but the parameter '" + function->parameters[i].name + "' requires '" + ast->nameOfType(function->parameters[i].typeId) + "'.");
+                    REPORT(expr->location, std::string() + "The "+std::to_string(i)+" argument is of type '"+ast->nameOfType(argument_types[i])+"' but the parameter '" + fun->parameters[i].name + "' requires '" + ast->nameOfType(fun->parameters[i].typeId) + "'.");
                 }
             }
             if(fail)
@@ -162,28 +177,30 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             int arg_diff = piece->virtual_sp - arg_offset;
 
             piece->emit_mov_rr(REG_B, REG_SP);
-            for(int i=function->parameters.size();i>=0; i--) {
-                auto& param = function->parameters[i];
+            for(int i=fun->parameters.size()-1;i>=0; i--) {
+                auto& param = fun->parameters[i];
                 
-                generatePop(REG_B, param.offset - 16 - arg_offset, param.typeId);
+                generatePop(REG_B, param.offset - 16 - arg_diff, param.typeId);
             }
 
             int relocation_index = 0;
             piece->emit_call(&relocation_index);
 
             // how about native calls
-            piece->relocations.push_back({expr->name, relocation_index});
+            // piece->relocations.push_back({expr->name, relocation_index});
+            piece->addRelocation(fun, relocation_index);
             
-            for(int i=0;i<expr->arguments.size(); i++) {
-                piece->emit_pop(REG_F); // throw away argument values
+            
+            if(fun->return_type.valid()) {
+                piece->emit_mov_rr(REG_B, REG_SP);
+                piece->emit_incr(REG_SP, fun->parameters_size);
+                generatePush(REG_B, fun->return_offset - 16, fun->return_type);
+            } else {
+                piece->emit_incr(REG_SP, fun->parameters_size);
             }
-            // NOTE: Optimize by popping all arguments by incrementing stack pointer directly
-            // piece->emit_li(REG_F, expr->arguments.size() * 8);
-            // piece->emit_add(REG_SP, REG_F);
             
-            // TODO: Some functions do not return a value. Handle it.
-            piece->emit_push(REG_A); // push return value
-            return TYPE_VOID;
+            
+            return fun->return_type;
             break;
         }
         case ASTExpression::ADD:
@@ -200,6 +217,11 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::GREATER_EQUAL: {
             TypeId ltype = generateExpression(expr->left);
             TypeId rtype = generateExpression(expr->right);
+            
+            if(ltype != rtype) {
+                REPORT(expr->location, "Cannot perform operation on the types '"+ast->nameOfType(ltype)+"', '"+ast->nameOfType(rtype)+"'.");
+                return TYPE_VOID;   
+            }
             
             bool is_float = false;
             if(ltype == TYPE_FLOAT || rtype == TYPE_FLOAT) {
@@ -226,6 +248,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             }
             
             piece->emit_push(REG_A);
+            return ltype;
             break;
         }
         case ASTExpression::NOT: {
@@ -263,24 +286,51 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             piece->emit_pop(REG_B);
             piece->emit_mov_rm(REG_A, REG_B, 4);
             piece->emit_push(REG_A);
+            return type;
             break;   
         }
         case ASTExpression::INDEX: {
             Assert(false);
-            TypeId type = generateExpression(expr->left);
+            // TypeId type = generateExpression(expr->left);
             
-            piece->emit_pop(REG_B);
-            piece->emit_mov_rm(REG_A, REG_B, 4);
-            piece->emit_push(REG_A);
+            // piece->emit_pop(REG_B);
+            // piece->emit_mov_rm(REG_A, REG_B, 4);
+            // piece->emit_push(REG_A);
             break;   
         }
         case ASTExpression::CAST: {
-            Assert(false);
             TypeId type = generateExpression(expr->left);
+            TypeId castType = ast->convertFullType(expr->name, current_scopeId);
             
-            piece->emit_pop(REG_B);
-            piece->emit_mov_rm(REG_A, REG_B, 4);
-            piece->emit_push(REG_A);
+            if(type == castType) {
+                return castType; // casting to the same type is okay, unnecessary, but okay
+            }
+            
+            // casting pointers is okay
+            if(type.pointer_level() > 0 && castType.pointer_level() > 0) {
+                return castType;
+            }
+            
+            if((type == TYPE_INT || type == TYPE_BOOL || type == TYPE_CHAR)
+            && (castType == TYPE_INT || castType == TYPE_BOOL || castType == TYPE_CHAR)) {
+                return castType;
+            }
+            
+            if((type == TYPE_INT || type == TYPE_FLOAT) && (castType == TYPE_INT || castType == TYPE_FLOAT)) {
+                if(type == TYPE_INT) {
+                    piece->emit_pop(REG_A);
+                    piece->emit_cast(REG_A, CAST_INT_FLOAT);
+                    piece->emit_push(REG_A);
+                } else {
+                    piece->emit_pop(REG_A);
+                    piece->emit_cast(REG_A, CAST_FLOAT_INT);
+                    piece->emit_push(REG_A);
+                }
+                return castType;
+            }
+            
+            REPORT(expr->location, "You cannot cast '"+ast->nameOfType(type)+"' to '"+ast->nameOfType(castType)+"'.");
+            return TYPE_VOID;
             break;   
         }
         case ASTExpression::SIZEOF: {
@@ -297,21 +347,20 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             TypeId rtype = generateExpression(expr->right);
             TypeId ltype = generateReference(expr->left);
             if(!ltype.valid() || !rtype.valid()) {
-                return false; // error should be reported already
+                return {}; // error should be reported already
             }
 
             if(rtype != ltype) {
                 REPORT(expr->location, "The expression and reference has mismatching types.");
                 // TODO: Implicit casting
-                return false;
+                return {};
             }
             
             piece->emit_pop(REG_B); // pointer to reference/value/variable
             
-            piece->emit_pop(REG_A);
-            piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
-
-            piece->emit_push(REG_A);
+            generatePop(REG_B, 0, ltype);
+            
+            generatePush(REG_B, 0, ltype);
             return ltype;
         } break;   
         case ASTExpression::PRE_INCREMENT:
@@ -407,7 +456,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         switch(stmt->kind()){
         case ASTStatement::EXPRESSION: {
             auto type = generateExpression(stmt->expression);
-            piece->emit_pop(REG_A); // we don't care about the value
+            generatePop(REG_INVALID, 0, type);
             break;   
         }
         case ASTStatement::VAR_DECLARATION: {
@@ -422,19 +471,17 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     break;
                 }
             } else {
+                auto type = ast->convertFullType(stmt->declaration_type, current_scopeId);
+                if(!type.valid()) {
+                    REPORT(stmt->location, "Type in declaration is not a valid type.");
+                    return false;
+                }
                 declaration = true;
-                variable = addVariable(stmt->declaration_name);
+                variable = addVariable(stmt->declaration_name, type);
                 if(!variable) {
                     REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
                     break;
                 }
-                variable->typeId = ast->convertFullType(stmt->declaration_type, current_scopeId);
-                if(!variable->typeId.valid()) {
-                    REPORT(stmt->location, "Type in declaration could not be found.");
-                    return false;
-                }
-                // make space on stack for local variable
-                piece->emit_incr(REG_SP, -8);
             }
             
             int var_offset = variable->frame_offset;
@@ -448,20 +495,15 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     // TODO: Implicit casting
                     return false;
                 }
-                piece->emit_pop(REG_A);
+                piece->emit_mov_rr(REG_B, REG_BP);
+                generatePop(REG_B, var_offset, type);
             } else {
-                // zero initialize the variable if expression wasn't specified
-                // TODO: Make this work with structs
-                piece->emit_li(REG_A, 0);
+                int size = ast->sizeOfType(variable->typeId);
+                piece->emit_li(REG_B, var_offset);
+                piece->emit_add(REG_B, REG_BP);
+                piece->emit_li(REG_A, size);
+                piece->emit_memzero(REG_B, REG_A);
             }
-            
-            // get the location (pointer) of the variable
-            piece->emit_li(REG_B, var_offset);
-            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
-            
-            // set the value of the variable
-            piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
-            
             break;
         }
         case ASTStatement::WHILE: {
@@ -505,15 +547,21 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         }
         case ASTStatement::RETURN: {
             if(stmt->expression) {
-                auto type = generateExpression(stmt->expression);
-                if(!type.valid())
+                if(!function->return_type.valid()) {
+                    REPORT(stmt->location, "Function does not have a return value but you specified one here.");
                     return false;
-                piece->emit_pop(REG_A);
+                }
+                auto type = generateExpression(stmt->expression);
+                if(type != function->return_type) {
+                    REPORT(stmt->location, "Type '"+ast->nameOfType(type)+"' in return statement does not match return type '"+ast->nameOfType(function->return_type)+"' of the function.");
+                    return false;
+                }
+                
+                piece->emit_mov_rr(REG_B, REG_BP);
+                generatePop(REG_B, function->return_offset, type);
             }
-            if(current_frameOffset != prev_frame_offset) {
-                // piece->emit_li(REG_B, current_frameOffset - prev_frame_offset);
-                // piece->emit_sub(REG_SP, REG_B);
-                piece->emit_incr(REG_SP, - (current_frameOffset - prev_frame_offset));
+            if(current_frameOffset != 0) {
+                piece->emit_incr(REG_SP, - (current_frameOffset));
             }
             piece->emit_ret();
             
@@ -599,7 +647,7 @@ bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
     astStruct->complete = true;
     return true;
 }
-void GenerateStructs(AST* ast, Reporter* reporter) {
+void CheckStructs(AST* ast, Reporter* reporter) {
     GeneratorContext context{};
     context.ast = ast;
     context.reporter = reporter;
@@ -609,7 +657,56 @@ void GenerateStructs(AST* ast, Reporter* reporter) {
         bool yes = context.generateStruct(st);
     }
 }
+
+void CheckFunction(AST* ast, ASTFunction* function, Reporter* reporter) {
+    GeneratorContext context{};
+    context.ast = ast;
+    context.function = function;
+    context.reporter = reporter;
+    context.current_scopeId = AST::GLOBAL_SCOPE;
+    
+    
+    int param_offset = 16;
+    GeneratorContext::Variable* variable = nullptr;
+    for(int i=function->parameters.size()-1; i>=0; i--) {
+        auto& param = function->parameters[i];
+        param.typeId = ast->convertFullType(param.typeString, context.current_scopeId);
+        if(!param.typeId.valid()) {
+            REPORT(function->location, "One of the parameters has an invalid type.");
+        }
+        
+        int size = ast->sizeOfType(param.typeId);
+
+        int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
+        param_offset = (param_offset + alignment) & ~alignment;
+
+        auto variable = context.addVariable(param.name, param.typeId, param_offset);
+        if(!variable) {
+            REPORT(function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+        }
+        Assert(("Parameter could not be created. Compiler bug!",variable));
+
+        param.offset = param_offset;
+        param_offset += size;
+    }
+    param_offset = (param_offset + 7) & ~7;
+    function->parameters_size = param_offset - 16;
+    
+    if(function->return_typeString.size()!=0) {
+        function->return_type = ast->convertFullType(function->return_typeString, context.current_scopeId);
+        if(!function->return_type.valid()) {
+            REPORT(function->location, "'"+function->return_typeString+"' is not a known type.");
+        } else {
+            int size = ast->sizeOfType(function->return_type);
+            size = (size + 7) & ~7;
+            function->return_offset = -size;
+        }
+    }
+}
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
+    if(function->is_native)
+        return; // native funcs can't be generated
+    
     GeneratorContext context{};
     context.ast = ast;
     context.function = function;
@@ -617,8 +714,10 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     context.piece = code->createPiece();
     context.reporter = reporter;
     context.current_scopeId = AST::GLOBAL_SCOPE;
+    function->piece_code_index = context.piece->code_index;
     
     context.piece->name = function->name;
+    context.piece->virtual_sp = 0;
     
     // Setup the base/frame pointer (the call instruction handles this automatically)
     // context.piece->emit_push(REG_BP);
@@ -628,46 +727,57 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     GeneratorContext::Variable* variable = nullptr;
     for(int i=function->parameters.size()-1; i>=0; i--) {
         auto& param = function->parameters[i];
-        param.typeId = ast->convertFullType(param.typeString, context.current_scopeId);
         
-        int size = ast->sizeOfType(param.typeId);
+        // int size = ast->sizeOfType(param.typeId);
 
-        int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
-        param_offset = (param_offset + alignment) & ~alignment;
+        // int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
+        // param_offset = (param_offset + alignment) & ~alignment;
 
-        auto variable = context.addVariable(param.name, param_offset);
+        // param.offset = param_offset;
+        // param_offset += size;
+        auto variable = context.addVariable(param.name, param.typeId, param.offset);
         if(!variable) {
-            reporter->err(function->origin_stream, function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+            REPORT(function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
         }
         Assert(("Parameter could not be created. Compiler bug!",variable));
-        variable->typeId = param.typeId;
 
-        param.offset = param_offset;
-        param_offset += size;
     }
-    int alignment = (function->parameters_size <= 1 ? 1 : function->parameters_size <= 2 ? 2 : function->parameters_size <= 4 ? 4 : 8) - 1;
-        param_offset = (param_offset + alignment) & ~alignment;
-    function->parameters_size = param_offset - 16;
+    // param_offset = (param_offset + 7) & ~7;
+    // function->parameters_size = param_offset - 16;
+    
+    if(function->return_type.valid()) {
+        int size = ast->sizeOfType(function->return_type);
+        size = (size + 7) & ~7;
+        context.piece->emit_incr(REG_SP, -size);
+        context.current_frameOffset -= size;
+        // function->return_offset = -size;
+    }
     
     context.generateBody(function->body);
  
     // Emit ret instruction if the user forgot the return statement
     if(context.piece->instructions.back().opcode != INST_RET) {
-        // context.piece->emit_pop(REG_BP); (the call instruction handles this automatically)
+        if(context.current_frameOffset != 0) {
+            context.piece->emit_incr(REG_SP, -(context.current_frameOffset));
+        }
         context.piece->emit_ret();
     }
 }
 
-GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& name, int frame_offset) {
+GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& name, TypeId type, int frame_offset) {
     auto pair = local_variables.find(name);
     if(pair != local_variables.end())
         return nullptr; // variable already exists
         
     auto ptr = new Variable();
     ptr->name = name;
+    ptr->typeId = type;
     local_variables[name] = ptr;
     if(frame_offset == 0) {
-        current_frameOffset -= 8;
+        int size = ast->sizeOfType(type);
+        size = (size + 7) & ~7;
+        piece->emit_incr(REG_SP, -size);
+        current_frameOffset -= size;
         ptr->frame_offset = current_frameOffset;
     } else {
         ptr->frame_offset = frame_offset;

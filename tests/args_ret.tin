@@ -22,12 +22,3 @@ fun add(a: Vec, b: Vec): Vec {
     o.y = a.y + b.y;
     return o;
 }
-
-// fun main() {
-//     a: int = cast int 15.254;
-//     p: void* = malloc(32);
-//     pi: int* = cast int* p;
-//     *pi = 923;
-//     mfree(p);
-//     *pi = 123;
-// }
