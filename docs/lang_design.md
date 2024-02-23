@@ -5,8 +5,8 @@ program ::= { struct | function | global_var | constant | include } *
 global_var ::= "global" declaration
 constant ::= "const" declaration
 
-include ::= "include" "\"" filename "\""
-filename ::= any characters except?
+import ::= "import" "\"" filepath "\""
+filepath ::= any characters except?
 
 struct ::= "struct" id "{" members "}"
 members ::= { id ":" type "," } *

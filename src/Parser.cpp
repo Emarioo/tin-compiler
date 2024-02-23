@@ -518,6 +518,10 @@ ASTBody* ParseContext::parseBody() {
                 advance();
                 break;
             }
+            case TOKEN_CONST: {
+                advance();
+                break;
+            }
             default: {
                 auto token2 = gettok(1);
                 // v.x.y = 23; is an assignment, checkin for id, colon, and equals tokens won't work
@@ -723,13 +727,19 @@ ASTStructure* ParseContext::parseStruct() {
     return out;
 }
 
-void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
+AST::Import* ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
     ParseContext context{};
     context.reporter = reporter;
     context.stream = stream;
     context.ast = ast;
-    context.current_scopeId = AST::GLOBAL_SCOPE;
-
+    
+    // context.current_scopeId = AST::GLOBAL_SCOPE;
+    auto body = ast->createBody(AST::GLOBAL_SCOPE);
+    context.current_scopeId = body->scopeId;
+    
+    auto imp = ast->createImport(stream->path);
+    imp->body = body;
+    
     bool running = true;
     while(running) {
         auto token = context.gettok();
@@ -741,24 +751,44 @@ void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
                 auto ast_struct = context.parseStruct();
                 if(!ast_struct)
                     running = false; // stop running, parsing failed
-                else
-                    context.ast->structures.push_back(ast_struct);
+                else {
+                    body->add(ast_struct);
+                    // context.ast->structures.push_back(ast_struct);
+                }
                 break;
             }
             case TOKEN_FUNCTION: {
                 auto ast_func = context.parseFunction();
                 if(!ast_func)
                     running = false; // stop running, parsing failed
-                else
-                    context.ast->functions.push_back(ast_func);
+                else {
+                    body->add(ast_func);
+                    // context.ast->functions.push_back(ast_func);
+                }
                 break;
             }
             case TOKEN_GLOBAL: {
-                
+                context.advance();
                 break;
             }
-            case TOKEN_INCLUDE: {
+            case TOKEN_CONST: {
+                context.advance();
+                break;
+            }
+            case TOKEN_IMPORT: {
+                context.advance();
                 
+                std::string path{};
+                auto token = context.gettok(&path);
+                if(token->type == TOKEN_LITERAL_STRING) {
+                    context.advance();
+                    printf("Include - %s\n",path.c_str());
+                    // TODO: Fix includes
+                    
+                    imp->dependencies.push_back(path);
+                } else {
+                    context.reporter->err(token, "A string literal is expected after 'import'.");
+                }
                 break;
             }
             default: {
@@ -767,4 +797,5 @@ void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
             }
         }
     }
+    return imp;
 }

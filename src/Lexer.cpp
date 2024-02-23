@@ -176,7 +176,7 @@ TokenStream* lex_file(const std::string& path) {
             else CASE(TOKEN_ELSE)
             else CASE(TOKEN_GLOBAL)
             else CASE(TOKEN_CONST)
-            else CASE(TOKEN_INCLUDE)
+            else CASE(TOKEN_IMPORT)
             else CASE(TOKEN_CAST)
             else CASE(TOKEN_SIZEOF)
             else CASE(TOKEN_TRUE)
@@ -220,7 +220,7 @@ const char* token_names[] {
     "else",      // TOKEN_ELSE,
     "global",    // TOKEN_GLOBAL,
     "const",     // TOKEN_CONST,
-    "include",   // TOKEN_INCLUDE,
+    "import",   // TOKEN_IMPORT,
     "cast",   // TOKEN_CAST,
     "sizeof",   // TOKEN_SIZEOF,
     "true",   // ,

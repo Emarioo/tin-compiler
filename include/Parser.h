@@ -45,4 +45,4 @@ struct ParseContext {
     std::string parseType();
 };
 
-void ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter);
+AST::Import* ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter);

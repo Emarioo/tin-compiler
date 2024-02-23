@@ -23,7 +23,7 @@ enum TokenType {
     TOKEN_ELSE,
     TOKEN_GLOBAL,
     TOKEN_CONST,
-    TOKEN_INCLUDE,
+    TOKEN_IMPORT,
     TOKEN_CAST,
     TOKEN_SIZEOF,
     TOKEN_TRUE,

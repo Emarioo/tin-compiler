@@ -2,8 +2,8 @@
 #include "Code.h"
 
 AST::AST() {
-    global_scope = createScope(GLOBAL_SCOPE);
-    Assert(global_scope->scopeId == GLOBAL_SCOPE);
+    // global_scope = createScope(GLOBAL_SCOPE);
+    global_body = createBody(GLOBAL_SCOPE);
 
     TypeInfo* type;
     #define ADD(T,S) type = createType(primitive_names[(int)T], GLOBAL_SCOPE); type->size = S;
@@ -23,7 +23,7 @@ AST::AST() {
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "int";
         f->piece_code_index = NATIVE_printi - NATIVE_MAX - 1;
-        functions.push_back(f);
+        global_body->add(f);
     }
     {
         auto f = createFunction();
@@ -33,7 +33,7 @@ AST::AST() {
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "float";
         f->piece_code_index = NATIVE_printf - NATIVE_MAX - 1;
-        functions.push_back(f);
+        global_body->add(f);
     }
     {
         auto f = createFunction();
@@ -44,7 +44,7 @@ AST::AST() {
         f->parameters.back().typeString = "int";
         f->piece_code_index = NATIVE_malloc - NATIVE_MAX - 1;
         f->return_typeString = "void*";
-        functions.push_back(f);
+        global_body->add(f);
     }
     {
         auto f = createFunction();
@@ -54,7 +54,7 @@ AST::AST() {
         f->parameters.back().name = "ptr";
         f->parameters.back().typeString = "void*";
         f->piece_code_index = NATIVE_mfree - NATIVE_MAX - 1;
-        functions.push_back(f);
+        global_body->add(f);
     }
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
@@ -83,11 +83,23 @@ ASTStructure* AST::createStructure() {
     return new ASTStructure();
 }
 ASTFunction* AST::findFunction(const std::string& name, ScopeId scopeId) {
-    for(int i=0;i<functions.size();i++) {
-        if(functions[i]->name == name) {
-            return functions[i];
+    ScopeInfo* info = getScope(scopeId);
+    while(info) {
+        auto& fs = info->body->functions;
+        
+        for(int i=0;i<fs.size();i++) {
+            if(fs[i]->name == name) {
+                return fs[i];
+            }
         }
+        
+        if(info->scopeId == info->parent)
+            break;
+        info = getScope(info->parent);
+        
+        // TODO: info->shared_scopes
     }
+    
     return nullptr;
 }
 const char* expr_type_table[] {
@@ -162,6 +174,30 @@ void AST::print(ASTExpression* expr, int depth) {
 }
 void AST::print(ASTBody* body, int depth) {
     Assert(body);
+    
+    for(const auto& st : body->structures) {
+        Assert(st);
+        printf("%s {\n", st->name.c_str());
+        for(const auto& member : st->members) {
+            printf(" %s: %s,\n", member.name.c_str(), member.typeString.c_str());
+        }
+        printf("}\n");
+    }
+    for(const auto& fn : body->functions) {
+        Assert(fn);
+        printf("%s(", fn->name.c_str());
+        for(const auto& param : fn->parameters) {
+            printf("%s: %s, ", param.name.c_str(), param.typeString.c_str());
+        }
+        if(fn->return_typeString.empty())
+            printf(")\n");
+        else
+            printf("): %s\n", fn->return_typeString.c_str());
+
+        if(fn->body)
+            print(fn->body, 1);
+    }
+    
     for(const auto& s : body->statements) {
         switch(s->kind()){
             case ASTStatement::EXPRESSION: {
@@ -210,32 +246,36 @@ void AST::print() {
     log_color(Color::GOLD);
     printf("Printing AST:\n");
     log_color(Color::NO_COLOR);
-    if(structures.size() == 0)
-        printf(" No structures\n");
-    if(functions.size() == 0)
-        printf(" No functions\n");
-    for(const auto& st : structures) {
-        Assert(st);
-        printf("%s {\n", st->name.c_str());
-        for(const auto& member : st->members) {
-            printf(" %s: %s,\n", member.name.c_str(), member.typeString.c_str());
-        }
-        printf("}\n");
-    }
-    for(const auto& fn : functions) {
-        Assert(fn);
-        printf("%s(", fn->name.c_str());
-        for(const auto& param : fn->parameters) {
-            printf("%s: %s, ", param.name.c_str(), param.typeString.c_str());
-        }
-        if(fn->return_typeString.empty())
-            printf(")\n");
-        else
-            printf("): %s\n", fn->return_typeString.c_str());
+    
+    print(global_body);
+    
+    // if(structures.size() == 0)
+    //     printf(" No structures\n");
+    // if(functions.size() == 0)
+    //     printf(" No functions\n");
+    
+    // for(const auto& st : structures) {
+    //     Assert(st);
+    //     printf("%s {\n", st->name.c_str());
+    //     for(const auto& member : st->members) {
+    //         printf(" %s: %s,\n", member.name.c_str(), member.typeString.c_str());
+    //     }
+    //     printf("}\n");
+    // }
+    // for(const auto& fn : functions) {
+    //     Assert(fn);
+    //     printf("%s(", fn->name.c_str());
+    //     for(const auto& param : fn->parameters) {
+    //         printf("%s: %s, ", param.name.c_str(), param.typeString.c_str());
+    //     }
+    //     if(fn->return_typeString.empty())
+    //         printf(")\n");
+    //     else
+    //         printf("): %s\n", fn->return_typeString.c_str());
 
-        if(fn->body)
-            print(fn->body, 1);
-    }
+    //     if(fn->body)
+    //         print(fn->body, 1);
+    // }
 }
 TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
     ScopeInfo* scope = getScope(scopeId);

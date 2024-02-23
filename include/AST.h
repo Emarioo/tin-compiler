@@ -34,7 +34,6 @@ struct TypeId {
     bool operator !=(TypeId type) const {
         return !(*this == type);
     }
-    
 
 private:
     u32 _index : 24;
@@ -51,8 +50,11 @@ typedef u32 ScopeId;
 struct ScopeInfo {
     ScopeId scopeId;
     ScopeId parent;
+    
+    ASTBody* body = nullptr;
 
     std::unordered_map<std::string, TypeInfo*> type_map;
+    std::vector<ScopeInfo*> shared_scopes;
 };
 
 struct ASTExpression {
@@ -186,6 +188,11 @@ private:
 struct ASTBody {
     ScopeId scopeId;
     std::vector<ASTStatement*> statements;
+    std::vector<ASTFunction*> functions;
+    std::vector<ASTStructure*> structures;
+    
+    void add(ASTFunction* f) { functions.push_back(f); }
+    void add(ASTStructure* s) { structures.push_back(s); }
 };
 
 struct ASTFunction {
@@ -247,10 +254,23 @@ struct AST {
     AST();
     static const ScopeId GLOBAL_SCOPE = 0;
 
-    ScopeInfo* global_scope = nullptr;
-    std::vector<ASTFunction*> functions;
-    std::vector<ASTStructure*> structures;
+    // ScopeInfo* global_scope = nullptr;
+    ASTBody* global_body = nullptr;
+    // std::vector<ASTFunction*> functions;
+    // std::vector<ASTStructure*> structures;
     // TODO: Global variables
+    struct Import {
+        std::string name;
+        ASTBody* body;
+        std::vector<std::string> dependencies; // other imports
+    };
+    std::vector<Import*> imports;
+    Import* createImport(const std::string& name) {
+        auto i = new Import();
+        i->name = name;
+        imports.push_back(i);
+        return i;
+    }
 
     ASTExpression* createExpression(ASTExpression::Kind kind);
     ASTStatement* createStatement(ASTStatement::Kind kind);
