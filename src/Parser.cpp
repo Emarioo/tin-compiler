@@ -4,6 +4,8 @@
     A function for every statement type, function, struct, expression.
 */
 
+#define LOCATION log_color(GRAY); printf("%s:%d\n",__FILE__,__LINE__); log_color(NO_COLOR);
+#define REPORT(L, ...) LOCATION reporter->err(L, __VA_ARGS__)
 
 std::string ParseContext::parseType() {
     std::string out = "";
@@ -34,6 +36,13 @@ int GetPrecedence(ASTExpression::Kind kind) {
         case ASTExpression::Kind::ADD:
         case ASTExpression::Kind::SUB:
             return 5;
+        case ASTExpression::Kind::EQUAL:
+        case ASTExpression::Kind::NOT_EQUAL:
+        case ASTExpression::Kind::LESS:
+        case ASTExpression::Kind::LESS_EQUAL:
+        case ASTExpression::Kind::GREATER:
+        case ASTExpression::Kind::GREATER_EQUAL:
+            return -4;
         case ASTExpression::Kind::AND:
         case ASTExpression::Kind::OR:
             return -5;
@@ -71,42 +80,54 @@ ASTExpression* ParseContext::parseExpression() {
         if(is_operator) {
             ASTExpression::Kind operationType = CharToExprType((char)token->type);
             if(token->type == '+' && token2->type == '+') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::POST_INCREMENT);
                 is_operator = !is_operator;
             } else if(token->type == '-' && token2->type == '-') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::POST_DECREMENT);
                 is_operator = !is_operator;
             } else if(operationType != ASTExpression::INVALID) {
+                saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(operationType);
             } else if (token->type == '&' && token2->type == '&') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 // && is okay but & & is also considered an AND operation. Is that okay?
                 operations.push_back(ASTExpression::AND);
             } else if (token->type == '|' && token2->type == '|') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::OR);
             } else if (token->type == '=' && token2->type == '=') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::EQUAL);
             } else if (token->type == '!' && token2->type == '=') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::NOT_EQUAL);
             } else if (token->type == '<' && token2->type == '=') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::LESS_EQUAL);
             } else if (token->type == '>' && token2->type == '=') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::GREATER_EQUAL);
             } else if (token->type == '<') {
+                saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(ASTExpression::LESS);
             } else if (token->type == '>') {
+                saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(ASTExpression::GREATER);
             } else if (token->type == '|' && token2->type == '|') {
+                saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::OR);
             } else if (token->type == '.') {
@@ -117,7 +138,7 @@ ASTExpression* ParseContext::parseExpression() {
                 expr->location = getloc();
                 token = gettok(&expr->name);
                 if(token->type != TOKEN_ID) {
-                    reporter->err(token, "Member access operator expects and identifier after '.'.");
+                    REPORT(token, "Member access operator expects and identifier after '.'.");
                     return nullptr;
                 }
                 advance();
@@ -128,9 +149,11 @@ ASTExpression* ParseContext::parseExpression() {
                 expressions.push_back(expr);
                 is_operator = !is_operator;
             } else if (token->type == '=') {
+                saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(ASTExpression::ASSIGN);
             } else if (token->type == '[') {
+                saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(ASTExpression::INDEX);
                 
@@ -138,26 +161,31 @@ ASTExpression* ParseContext::parseExpression() {
                 
                 token = gettok();
                 if(token->type != ']') {
-                    reporter->err(token,"Expected closing bracket for index operator.");
+                    REPORT(token,"Expected closing bracket for index operator.");
                     return nullptr;
                 }
+                advance();
                 
                 expressions.push_back(index_expr);
+                is_operator = !is_operator;
             } else {
                 ending = true; // no valid operation, end of expression
             }
         } else {
             if(token->type == '!') {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::NOT);
                 advance();
                 continue;
             }
             if(token->type == '&') {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::REFER);
                 advance();
                 continue;
             }
             if(token->type == '*') {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::DEREF);
                 advance();
                 continue;
@@ -172,11 +200,13 @@ ASTExpression* ParseContext::parseExpression() {
                 continue;
             }
             if(token->type == '+' && token2->type == '+') {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::PRE_INCREMENT);
                 advance(2);
                 continue;
             }
             if(token->type == '-' && token2->type == '-') {
+                saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::PRE_DECREMENT);
                 advance(2);
                 continue;
@@ -197,7 +227,7 @@ ASTExpression* ParseContext::parseExpression() {
                     while(true) {
                         token = gettok();
                         if(token->type == TOKEN_EOF) {
-                            reporter->err(token,"Sudden end of file.");
+                            REPORT(token,"Sudden end of file.");
                             return nullptr;
                         }
                         if(token->type == ')') {
@@ -217,7 +247,7 @@ ASTExpression* ParseContext::parseExpression() {
                         } else if(token->type == ')') {
                             continue;
                         } else {
-                            reporter->err(token, "Expected closing parentheses.");
+                            REPORT(token, "Expected closing parentheses.");
                             return nullptr;
                         }
                     }
@@ -231,35 +261,42 @@ ASTExpression* ParseContext::parseExpression() {
                     expressions.push_back(expr);
                 }
             } else if(token->type == TOKEN_TRUE) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::TRUE);
+                expr->location = getloc();
+                advance();
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_FALSE) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::FALSE);
+                expr->location = getloc();
+                advance();
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_NULL) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_NULL);
+                expr->location = getloc();
+                advance();
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_INTEGER) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
+                expr->location = getloc();
+                advance();
                 expr->literal_integer = number;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_FLOAT) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
+                expr->location = getloc();
+                advance();
                 expr->literal_float = decimal;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_STRING) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_STR);
+                expr->location = getloc();
+                advance();
                 expr->literal_string = name;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_SIZEOF) {
-                advance();
                 ASTExpression* expr = ast->createExpression(ASTExpression::SIZEOF);
+                expr->location = getloc();
+                advance();
                 std::string type = parseType();
                 expr->name = type;
                 expressions.push_back(expr);
@@ -273,13 +310,13 @@ ASTExpression* ParseContext::parseExpression() {
                 if(token->type == ')') {
                     advance();
                 } else {
-                    reporter->err(token, "Expected closing parentheses.");
+                    REPORT(token, "Expected closing parentheses.");
                     return nullptr;
                 }
 
                 expressions.push_back(expr);
             } else {
-                reporter->err(token, "Invalid token.");
+                REPORT(token, "Invalid token.");
                 return nullptr;
             }
         }
@@ -299,10 +336,10 @@ ASTExpression* ParseContext::parseExpression() {
                 
                 if(op == ASTExpression::CAST) {
                     expr->name = cast_strings.back();
-                    expr->location = saved_locations.back();
-                    saved_locations.pop_back();
                     cast_strings.pop_back();
                 }
+                expr->location = saved_locations.back();
+                saved_locations.pop_back();
             }
         } else {
             if(!ending) {
@@ -318,6 +355,11 @@ ASTExpression* ParseContext::parseExpression() {
                             expressions.pop_back();
                             expr->left = expressions.back();
                             expressions.pop_back();
+
+                            // if(left_op == ASTExpression::ASSIGN || left_op == ASTExpression::INDEX) {
+                                expr->location = saved_locations.back();
+                                saved_locations.pop_back();
+                            // }
                             
                             expressions.push_back(expr);
                         }
@@ -335,6 +377,11 @@ ASTExpression* ParseContext::parseExpression() {
                     expressions.pop_back();
                     expr->left = expressions.back();
                     expressions.pop_back();
+
+                    // if(op == ASTExpression::ASSIGN || left_op == ASTExpression::INDEX) {
+                        expr->location = saved_locations.back();
+                        saved_locations.pop_back();
+                    // }
                     
                     expressions.push_back(expr);
                 }
@@ -433,14 +480,14 @@ ASTStatement* ParseContext::parseVarDeclaration() {
     
     token = gettok();
     if(token->type != ':') {
-        reporter->err(token, "Expected ':' for variable declarations.");
+        REPORT(token, "Expected ':' for variable declarations.");
         return nullptr;
     }
     advance();
         
     std::string type = parseType();
     if(type.empty()) {
-        reporter->err(token, "Invalid syntax for type.");
+        REPORT(token, "Invalid syntax for type.");
         return nullptr;
     }
     out->declaration_type = type;
@@ -450,7 +497,7 @@ ASTStatement* ParseContext::parseVarDeclaration() {
         if(token->type == ';') {
             return out;
         }
-        reporter->err(token, "Expected '=' or semi-colon after variable name and type.");
+        REPORT(token, "Expected '=' or semi-colon after variable name and type.");
         return nullptr;
     }
     advance();
@@ -476,7 +523,7 @@ ASTBody* ParseContext::parseBody() {
 
     Token* token = gettok();
     if(token->type != '{') {
-        reporter->err(token, "Should be a curly brace.");
+        REPORT(token, "Should be a curly brace.");
         return nullptr;
     }
     advance();
@@ -506,13 +553,16 @@ ASTBody* ParseContext::parseBody() {
 
                 stmt = ast->createStatement(ASTStatement::RETURN);
 
-                stmt->expression = parseExpression();
-                if(!stmt->expression)
-                    return nullptr;
+                token = gettok();
+                if(token->type != ';') {
+                    stmt->expression = parseExpression();
+                    if(!stmt->expression)
+                        return nullptr;
+                }
 
                 token = gettok();
                 if(token->type != ';') {
-                    reporter->err(token, "You forgot a semi-colon after the statement.");
+                    REPORT(token, "You forgot a semi-colon after the statement.");
                     return nullptr;
                 }
                 advance();
@@ -532,7 +582,7 @@ ASTBody* ParseContext::parseBody() {
                         
                     token = gettok();
                     if(token->type != ';') {
-                        reporter->err(token, "You forgot a semi-colon after the statement.");
+                        REPORT(token, "You forgot a semi-colon after the statement.");
                         return nullptr;
                     }
                     advance();
@@ -546,7 +596,7 @@ ASTBody* ParseContext::parseBody() {
                     
                     token = gettok();
                     if(token->type != ';') {
-                        reporter->err(token, "You forgot a semi-colon after the statement.");
+                        REPORT(token, "You forgot a semi-colon after the statement.");
                         return nullptr;
                     }
                     advance();
@@ -575,7 +625,7 @@ ASTFunction* ParseContext::parseFunction() {
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
-        reporter->err(token, "Should be an identifier.");
+        REPORT(token, "Should be an identifier.");
         return nullptr;
     }
     advance();
@@ -585,7 +635,7 @@ ASTFunction* ParseContext::parseFunction() {
 
     token = gettok();
     if(token->type != '(') {
-        reporter->err(token, "Should be a opening parenthesses.");
+        REPORT(token, "Should be a opening parenthesses.");
         return nullptr;
     }
     advance();
@@ -593,7 +643,7 @@ ASTFunction* ParseContext::parseFunction() {
     while(true) {
         token = gettok();
         if(token->type == TOKEN_EOF) {
-            reporter->err(token, "Sudden end of file.");
+            REPORT(token, "Sudden end of file.");
             break;
         }
         if(token->type == ')') {
@@ -603,14 +653,14 @@ ASTFunction* ParseContext::parseFunction() {
         std::string param_name="";
         token = gettok(&param_name);
         if(token->type != TOKEN_ID) {
-            reporter->err(token, "Should be an identifier.");
+            REPORT(token, "Should be an identifier.");
             return nullptr;
         }
         advance();
 
         token = gettok();
         if(token->type != ':') {
-            reporter->err(token, "Should be a colon.");
+            REPORT(token, "Should be a colon.");
             return nullptr;
         }
         advance();
@@ -618,7 +668,7 @@ ASTFunction* ParseContext::parseFunction() {
         token = gettok(); // needed when reporting error
         std::string type = parseType();
         if(type.empty()) {
-            reporter->err(token, "Invalid syntax for type.");
+            REPORT(token, "Invalid syntax for type.");
             return nullptr;
         }
         ASTFunction::Parameter param{};
@@ -632,7 +682,7 @@ ASTFunction* ParseContext::parseFunction() {
         } else if(token->type == ')') {
             continue; // break/exit logic handled at start of loop
         } else {
-            reporter->err(token, "Bad token?");
+            REPORT(token, "Bad token?");
             return nullptr;
         }
     }
@@ -642,7 +692,7 @@ ASTFunction* ParseContext::parseFunction() {
         advance();
         std::string return_type = parseType();
          if(return_type.empty()) {
-            reporter->err(token, "Invalid syntax for type.");
+            REPORT(token, "Invalid syntax for type.");
             return nullptr;
         }
         out->return_typeString = return_type;
@@ -665,7 +715,7 @@ ASTStructure* ParseContext::parseStruct() {
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
-        reporter->err(token, "Should be an identifier.");
+        REPORT(token, "Should be an identifier.");
         return nullptr;
     }
     advance();
@@ -673,7 +723,7 @@ ASTStructure* ParseContext::parseStruct() {
 
     token = gettok();
     if(token->type != '{') {
-        reporter->err(token, "Should be a curly brace.");
+        REPORT(token, "Should be a curly brace.");
         return nullptr;
     }
     advance();
@@ -681,7 +731,7 @@ ASTStructure* ParseContext::parseStruct() {
     while(true) {
         token = gettok();
         if(token->type == TOKEN_EOF) {
-            reporter->err(token, "Sudden end of file.");
+            REPORT(token, "Sudden end of file.");
             break;
         }
         if(token->type == '}') {
@@ -690,15 +740,16 @@ ASTStructure* ParseContext::parseStruct() {
         }
         std::string member_name="";
         token = gettok(&member_name);
+        auto name_loc = getloc();
         if(token->type != TOKEN_ID) {
-            reporter->err(token, "Should be an identifier.");
+            REPORT(token, "Should be an identifier.");
             return nullptr;
         }
         advance();
 
         token = gettok();
         if(token->type != ':') {
-            reporter->err(token, "Should be a colon.");
+            REPORT(token, "Should be a colon.");
             return nullptr;
         }
         advance();
@@ -706,12 +757,13 @@ ASTStructure* ParseContext::parseStruct() {
         token = gettok(); // needed when reporting error
         std::string type = parseType();
         if(type.empty()) {
-            reporter->err(token, "Invalid syntax for type.");
+            REPORT(token, "Invalid syntax for type.");
             return nullptr;
         }
         ASTStructure::Member member{};
         member.name = member_name;
         member.typeString = type;
+        member.location = name_loc;
         out->members.push_back(member);
 
         token = gettok();
@@ -720,14 +772,14 @@ ASTStructure* ParseContext::parseStruct() {
         } else if(token->type == '}') {
             continue; // break/exit logic handled at start of loop
         } else {
-            reporter->err(token, "Bad token?");
+            REPORT(token, "Bad token?");
             return nullptr;
         }
     }
     return out;
 }
 
-AST::Import* ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter) {
+AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, Reporter* reporter) {
     ParseContext context{};
     context.reporter = reporter;
     context.stream = stream;
@@ -737,9 +789,13 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter)
     auto body = ast->createBody(AST::GLOBAL_SCOPE);
     context.current_scopeId = body->scopeId;
     
-    auto imp = ast->createImport(stream->path);
-    imp->body = body;
-    
+    if(!imp) {
+        imp = ast->createImport(stream->path);
+    }
+    imp->body = body; // TODO: Mutex, compiler checks body and modifies shared_scopes
+
+    imp->stream = stream;
+
     bool running = true;
     while(running) {
         auto token = context.gettok();
@@ -782,20 +838,30 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST* ast, Reporter* reporter)
                 auto token = context.gettok(&path);
                 if(token->type == TOKEN_LITERAL_STRING) {
                     context.advance();
-                    printf("Include - %s\n",path.c_str());
-                    // TODO: Fix includes
                     
-                    imp->dependencies.push_back(path);
+                    bool found = false;
+                    for(auto& d : imp->dependencies) {
+                        if(d == path) {
+                            found = true;
+                            break; // ignore duplicates
+                        }
+                    }
+                    if(!found)
+                        imp->dependencies.push_back(path);
                 } else {
-                    context.reporter->err(token, "A string literal is expected after 'import'.");
+                    REPORT(token, "A string literal is expected after 'import'.");
+                    return imp;
                 }
                 break;
             }
             default: {
-                context.reporter->err(token, "Unexpected token.");
-                return;
+                REPORT(token, "Unexpected token.");
+                return imp;
             }
         }
     }
     return imp;
 }
+
+#undef LOCATION
+#undef REPORT

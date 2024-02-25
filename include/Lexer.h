@@ -42,7 +42,7 @@ struct Token {
     char debug_type;
 };
 struct SourceLocation {
-    int token_index;
+    int token_index = 0;
 };
 struct TokenStream {
     static void Destroy(TokenStream* stream);

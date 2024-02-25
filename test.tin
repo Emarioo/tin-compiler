@@ -1,33 +1,9 @@
+import "tests/test_base.tin"
 
-struct Vec {
-    x: int,
-    y: int,
-}
-fun main() {
-    a: Vec;
-    b: Vec;
-    a.x = 33;
-    a.y = 44;
-    b.x = 55;
-    b.y = 66;
-
-    o: Vec = add(a, b);
-    printi(o.x); // 88
-    printi(o.y); // 110
-}
-
-fun add(a: Vec, b: Vec): Vec {
-    o: Vec;
-    o.x = a.x + b.x;
-    o.y = a.y + b.y;
-    return o;
-}
-
-// fun main() {
-//     a: int = cast int 15.254;
-//     p: void* = malloc(32);
-//     pi: int* = cast int* p;
-//     *pi = 923;
-//     mfree(p);
-//     *pi = 123;
+// struct A {
+//     arr: ArrayInt_,
 // }
+
+fun main() {
+    
+}

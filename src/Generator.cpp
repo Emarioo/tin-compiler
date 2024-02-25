@@ -1,6 +1,7 @@
 #include "Generator.h"
 
-#define REPORT(L, ...) reporter->err(function->origin_stream, L, __VA_ARGS__)
+#define LOCATION log_color(GRAY); printf("%s:%d\n",__FILE__,__LINE__); log_color(NO_COLOR);
+#define REPORT(L, ...) LOCATION reporter->err(current_stream, L, __VA_ARGS__)
 
 
 void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
@@ -51,15 +52,24 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
                 exprs.push_back(expr);            
                 expr = expr->left;
             } break;
+            case ASTExpression::INDEX: {
+                exprs.push_back(expr);
+                expr = expr->left;
+            } break;
             default: {
-                REPORT(expr->location, "Invalid expression as a reference.");
+                REPORT(expr->location, "Invalid expression/operation in reference.");
                 return TYPE_VOID;
                 // Assert(false);
             }
         }
     }
-    TypeId out = TYPE_VOID;
-    int frame_offset = 0;
+    enum PtrType {
+        LOCAL,
+        VALUE,
+    };
+    PtrType ptrType = LOCAL;
+    TypeId type = TYPE_VOID;
+    int offset = 0;
     for(int i=exprs.size()-1;i>=0;i--) {
         auto expr = exprs[i];
         
@@ -70,32 +80,101 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
                     REPORT(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
                     return TYPE_VOID;
                 }
-                frame_offset = variable->frame_offset;
-                out = variable->typeId;
+                offset = variable->frame_offset;
+                type = variable->typeId;
+                ptrType = LOCAL;
             } break;
             case ASTExpression::MEMBER: {
                 auto prev_expr = exprs[i+1];
-                auto info = ast->getType(out);
-                if(!info->ast_struct) {
-                    REPORT(expr->location, std::string() + "Member access is only allowed on structure types. '"+prev_expr->name+"' is '"+ast->nameOfType(out) + "'.");
+                if(type.pointer_level() == 0) {
+                    auto info = ast->getType(type);
+                    if(!info->ast_struct) {
+                        REPORT(expr->location, std::string() + "Member access is only allowed on structure types. '"+prev_expr->name+"' is '"+ast->nameOfType(type) + "'.");
+                        return TYPE_VOID;
+                    }
+                    auto mem = info->ast_struct->findMember(expr->name);
+                    if(!mem) {
+                        REPORT(expr->location, std::string() + "'"+ expr->name+"' is not a member of '"+ast->nameOfType(type) + "'.");
+                        return TYPE_VOID;
+                    }
+                    offset += mem->offset;
+                    type = mem->typeId;
+                } else if(type.pointer_level() == 1) {
+                    // implicit dereference
+                    auto info = ast->getType(type.base());
+                    if(!info->ast_struct) {
+                        REPORT(expr->location, std::string() + "Member access is only allowed on structure types. '"+prev_expr->name+"' is '"+ast->nameOfType(type) + "'.");
+                        return TYPE_VOID;
+                    }
+                    auto mem = info->ast_struct->findMember(expr->name);
+                    if(!mem) {
+                        REPORT(expr->location, std::string() + "'"+ expr->name+"' is not a member of '"+ast->nameOfType(type) + "'.");
+                        return TYPE_VOID;
+                    }
+                    if(ptrType == LOCAL) {
+                        piece->emit_mov_rm_disp(REG_B, REG_BP, 8, offset);
+                    } else {
+                        piece->emit_mov_rm_disp(REG_B, REG_B, 8, offset);
+                    }
+                    offset = mem->offset;
+                    type = mem->typeId;
+                    ptrType = VALUE;
+                } else {
+                    REPORT(expr->location, std::string() + "Member access does not work with pointer levels above 1. '"+prev_expr->name+"' is '"+ast->nameOfType(type) + "'.");
                     return TYPE_VOID;
                 }
-                auto mem = info->ast_struct->findMember(expr->name);
-                if(!mem) {
-                    REPORT(expr->location, std::string() + "'"+ expr->name+"' is not a member of '"+ast->nameOfType(out) + "'.");
+            } break;
+            case ASTExpression::INDEX: {
+                auto prev_expr = exprs[i+1];
+                if(type.pointer_level() > 0) {
+                    if(ptrType == LOCAL) {
+                        piece->emit_mov_rm_disp(REG_B, REG_BP, 8, offset);
+                    } else {
+                        piece->emit_mov_rm_disp(REG_B, REG_B, 8, offset);
+                    }
+
+                    piece->emit_push(REG_B);
+
+                    auto rtype = generateExpression(expr->right);
+                    if(rtype != TYPE_INT) {
+                        REPORT(expr->location, std::string() + "Expression within brackets of indexing operator must be an integer. '"+ast->nameOfType(type) + "' is not an integer.");
+                        return TYPE_VOID;
+                    }
+                    TypeId elem_type = type;
+                    elem_type.set_pointer_level(elem_type.pointer_level() - 1);
+                    piece->emit_pop(REG_A);
+                    piece->emit_pop(REG_B);
+                    piece->emit_li(REG_C, ast->sizeOfType(elem_type));
+                    piece->emit_mul(REG_A, REG_C);
+                    piece->emit_add(REG_B, REG_A);
+
+                    offset = 0;
+                    type = elem_type;
+                    ptrType = VALUE;
+                } else {
+                    REPORT(expr->location, std::string() + "Indexing is only allowed on pointer types. '"+ast->nameOfType(type) + "' is not a pointer.");
                     return TYPE_VOID;
                 }
-                frame_offset += mem->offset;
-                out = mem->typeId;
             } break;
             default: Assert(false);
         }
     }
-    piece->emit_li(REG_B, frame_offset);
-    piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
-    
+
+    if(ptrType == LOCAL) {
+        if(offset) {
+            piece->emit_li(REG_B, offset);
+            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+        } else {
+            piece->emit_mov_rr(REG_B, REG_BP); // reg_b = reg_bp
+        }
+    } else {
+        if(offset) {
+            piece->emit_li(REG_A, offset);
+            piece->emit_add(REG_B, REG_A); // reg_b = reg_b + var_offset
+        }
+    }
     piece->emit_push(REG_B); // push pointer
-    return out;
+    return type;
 }
 TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
     Assert(expr);
@@ -165,8 +244,15 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 return TYPE_VOID;
             }
             bool fail=false;
+            auto pvoid = TypeId::Make(TYPE_VOID, 1);
             for(int i=0;i<argument_types.size();i++) {
-                if(fun->parameters[i].typeId != argument_types[i]) {
+                auto& ltype = fun->parameters[i].typeId;
+                auto& rtype = argument_types[i];
+                if(ltype == rtype) {
+
+                } else if((ltype == pvoid && rtype.pointer_level() == 1) || (ltype.pointer_level() == 1 && rtype == pvoid) ) {
+
+                } else {
                     fail = true;
                     REPORT(expr->location, std::string() + "The "+std::to_string(i)+" argument is of type '"+ast->nameOfType(argument_types[i])+"' but the parameter '" + fun->parameters[i].name + "' requires '" + ast->nameOfType(fun->parameters[i].typeId) + "'.");
                 }
@@ -183,13 +269,16 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 generatePop(REG_B, param.offset - 16 - arg_diff, param.typeId);
             }
 
+            // piece->emit_mov_rm_disp(REG_A, REG_B, 4, 16);
+            // piece->emit_mov_rm_disp(REG_A, REG_B, 8, 24);
+            // piece->emit_mov_rm_disp(REG_A, REG_B, 8, 32);
+
             int relocation_index = 0;
             piece->emit_call(&relocation_index);
 
             // how about native calls
             // piece->relocations.push_back({expr->name, relocation_index});
             piece->addRelocation(fun, relocation_index);
-            
             
             if(fun->return_type.valid()) {
                 piece->emit_mov_rr(REG_B, REG_SP);
@@ -198,7 +287,6 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             } else {
                 piece->emit_incr(REG_SP, fun->parameters_size);
             }
-            
             
             return fun->return_type;
             break;
@@ -218,7 +306,13 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             TypeId ltype = generateExpression(expr->left);
             TypeId rtype = generateExpression(expr->right);
             
-            if(ltype != rtype) {
+            if(ltype == rtype) {
+            
+            } else if((ltype == TYPE_INT || ltype == TYPE_CHAR || ltype.pointer_level()>0) && (rtype == TYPE_INT || rtype == TYPE_CHAR || rtype.pointer_level()>0)) {
+
+            } else if((ltype == TYPE_INT || ltype == TYPE_FLOAT) && (rtype == TYPE_INT || rtype == TYPE_FLOAT)) {
+                
+            } else {
                 REPORT(expr->location, "Cannot perform operation on the types '"+ast->nameOfType(ltype)+"', '"+ast->nameOfType(rtype)+"'.");
                 return TYPE_VOID;   
             }
@@ -262,6 +356,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
         }
         case ASTExpression::REFER: {
             TypeId type = generateReference(expr->left);
+            type.set_pointer_level(type.pointer_level() + 1);
             return type;
             break;   
         }
@@ -273,8 +368,9 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             }
 
             piece->emit_pop(REG_B);
-            piece->emit_mov_rm(REG_A, REG_B, 4);
-            piece->emit_push(REG_A);
+            // piece->emit_mov_rm(REG_A, REG_B, 4);
+            // piece->emit_push(REG_A);
+            generatePush(REG_B, 0, type);
 
             type.set_pointer_level(type.pointer_level()-1);
             return type;
@@ -284,18 +380,38 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             TypeId type = generateReference(expr);
 
             piece->emit_pop(REG_B);
-            piece->emit_mov_rm(REG_A, REG_B, 4);
-            piece->emit_push(REG_A);
+
+            generatePush(REG_B, 0, type);
+
+            // piece->emit_mov_rm(REG_A, REG_B, 4);
+            // piece->emit_push(REG_A);
             return type;
             break;   
         }
         case ASTExpression::INDEX: {
-            Assert(false);
-            // TypeId type = generateExpression(expr->left);
+            TypeId rtype = generateExpression(expr->right);
+            TypeId ltype = generateExpression(expr->left);
+
+            if(ltype.pointer_level() == 0) {
+                REPORT(expr->left->location, "Index operator only works on pointers. '"+ast->nameOfType(ltype)+"' is not a pointer.");
+                return TYPE_VOID;
+            }
+            if(rtype != TYPE_INT) {
+                REPORT(expr->left->location, "Value in brackets of index operator must be an integer. '"+ast->nameOfType(rtype)+"' is not an integer.");
+                return TYPE_VOID;
+            }
             
-            // piece->emit_pop(REG_B);
-            // piece->emit_mov_rm(REG_A, REG_B, 4);
-            // piece->emit_push(REG_A);
+            TypeId elem_type = ltype;
+            elem_type.set_pointer_level(elem_type.pointer_level()-1);
+
+            piece->emit_pop(REG_B);
+            piece->emit_pop(REG_A);
+            piece->emit_li(REG_C, ast->sizeOfType(elem_type));
+            piece->emit_mul(REG_A, REG_C);
+            piece->emit_add(REG_B, REG_A);
+            
+            generatePush(REG_B, 0, elem_type);
+            return elem_type;
             break;   
         }
         case ASTExpression::CAST: {
@@ -349,8 +465,13 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             if(!ltype.valid() || !rtype.valid()) {
                 return {}; // error should be reported already
             }
+            auto pvoid = TypeId::Make(TYPE_VOID,1);
+            if(rtype == ltype) {
 
-            if(rtype != ltype) {
+            } else if((ltype == pvoid && rtype.pointer_level() == 1) || (ltype.pointer_level() == 1 && rtype == pvoid) ) {
+
+            } else {
+
                 REPORT(expr->location, "The expression and reference has mismatching types.");
                 // TODO: Implicit casting
                 return {};
@@ -367,29 +488,26 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::POST_INCREMENT:
         case ASTExpression::PRE_DECREMENT:
         case ASTExpression::POST_DECREMENT: {
-            if(expr->left->kind() != ASTExpression::IDENTIFIER) {
-                REPORT(expr->left->location, "Increment/decrement operation is only allowed on identifiers.");
+            auto type = generateReference(expr->left);
+            if(!type.valid())
+                return TYPE_VOID;
+            // if(expr->left->kind() != ASTExpression::IDENTIFIER) {
+            //     REPORT(expr->left->location, "Increment/decrement operation is only allowed on references (identifiers, members, dereference pointers).");
+            //     return TYPE_VOID;
+            // }
+
+            // auto variable = findVariable(expr->left->name);
+            // if(!variable) {
+            //     REPORT(expr->left->location, std::string() + "Variable '" + expr->left->name + "' does not exist.");
+            //     return TYPE_VOID;
+            // }
+
+            if(type != TYPE_INT) {
+                REPORT(expr->left->location, std::string() + "Increment/decrement is limited to integer types. Type was '" + ast->nameOfType(type) + "'.");
                 return TYPE_VOID;
             }
 
-            auto variable = findVariable(expr->left->name);
-            if(!variable) {
-                REPORT(expr->left->location, std::string() + "Variable '" + expr->left->name + "' does not exist.");
-                return TYPE_VOID;
-            }
-
-            if(variable->typeId != TYPE_INT) {
-                REPORT(expr->left->location, std::string() + "Increment/decrement is limited to integer types. Variable '" + expr->left->name + "' is of type '" + ast->nameOfType(variable->typeId) + "'.");
-                return TYPE_VOID;
-            }
-
-            int var_offset = variable->frame_offset;
-            // get the address of the variable
-            // a local variable exists on the stack
-            // with an offset from the base pointer
-            piece->emit_li(REG_B, var_offset);
-            piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
-            
+            piece->emit_pop(REG_B);
             // get the value of the variable
             piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
 
@@ -414,7 +532,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             }
             piece->emit_mov_mr(REG_B, REG_A, 4); // *reg_b = reg_a
 
-            return variable->typeId;
+            return type;
         } break;
         case ASTExpression::TRUE: {
             piece->emit_li(REG_A, 1);
@@ -490,7 +608,13 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                 if(!type.valid()) {
                     return false; // error should be reported already
                 }
-                if(type != variable->typeId) {
+                auto ltype = type;
+                auto rtype = variable->typeId;
+                if(type == variable->typeId) {
+
+                } else if(ltype.pointer_level() == rtype.pointer_level()) {
+
+                } else {
                     REPORT(stmt->location, "The expression and variable has mismatching types.");
                     // TODO: Implicit casting
                     return false;
@@ -621,7 +745,9 @@ bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
         auto& mem = astStruct->members[j];
         TypeId type = ast->convertFullType(mem.typeString, current_scopeId);
         if(!type.valid()) {
-            Assert(false);
+            if(!ignore_errors) {
+                REPORT(mem.location, "Invalid type");
+            }
             // error, type doesn't exist.
             return false;
         }
@@ -647,28 +773,51 @@ bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
     astStruct->complete = true;
     return true;
 }
-void CheckStructs(AST* ast, Reporter* reporter) {
+bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed, bool ignore_errors) {
     GeneratorContext context{};
     context.ast = ast;
     context.reporter = reporter;
+    context.ignore_errors = ignore_errors;
     
-    for(int i=0;i<ast->structures.size();i++) {
-        auto st = ast->structures[i];
+    // three cases can occur
+    // we check structs and all types are valid, success
+    // we check but some types don't exist, failure print errors
+    // we check but some types don't exist yet, try again later
+
+    bool failure = false;
+    *changed = false;
+
+    for(int i=0;i<imp->body->structures.size();i++) {
+        auto st = imp->body->structures[i];
+        if(st->complete)
+            continue;
+
+        context.current_stream = imp->stream;
         bool yes = context.generateStruct(st);
+        if(yes) {
+            *changed = true;
+        } else {
+            failure = true;
+        }
     }
+
+    return !failure;
 }
 
-void CheckFunction(AST* ast, ASTFunction* function, Reporter* reporter) {
+bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* reporter) {
     GeneratorContext context{};
     context.ast = ast;
     context.function = function;
     context.reporter = reporter;
-    context.current_scopeId = AST::GLOBAL_SCOPE;
-    
+    context.current_scopeId = imp->body->scopeId;
+    context.current_stream = function->origin_stream;
+
+    auto current_stream = context.current_stream;
     
     int param_offset = 16;
     GeneratorContext::Variable* variable = nullptr;
-    for(int i=function->parameters.size()-1; i>=0; i--) {
+    // for(int i=function->parameters.size()-1; i>=0; i--) {
+    for(int i=0;i<function->parameters.size(); i++) {
         auto& param = function->parameters[i];
         param.typeId = ast->convertFullType(param.typeString, context.current_scopeId);
         if(!param.typeId.valid()) {
@@ -702,6 +851,7 @@ void CheckFunction(AST* ast, ASTFunction* function, Reporter* reporter) {
             function->return_offset = -size;
         }
     }
+    return true;
 }
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
     if(function->is_native)
@@ -718,6 +868,9 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     
     context.piece->name = function->name;
     context.piece->virtual_sp = 0;
+    context.current_stream = function->origin_stream;
+    auto current_stream = context.current_stream;
+
     
     // Setup the base/frame pointer (the call instruction handles this automatically)
     // context.piece->emit_push(REG_BP);
@@ -757,6 +910,9 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
  
     // Emit ret instruction if the user forgot the return statement
     if(context.piece->instructions.back().opcode != INST_RET) {
+        if(function->return_type != TYPE_VOID) {
+            REPORT(function->location, "Missing return statement. They are mandatory if the function has a return type.");
+        }
         if(context.current_frameOffset != 0) {
             context.piece->emit_incr(REG_SP, -(context.current_frameOffset));
         }
@@ -790,3 +946,6 @@ GeneratorContext::Variable* GeneratorContext::findVariable(const std::string& na
         return nullptr;
     return pair->second;
 }
+
+#undef LOCATION
+#undef REPORT

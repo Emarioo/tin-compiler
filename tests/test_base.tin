@@ -1,0 +1,79 @@
+struct ArrayInt {
+    data: int*,
+    max: int,
+    len: int,
+}
+fun array_int_init(this: ArrayInt*) {
+    this.data = null;
+    this.max = 0;
+    this.len = 0;
+}
+fun array_int_cleanup(this: ArrayInt*) {
+    if this.data {
+        mfree(this.data);
+    }
+    this.data = null;
+    this.max = 0;
+    this.len = 0;
+}
+fun array_int_add(this: ArrayInt*, value: int): bool {
+    if this.len >= this.max {
+        if !array_int_reserve(this, 2 * this.max + 10) {
+            return false;
+        }
+    }
+    this.data[this.len] = value;
+    this.len++;
+    return true;
+}
+fun array_int_remove(this: ArrayInt*, index: int) {
+    if index >= this.len {
+        return;
+    }
+    // memove allows memory overlap
+    memmove(this.data + index * sizeof int, this.data + (index+1) * sizeof int, (this.len - index - 1) * sizeof int);
+    this.len--;
+}
+fun array_int_reserve(this: ArrayInt*, size: int): bool {
+    if size <= this.max {
+        return true;
+    }
+    new_max: int = size;
+    new_data: int* = malloc(new_max * sizeof int);
+    if !new_data {
+        return false;
+    }
+
+    if this.data {
+        memmove(new_data, this.data, this.max * sizeof int);
+        mfree(this.data);
+    } else {
+        this.len = 0;
+    }
+    this.data = new_data;
+    this.max = new_max;
+    return true;
+}
+
+fun test_array() { // not much of a test
+    arr: ArrayInt;
+    // array_int_init(&arr);
+
+    array_int_add(&arr, 92);
+    array_int_add(&arr, 2);
+    array_int_add(&arr, 82);
+    array_int_add(&arr, 23);
+    array_int_remove(&arr, 0);
+
+    // printi(arr.data[0]);
+
+    // printi(arr.len);
+
+    i: int;
+    while i < arr.len {
+        printi(arr.data[i]);
+        i++;
+    }
+
+    array_int_cleanup(&arr);
+}

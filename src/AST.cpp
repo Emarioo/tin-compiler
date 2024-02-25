@@ -18,47 +18,90 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->name = "printi";
+        f->piece_code_index = NATIVE_printi - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "int";
-        f->piece_code_index = NATIVE_printi - NATIVE_MAX - 1;
         global_body->add(f);
     }
     {
         auto f = createFunction();
         f->is_native = true;
-        f->name = "printf";
+        f->piece_code_index = NATIVE_printf - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "float";
-        f->piece_code_index = NATIVE_printf - NATIVE_MAX - 1;
         global_body->add(f);
     }
     {
         auto f = createFunction();
         f->is_native = true;
-        f->name = "malloc";
+        f->piece_code_index = NATIVE_malloc - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
         f->parameters.push_back({});
         f->parameters.back().name = "size";
         f->parameters.back().typeString = "int";
-        f->piece_code_index = NATIVE_malloc - NATIVE_MAX - 1;
         f->return_typeString = "void*";
         global_body->add(f);
     }
     {
         auto f = createFunction();
         f->is_native = true;
-        f->name = "mfree";
+        f->piece_code_index = NATIVE_mfree - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
         f->parameters.push_back({});
         f->parameters.back().name = "ptr";
         f->parameters.back().typeString = "void*";
-        f->piece_code_index = NATIVE_mfree - NATIVE_MAX - 1;
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_memmove - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "dst";
+        f->parameters.back().typeString = "void*";
+        f->parameters.push_back({});
+        f->parameters.back().name = "src";
+        f->parameters.back().typeString = "void*";
+        f->parameters.push_back({});
+        f->parameters.back().name = "size";
+        f->parameters.back().typeString = "int";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_pow - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "x";
+        f->parameters.back().typeString = "float";
+        f->parameters.push_back({});
+        f->parameters.back().name = "y";
+        f->parameters.back().typeString = "float";
+        f->return_typeString = "float";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_sqrt - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "x";
+        f->parameters.back().typeString = "float";
+        f->return_typeString = "float";
         global_body->add(f);
     }
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
     auto ptr = new ASTExpression(kind);
+    ptr->nodeid = next_nodeid();
+    
     return ptr;
 }
 ASTStatement* AST::createStatement(ASTStatement::Kind kind) {
@@ -67,24 +110,44 @@ ASTStatement* AST::createStatement(ASTStatement::Kind kind) {
 }
 ASTBody* AST::createBody(ScopeId parent) {
     auto ptr = new ASTBody();
+    ptr->nodeid = next_nodeid();
     auto scope = createScope(parent);
     ptr->scopeId = scope->scopeId;
+    scope->body = ptr;
     return ptr;
 }
 ASTBody* AST::createBodyWithSharedScope(ScopeId scopeToShare) {
     auto ptr = new ASTBody();
+    ptr->nodeid = next_nodeid();
     ptr->scopeId = scopeToShare;
     return ptr;
 }
 ASTFunction* AST::createFunction() {
-    return new ASTFunction();
+    auto ptr = new ASTFunction();
+    ptr->nodeid = next_nodeid();
+    return ptr;
 }
 ASTStructure* AST::createStructure() {
-    return new ASTStructure();
+    auto ptr = new ASTStructure();
+    ptr->nodeid = next_nodeid();
+    return ptr;
 }
 ASTFunction* AST::findFunction(const std::string& name, ScopeId scopeId) {
-    ScopeInfo* info = getScope(scopeId);
-    while(info) {
+    std::vector<ScopeInfo*> searchScopes;
+    int search_index = 0;
+    auto add = [&](ScopeInfo* s) {
+        // TODO: Optimize
+        for (int i=0;i<search_index;i++) {
+            if(searchScopes[i] == s) {
+                return;
+            }
+        }
+        searchScopes.push_back(s);
+    };
+    searchScopes.push_back(getScope(scopeId));
+    while(search_index < searchScopes.size()) {
+        ScopeInfo* info = searchScopes[search_index];
+        search_index++;
         auto& fs = info->body->functions;
         
         for(int i=0;i<fs.size();i++) {
@@ -94,12 +157,15 @@ ASTFunction* AST::findFunction(const std::string& name, ScopeId scopeId) {
         }
         
         if(info->scopeId == info->parent)
-            break;
-        info = getScope(info->parent);
+            continue;
         
-        // TODO: info->shared_scopes
+        for(auto s : info->shared_scopes) {
+            add(s);
+        }
+
+        auto s = getScope(info->parent);
+        add(s);
     }
-    
     return nullptr;
 }
 const char* expr_type_table[] {

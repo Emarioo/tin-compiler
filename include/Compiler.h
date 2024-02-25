@@ -20,7 +20,9 @@ struct Compiler {
     struct Task {
         TaskType type;
         std::string name;
-        ASTBody* body;
+        AST::Import* imp = nullptr;
+
+        // ASTBody* body = nullptr; // only used if there is no import (preload for example)
     };
     std::vector<Task> tasks;
     

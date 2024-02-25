@@ -1,0 +1,17 @@
+
+struct Vec {
+    x: float,
+    y: float,
+}
+fun vec_add(a: Vec, b: Vec): Vec {
+    o: Vec;
+    o.x = a.x + b.x;
+    o.y = a.y + b.y;
+    return o;
+}
+fun vec_mul(a: Vec, b: float): Vec {
+    o: Vec;
+    o.x = a.x * b;
+    o.y = a.y * b;
+    return o;
+}

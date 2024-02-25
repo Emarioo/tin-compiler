@@ -44,7 +44,7 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control",
-				"match": "\\b(if|else|while|break|continue|global|const|fun|struct|return|cast|include)\\b"
+				"match": "\\b(if|else|while|break|continue|global|const|fun|struct|return|cast|sizeof|import)\\b"
 			}
 			
 			]
@@ -109,7 +109,7 @@
         "types":{
             "patterns": [{
                 "name":"entity.name.type",
-                "match": "((?<=\\w+\\s*:\\s*)|(?<=\\)\\s*:\\s*)|(?<=cast\\s*))(?<base>(\\w+::)*(\\w+)(\\<(\\g'base')(,\\g'base')*\\>)?)"
+                "match": "((?<=\\w+\\s*:\\s*)|(?<=\\)\\s*:\\s*)|(?<=cast\\s*)|(?<=sizeof\\s*))(?<base>(\\w+::)*(\\w+)(\\<(\\g'base')(,\\g'base')*\\>)?)"
             }]
         }
 	},

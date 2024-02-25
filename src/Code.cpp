@@ -211,7 +211,11 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
                 if(imm < 0) {
                     printf(" %s", NAME_OF_NATIVE(imm + NATIVE_MAX));
                 } else {
-                    printf(" %s", code->pieces[imm-1]->name.c_str());
+                    int pi = imm-1;
+                    printf(" %s", code->pieces[pi]->name.c_str());
+
+                    log_color(Color::GRAY);
+                    printf(" %d", pi);
                 }
             } else if(inst.opcode == INST_JMP || inst.opcode == INST_JZ) {
                 printf(", ");
@@ -247,36 +251,11 @@ void Code::apply_relocations() {
     for(auto p : pieces) {
         for(const auto& rel : p->relocations) {
             if(rel.function) {
+                // printf("Apply %s:%d = %d\n", rel.function->name.c_str(), rel.index_of_immediate, rel.function->piece_code_index + 1);
                 *(int*)&p->instructions[rel.index_of_immediate] = rel.function->piece_code_index + 1; // +1 because 0 is seen as invalid
             } else {
                 printf("Function was null when applying relocations\n");
             }
-            
-            // int piece_index = -1;
-            // for(int i=0;i<pieces.size();i++) {
-            //     if(rel.func_name == pieces[i]->name) {
-            //         piece_index = i;
-            //         break;
-            //     }
-            // }
-            // if(piece_index != -1) {
-            //     *(int*)&p->instructions[rel.index_of_immediate] = piece_index + 1; // +1 because 0 is seen as invalid
-            // } else {
-            //     int found = -1;
-            //     for(int j=0;j<NATIVE_MAX;j++) {
-            //         if(!strcmp(native_names[j], rel.func_name.c_str())) {
-            //             found = j;
-            //             break;
-            //         }
-            //     }
-            //     if(found != -1) {
-            //         *(int*)&p->instructions[rel.index_of_immediate] = found - NATIVE_MAX;
-            //         continue;
-            //     }
-            //     // Probably caused by an error in which case we don't need
-            //     //  to print a message here since it's probably already covered
-            //     printf("'%s' is not a function and relocations to it cannot be applied\n", rel.func_name.c_str());
-            // }
         }
     }
 }
@@ -285,4 +264,11 @@ const char* native_names[] {
     "printf", // NATIVE_printf
     "malloc",
     "mfree",
+    "memmove",
+    "pow",
+    "sqrt",
 };
+void CodePiece::addRelocation(ASTFunction* func, int imm_index){
+    // printf("Reloc %s, %d\n", func->name.c_str(), imm_index);
+    relocations.push_back({func, imm_index});
+}

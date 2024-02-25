@@ -32,7 +32,7 @@ TokenStream* lex_file(const std::string& path) {
     int start_col = 0;
 
     int line=1;
-    int column=0;
+    int column=1;
 
     int data_start = 0;
 
@@ -52,7 +52,7 @@ TokenStream* lex_file(const std::string& path) {
         else
             column++;
         if(chr == '\n') {
-            column = 0;
+            column = 1;
             line++;
         }
 
@@ -65,8 +65,10 @@ TokenStream* lex_file(const std::string& path) {
             continue;
         }
         if(is_multicomment) {
-            if(chr == '*' && chr == '/')
+            if(chr == '*' && nextChr == '/') {
+                index++;
                 is_multicomment = false;
+            }
             continue;
         }
 

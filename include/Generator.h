@@ -10,6 +10,9 @@ struct GeneratorContext {
     ASTFunction* function;
     Code* code;
     CodePiece* piece;
+    bool ignore_errors = false;
+
+    TokenStream* current_stream=nullptr;
     
     int current_frameOffset = 0; // used for allocating local variables
     ScopeId current_scopeId;
@@ -34,6 +37,6 @@ struct GeneratorContext {
     Variable* findVariable(const std::string& name);
 };
 
-void CheckStructs(AST* ast, Reporter* reporter);
-void CheckFunction(AST* ast, ASTFunction* function, Reporter* reporter);
+bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed, bool ignore_errors);
+bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* reporter);
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter);

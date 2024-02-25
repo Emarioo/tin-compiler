@@ -28,10 +28,23 @@ void Interpreter::execute() {
     
     registers[REG_SP] = (i64)(stack + stack_max); // stack starts at the top and grows down
     
-    piece_index = 0;
-    piece = code->pieces[piece_index];
+    bool found_main = false;
+    for(int i=0;i<code->pieces.size(); i++) {
+        if(code->pieces[i]->name == "main") {
+            found_main = true;
+            piece_index = i;
+            piece = code->pieces[i];
+            break;
+        }
+    }
+    if(!found_main) {
+        log_color(RED);
+        printf("Interpreter: main was not found.\n");
+        log_color(NO_COLOR);
+        return;
+    }
     
-        // printf("Interpreter: Stack overflow (sp: %ld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);
+    // printf("Interpreter: Stack overflow (sp: %ld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);
     #define CHECK_STACK if(registers[REG_SP] > (i64)stack + stack_max || registers[REG_SP] < (i64)stack) {\
         printf("\n");\
         log_color(Color::RED);\
@@ -161,6 +174,7 @@ void Interpreter::execute() {
             break;
         }
         case INST_MOV_RM_DISP: {
+            registers[inst.op0] = 0; // reset register
             mov(inst.op2, &registers[inst.op0], (void*)(registers[inst.op1] + imm));
             break;
         }
@@ -361,6 +375,27 @@ void Interpreter::run_native_call(NativeCalls callType) {
                 allocations.erase(arg0);
             }
         }
+    } break;
+    case NATIVE_memmove: {
+        void* arg0 = *(void**)(registers[REG_SP] + 0);
+        void* arg1 = *(void**)(registers[REG_SP] + 8);
+        int arg2 = *(int*)(registers[REG_SP] + 16);
+        // void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
+        
+        memmove(arg0, arg1, arg2);
+    } break;
+    case NATIVE_pow: {
+        float arg0 = *(float*)(registers[REG_SP] + 0);
+        float arg1 = *(float*)(registers[REG_SP] + 4);
+        float& ret = *(float*)(registers[REG_SP] - 16 - 8);
+        
+        ret = powf(arg0, arg1);
+    } break;
+    case NATIVE_sqrt: {
+        float arg0 = *(float*)(registers[REG_SP] + 0);
+        float& ret = *(float*)(registers[REG_SP] - 16 - 8);
+        
+        ret = sqrtf(arg0);
     } break;
     default: Assert(false);   
     }

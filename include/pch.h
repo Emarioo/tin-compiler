@@ -10,6 +10,7 @@
 #include <iostream>
 #include <thread>
 #include <string>
+#include <math.h>
 #include <stdint.h>
 
 typedef uint64_t u64;

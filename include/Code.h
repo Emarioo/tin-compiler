@@ -102,9 +102,7 @@ struct CodePiece {
         int index_of_immediate; // immediate of INST_CALL instruction
     };
     std::vector<Relocation> relocations;
-    void addRelocation(ASTFunction* func, int imm_index) {
-        relocations.push_back({func, imm_index});
-    }
+    void addRelocation(ASTFunction* func, int imm_index);
 
     void emit_li(Register reg, int imm);
     void emit_push(Register reg);
@@ -194,6 +192,9 @@ enum NativeCalls {
     NATIVE_printf,
     NATIVE_malloc,
     NATIVE_mfree,
+    NATIVE_memmove,
+    NATIVE_pow,
+    NATIVE_sqrt,
     NATIVE_MAX,
 };
 #define NAME_OF_NATIVE(X) native_names[X]

@@ -21,12 +21,15 @@ struct TypeId {
     TypeId() : _index(0), _pointer_level(0) { }
     TypeId(PrimitiveType type) : TypeId(Make(type)) { }
     static TypeId Make(u32 index) { TypeId t{}; t._index = index; return t; }
+    static TypeId Make(u32 index, u32 level) { TypeId t{}; t._index = index; t._pointer_level = level; return t; }
 
     u32 index() const { return _index; }
     u32 pointer_level() const { return _pointer_level; }
     bool valid() const { return _index != 0 || _pointer_level != 0; }
 
     void set_pointer_level(u32 level) { _pointer_level = level; }
+
+    TypeId base() const { return Make(_index); }
 
     bool operator ==(TypeId type) const {
         return _index == type._index && _pointer_level == type._pointer_level;
@@ -57,7 +60,11 @@ struct ScopeInfo {
     std::vector<ScopeInfo*> shared_scopes;
 };
 
-struct ASTExpression {
+struct ASTNode {
+    int nodeid;
+};
+
+struct ASTExpression : public ASTNode {
     enum Kind {
         INVALID,
         IDENTIFIER,
@@ -158,7 +165,7 @@ private:
     Kind _kind;
 };
 
-struct ASTStatement {
+struct ASTStatement : public ASTNode {
     enum Kind {
         INVALID,
         VAR_DECLARATION, // variable declaration
@@ -185,7 +192,7 @@ private:
     Kind _kind;
 };
 
-struct ASTBody {
+struct ASTBody : public ASTNode {
     ScopeId scopeId;
     std::vector<ASTStatement*> statements;
     std::vector<ASTFunction*> functions;
@@ -195,7 +202,7 @@ struct ASTBody {
     void add(ASTStructure* s) { structures.push_back(s); }
 };
 
-struct ASTFunction {
+struct ASTFunction : public ASTNode {
     std::string name;
     
     SourceLocation location;
@@ -214,13 +221,13 @@ struct ASTFunction {
     TypeId return_type;
     int return_offset = 0; // offset from base pointer inside the function
 
-    int piece_code_index = 0;
+    int piece_code_index = -1;
 
     ASTBody* body = nullptr;
     
     bool is_native = false;
 };
-struct ASTStructure {
+struct ASTStructure : public ASTNode {
     std::string name;
     
     SourceLocation location;
@@ -231,6 +238,7 @@ struct ASTStructure {
         std::string typeString;
         TypeId typeId;
         int offset;
+        SourceLocation location;
     };
     std::vector<Member> members;
 
@@ -263,12 +271,18 @@ struct AST {
         std::string name;
         ASTBody* body;
         std::vector<std::string> dependencies; // other imports
+        std::vector<Import*> fixups;
+        int deps_count = 0;
+        int deps_now = 0;
+        TokenStream* stream=nullptr;
     };
     std::vector<Import*> imports;
+    std::unordered_map<std::string, Import*> import_map;
     Import* createImport(const std::string& name) {
         auto i = new Import();
         i->name = name;
         imports.push_back(i);
+        // import_map[];
         return i;
     }
 
@@ -310,4 +324,8 @@ struct AST {
     TypeInfo* createType(const std::string& str, ScopeId scopeId);
     int sizeOfType(TypeId typeId);
     std::string nameOfType(TypeId typeId);
+
+private:
+    int next_nodeid() { return _nodeid++; }
+    int _nodeid = 0;
 };
