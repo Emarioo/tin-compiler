@@ -1,8 +1,8 @@
 import "tests/test_base.tin"
 
-// struct A {
-//     arr: ArrayInt_,
-// }
+struct A {
+    arr: ArrayInt,
+}
 
 fun main() {
     

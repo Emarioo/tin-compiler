@@ -22,6 +22,8 @@ struct Compiler {
         std::string name;
         AST::Import* imp = nullptr;
 
+        bool no_change = false;
+
         // ASTBody* body = nullptr; // only used if there is no import (preload for example)
     };
     std::vector<Task> tasks;

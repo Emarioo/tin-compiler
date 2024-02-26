@@ -43,6 +43,12 @@ void Interpreter::execute() {
         log_color(NO_COLOR);
         return;
     }
+    if(piece->instructions.size() == 0) {
+        log_color(YELLOW);
+        printf("Interpreter: '%s' has no instructions.\n", piece->name.c_str());
+        log_color(NO_COLOR);
+        return;
+    }
     
     // printf("Interpreter: Stack overflow (sp: %ld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);
     #define CHECK_STACK if(registers[REG_SP] > (i64)stack + stack_max || registers[REG_SP] < (i64)stack) {\

@@ -746,7 +746,7 @@ bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
         TypeId type = ast->convertFullType(mem.typeString, current_scopeId);
         if(!type.valid()) {
             if(!ignore_errors) {
-                REPORT(mem.location, "Invalid type");
+                REPORT(mem.location, "Invalid type '"+mem.typeString+"'.");
             }
             // error, type doesn't exist.
             return false;
@@ -909,7 +909,7 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     context.generateBody(function->body);
  
     // Emit ret instruction if the user forgot the return statement
-    if(context.piece->instructions.back().opcode != INST_RET) {
+    if(context.piece->instructions.size() > 0 && context.piece->instructions.back().opcode != INST_RET) {
         if(function->return_type != TYPE_VOID) {
             REPORT(function->location, "Missing return statement. They are mandatory if the function has a return type.");
         }

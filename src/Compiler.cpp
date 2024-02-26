@@ -170,8 +170,13 @@ void Compiler::processTasks() {
 
                 if(!success) {
                     if(!changed) {
-                        printf("No struct change\n");
+                        // printf("No struct change\n");
+                        if(task.no_change) {
+                            ignore_errors = false;
+                            CheckStructs(ast, task.imp, reporter, &changed, ignore_errors); // print errors
+                        }
                     }
+                    task.no_change = !changed;
                     log_color(RED); LOGC("Checking structs failure: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     if(ignore_errors) {
                         tasks.push_back(task);
