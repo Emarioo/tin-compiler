@@ -105,7 +105,10 @@ void CodePiece::emit_jz(Register reg, int* out_index_of_imm) {
     *out_index_of_imm = get_pc();
     emit_imm(0);
 }
-
+void CodePiece::emit_dataptr(Register reg, int offset) {
+    emit({INST_DATAPTR,reg});
+    emit_imm(offset);
+}
 void CodePiece::emit_call(int* out_index_of_imm) {
     emit({INST_CALL});
     *out_index_of_imm = get_pc();
@@ -160,6 +163,7 @@ const char* opcode_names[] {
     "call",             // INST_CALL
     "mov_mr_disp",           // INST_MOV_MR_DISP
     "mov_rm_disp",           // INST_MOV_RM_DISP
+    "dataptr",           // 
     
 };
 const char* register_names[] {
@@ -271,4 +275,22 @@ const char* native_names[] {
 void CodePiece::addRelocation(ASTFunction* func, int imm_index){
     // printf("Reloc %s, %d\n", func->name.c_str(), imm_index);
     relocations.push_back({func, imm_index});
+}
+int Code::appendData(int size, void* data) {
+    Assert(size > 0);
+    if(size + global_data_size > global_data_max) {
+        int max = global_data_max * 2 + size * 2;
+        global_data = (u8*)realloc(global_data, max);
+        Assert(global_data);
+        global_data_max = max;
+    }
+    int off = global_data_size;
+    global_data_size += size;
+    
+    if(data) {
+        memcpy(global_data + off, data, size);
+    } else {
+        memset(global_data + off, '_', size);
+    }
+    return off;
 }

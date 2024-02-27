@@ -50,11 +50,28 @@ struct TypeInfo {
     ASTStructure* ast_struct = nullptr;
 };
 typedef u32 ScopeId;
+struct Identifier {
+    enum Kind {
+        LOCAL_ID,
+        GLOBAL_ID,
+        CONST_ID,
+    };
+    Identifier(Kind kind) : kind(kind) { }
+    Kind kind;
+    TypeId type;
+    
+    union {
+        int offset; // frame offset or global offset
+        ASTStatement* statement = nullptr;
+    };
+};
 struct ScopeInfo {
     ScopeId scopeId;
     ScopeId parent;
     
     ASTBody* body = nullptr;
+    
+    std::unordered_map<std::string, Identifier*> identifiers;
 
     std::unordered_map<std::string, TypeInfo*> type_map;
     std::vector<ScopeInfo*> shared_scopes;
@@ -66,12 +83,9 @@ struct ASTNode {
 
 struct ASTExpression : public ASTNode {
     enum Kind {
-        INVALID,
+        INVALID = 0,
         IDENTIFIER,
         FUNCTION_CALL,
-        LITERAL_INT,
-        LITERAL_FLOAT,
-        LITERAL_STR,
         ADD,
         SUB,
         DIV,
@@ -90,15 +104,20 @@ struct ASTExpression : public ASTNode {
         INDEX,
         MEMBER,
         CAST,
-        SIZEOF,
         ASSIGN,
         PRE_INCREMENT,
         POST_INCREMENT,
         PRE_DECREMENT,
         POST_DECREMENT,
+        
+        CONST_EXPR,
+        SIZEOF = CONST_EXPR,
+        LITERAL_INT,
+        LITERAL_FLOAT,
+        LITERAL_STR,
+        LITERAL_NULL,
         TRUE,
         FALSE,
-        LITERAL_NULL,
     };
     ASTExpression(Kind kind) : _kind(kind) {
         // switch(_kind){
@@ -144,6 +163,9 @@ struct ASTExpression : public ASTNode {
     Kind kind() const {
         return _kind;
     }
+    bool isConst() const {
+        return _kind >= ASTExpression::CONST_EXPR;
+    }
 
     // union {
     //     // struct {
@@ -167,8 +189,10 @@ private:
 
 struct ASTStatement : public ASTNode {
     enum Kind {
-        INVALID,
+        INVALID = 0,
         VAR_DECLARATION, // variable declaration
+        GLOBAL_DECLARATION,
+        CONST_DECLARATION,
         EXPRESSION,
         IF,
         WHILE,
@@ -264,9 +288,7 @@ struct AST {
 
     // ScopeInfo* global_scope = nullptr;
     ASTBody* global_body = nullptr;
-    // std::vector<ASTFunction*> functions;
-    // std::vector<ASTStructure*> structures;
-    // TODO: Global variables
+
     struct Import {
         std::string name;
         ASTBody* body;
@@ -324,6 +346,16 @@ struct AST {
     TypeInfo* createType(const std::string& str, ScopeId scopeId);
     int sizeOfType(TypeId typeId);
     std::string nameOfType(TypeId typeId);
+    
+    Identifier* addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset);
+    Identifier* findVariable(const std::string& name, ScopeId scopeId);
+
+    struct ScopeIterator {
+        std::vector<ScopeInfo*> searchScopes;
+        int search_index = 0;
+    };
+    ScopeIterator createScopeIterator(ScopeId scopeId);
+    ScopeInfo* iterate(ScopeIterator& iterator);
 
 private:
     int next_nodeid() { return _nodeid++; }

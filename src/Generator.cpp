@@ -64,10 +64,11 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
         }
     }
     enum PtrType {
+        INVALID,
         LOCAL,
         VALUE,
     };
-    PtrType ptrType = LOCAL;
+    PtrType ptrType = INVALID;
     TypeId type = TYPE_VOID;
     int offset = 0;
     for(int i=exprs.size()-1;i>=0;i--) {
@@ -75,16 +76,34 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
         
         switch(expr->kind()) {
             case ASTExpression::IDENTIFIER: {
-                auto variable = findVariable(expr->name);
+                Assert(ptrType == INVALID);
+                auto variable = ast->findVariable(expr->name, current_scopeId);
                 if(!variable) {
                     REPORT(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
                     return TYPE_VOID;
                 }
-                offset = variable->frame_offset;
-                type = variable->typeId;
-                ptrType = LOCAL;
+                switch(variable->kind) {
+                    case Identifier::LOCAL_ID: {
+                        offset = variable->offset;
+                        type = variable->type;
+                        ptrType = LOCAL;
+                    } break;
+                    case Identifier::GLOBAL_ID: {
+                        // emit push pointer to global data section
+                        offset = 0;
+                        type = variable->type;
+                        ptrType = VALUE;
+                        piece->emit_dataptr(REG_B, variable->offset);
+                    } break;
+                    case Identifier::CONST_ID: {
+                        REPORT(expr->location, "Cannot reference constants.");
+                        return TYPE_VOID;
+                    } break;
+                    default: Assert(false);
+                }
             } break;
             case ASTExpression::MEMBER: {
+                Assert(ptrType != INVALID);
                 auto prev_expr = exprs[i+1];
                 if(type.pointer_level() == 0) {
                     auto info = ast->getType(type);
@@ -125,6 +144,7 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
                 }
             } break;
             case ASTExpression::INDEX: {
+                Assert(ptrType != INVALID);
                 auto prev_expr = exprs[i+1];
                 if(type.pointer_level() > 0) {
                     if(ptrType == LOCAL) {
@@ -183,14 +203,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             piece->emit_li(REG_A, expr->literal_integer);
             piece->emit_push(REG_A);
             return TYPE_INT;
-            break;
-        }
+        } break;
         case ASTExpression::LITERAL_FLOAT: {
             piece->emit_li(REG_A, *(int*)&expr->literal_float);
             piece->emit_push(REG_A);
             return TYPE_FLOAT;
-            break;
-        }
+        } break;
         case ASTExpression::LITERAL_STR: {
             // TODO: How do we do this?
             piece->emit_li(REG_A, 0);
@@ -198,30 +216,50 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             TypeId type = TYPE_CHAR;
             type.set_pointer_level(1);
             return type;
-            break;
-        }
+        } break;
         case ASTExpression::IDENTIFIER: {
-            auto variable = findVariable(expr->name);
+            auto variable = ast->findVariable(expr->name, current_scopeId);
             if(!variable) {
                 REPORT(expr->location, std::string() + "Variable '" + expr->name + "' does not exist.");
                 break;
             }
-            int var_offset = variable->frame_offset;
-            // get the address of the variable
-            // a local variable exists on the stack
-            // with an offset from the base pointer
-            // piece->emit_li(REG_B, var_offset);
-            // piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
-            
-            // // get the value of the variable
-            // piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
-            // piece->emit_push(REG_A);
-            
-            piece->emit_mov_rr(REG_B, REG_BP);
-            generatePush(REG_B, var_offset, variable->typeId);
-            return variable->typeId;
-            break;
-        }
+            switch(variable->kind) {
+                case Identifier::LOCAL_ID: {
+                    int var_offset = variable->offset;
+                    // get the address of the variable
+                    // a local variable exists on the stack
+                    // with an offset from the base pointer
+                    // piece->emit_li(REG_B, var_offset);
+                    // piece->emit_add(REG_B, REG_BP); // reg_b = reg_bp + var_offset
+                    
+                    // // get the value of the variable
+                    // piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
+                    // piece->emit_push(REG_A);
+                    
+                    piece->emit_mov_rr(REG_B, REG_BP);
+                    generatePush(REG_B, var_offset, variable->type);
+                    return variable->type;
+                } break;
+                case Identifier::GLOBAL_ID: {
+                    piece->emit_dataptr(REG_B, variable->offset);
+                    generatePush(REG_B, 0, variable->type);
+                    return variable->type;
+                } break;
+                case Identifier::CONST_ID: {
+                    Assert(variable->statement && variable->statement->expression);
+                    auto e = variable->statement->expression;
+                    if(!e->isConst()) {
+                        REPORT(e->location, "Constant is not a valid const expression. Only literals are allowed in constants (no operations at all)");
+                        return TYPE_VOID;
+                    }
+                    auto type = generateExpression(e);
+                    return type;
+                } break;
+                default: Assert(false);
+            }
+            return TYPE_VOID;
+       
+        } break;
         case ASTExpression::FUNCTION_CALL: {
             auto fun = ast->findFunction(expr->name, current_scopeId);
             if(!fun) {
@@ -313,7 +351,9 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             } else if((ltype == TYPE_INT || ltype == TYPE_FLOAT) && (rtype == TYPE_INT || rtype == TYPE_FLOAT)) {
                 
             } else {
-                REPORT(expr->location, "Cannot perform operation on the types '"+ast->nameOfType(ltype)+"', '"+ast->nameOfType(rtype)+"'.");
+                if(reporter->errors == 0 || (ltype != TYPE_VOID && rtype != TYPE_VOID)) {
+                    REPORT(expr->location, "Cannot perform operation on the types '"+ast->nameOfType(ltype)+"', '"+ast->nameOfType(rtype)+"'.");
+                }
                 return TYPE_VOID;   
             }
             
@@ -575,61 +615,77 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         case ASTStatement::EXPRESSION: {
             auto type = generateExpression(stmt->expression);
             generatePop(REG_INVALID, 0, type);
-            break;   
-        }
+        } break;   
+        // case ASTStatement::GLOBAL_DECLARATION: {
+        //     Assert(false); // not allowed, handled in parser
+        // } break;
+        case ASTStatement::CONST_DECLARATION:
         case ASTStatement::VAR_DECLARATION: {
             // make space on the stack frame for local variable
             
-            Variable* variable = nullptr;
-            bool declaration = false;
-            if(stmt->declaration_type.empty()) {
-                variable = findVariable(stmt->declaration_name);
-                if(!variable) {
-                    REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is not declared.");
-                    break;
-                }
-            } else {
-                auto type = ast->convertFullType(stmt->declaration_type, current_scopeId);
-                if(!type.valid()) {
-                    REPORT(stmt->location, "Type in declaration is not a valid type.");
-                    return false;
-                }
-                declaration = true;
-                variable = addVariable(stmt->declaration_name, type);
-                if(!variable) {
-                    REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
-                    break;
-                }
+            Identifier* variable = nullptr;
+            // bool declaration = false;
+            bool is_const = stmt->kind() == ASTStatement::CONST_DECLARATION;
+            // if(stmt->declaration_type.empty()) {
+            //     variable = ast->findVariable(stmt->declaration_name, current_scopeId);
+            //     if(!variable) {
+            //         REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is not declared.");
+            //         break;
+            //     }
+            // } else {
+            auto type = ast->convertFullType(stmt->declaration_type, current_scopeId);
+            if(!type.valid()) {
+                REPORT(stmt->location, "Type in declaration is not a valid type.");
+                return false;
+            }
+            // declaration = true;
+            int frame_offset = 0;
+            
+            if(!is_const) {
+                int size = ast->sizeOfType(type);
+                size = (size + 7) & ~7;
+                piece->emit_incr(REG_SP, -size);
+                current_frameOffset -= size;
+                frame_offset = current_frameOffset;
             }
             
-            int var_offset = variable->frame_offset;
-            if(stmt->expression) {
-                TypeId type = generateExpression(stmt->expression);
-                if(!type.valid()) {
-                    return false; // error should be reported already
-                }
-                auto ltype = type;
-                auto rtype = variable->typeId;
-                if(type == variable->typeId) {
-
-                } else if(ltype.pointer_level() == rtype.pointer_level()) {
-
-                } else {
-                    REPORT(stmt->location, "The expression and variable has mismatching types.");
-                    // TODO: Implicit casting
-                    return false;
-                }
-                piece->emit_mov_rr(REG_B, REG_BP);
-                generatePop(REG_B, var_offset, type);
-            } else {
-                int size = ast->sizeOfType(variable->typeId);
-                piece->emit_li(REG_B, var_offset);
-                piece->emit_add(REG_B, REG_BP);
-                piece->emit_li(REG_A, size);
-                piece->emit_memzero(REG_B, REG_A);
+            variable = ast->addVariable(stmt->kind() == ASTStatement::CONST_DECLARATION ? Identifier::CONST_ID : Identifier::LOCAL_ID, stmt->declaration_name, current_scopeId, type, frame_offset);
+            if(!variable) {
+                REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
+                break;
             }
-            break;
-        }
+            // }
+            if(is_const) {
+                variable->statement = stmt;
+            } else {
+                int var_offset = variable->offset;
+                if(stmt->expression) {
+                    TypeId type = generateExpression(stmt->expression);
+                    if(!type.valid()) {
+                        return false; // error should be reported already
+                    }
+                    auto ltype = type;
+                    auto rtype = variable->type;
+                    if(type == variable->type) {
+
+                    } else if(ltype.pointer_level() == rtype.pointer_level()) {
+
+                    } else {
+                        REPORT(stmt->location, "The expression and variable has mismatching types.");
+                        // TODO: Implicit casting
+                        return false;
+                    }
+                    piece->emit_mov_rr(REG_B, REG_BP);
+                    generatePop(REG_B, var_offset, type);
+                } else {
+                    int size = ast->sizeOfType(variable->type);
+                    piece->emit_li(REG_B, var_offset);
+                    piece->emit_add(REG_B, REG_BP);
+                    piece->emit_li(REG_A, size);
+                    piece->emit_memzero(REG_B, REG_A);
+                }
+            }
+        } break;
         case ASTStatement::WHILE: {
             int pc_loop = piece->get_pc();
             
@@ -644,8 +700,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             piece->emit_jmp(pc_loop);
             
             piece->fix_jump_here(reloc_while);
-            break;
-        }
+        } break;
         case ASTStatement::IF: {
             generateExpression(stmt->expression);
             piece->emit_pop(REG_A);
@@ -666,9 +721,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             } else {
                 piece->fix_jump_here(reloc_if);
             }
-            
-            break;
-        }
+        } break;
         case ASTStatement::RETURN: {
             if(stmt->expression) {
                 if(!function->return_type.valid()) {
@@ -693,8 +746,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             
             if(stop)
                 current_frameOffset = prev_frame_offset;
-            break;
-        }
+        } break;
         default: Assert(false);
         }
         
@@ -815,7 +867,6 @@ bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* 
     auto current_stream = context.current_stream;
     
     int param_offset = 16;
-    GeneratorContext::Variable* variable = nullptr;
     // for(int i=function->parameters.size()-1; i>=0; i--) {
     for(int i=0;i<function->parameters.size(); i++) {
         auto& param = function->parameters[i];
@@ -828,12 +879,14 @@ bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* 
 
         int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
         param_offset = (param_offset + alignment) & ~alignment;
-
-        auto variable = context.addVariable(param.name, param.typeId, param_offset);
-        if(!variable) {
-            REPORT(function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+        
+        if(function->body) {
+            auto variable = ast->addVariable(Identifier::LOCAL_ID, param.name, function->body->scopeId, param.typeId, param_offset);
+            if(!variable) {
+                REPORT(function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+            }
+            Assert(("Parameter could not be created. Compiler bug!",variable));
         }
-        Assert(("Parameter could not be created. Compiler bug!",variable));
 
         param.offset = param_offset;
         param_offset += size;
@@ -853,6 +906,56 @@ bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* 
     }
     return true;
 }
+bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter) {
+    bool failure = false;
+    auto current_stream = imp->stream;
+    auto current_scopeId = imp->body->scopeId;
+    for(auto stmt : imp->body->statements) {
+        switch(stmt->kind()) {
+            case ASTStatement::GLOBAL_DECLARATION: {
+                auto type = ast->convertFullType(stmt->declaration_type, imp->body->scopeId);
+                if(!type.valid()) {
+                    REPORT(stmt->location, "Invalid type '"+stmt->declaration_type+"'.");
+                    failure = true;
+                    break;
+                }
+                
+                int size = ast->sizeOfType(type);
+                
+                int global_offset = code->appendData(size);
+                auto id = ast->addVariable(Identifier::GLOBAL_ID, stmt->declaration_name, imp->body->scopeId, type, global_offset);
+                if(!id) {
+                    // A good error message would tell the user where the variable was declared.
+                    REPORT(stmt->location, "Global variable '"+stmt->declaration_name+"' already exists.");
+                    failure = true;
+                    break;
+                }
+                // log_color(YELLOW);
+                // printf("CheckGlobals: Expression of global variables are ignored at the moment. TODO: Evaluate in the start of 'main'.\n");
+                // log_color(NO_COLOR);
+            } break;
+            case ASTStatement::CONST_DECLARATION: {
+                Identifier* variable = nullptr;
+                auto type = ast->convertFullType(stmt->declaration_type, current_scopeId);
+                if(!type.valid()) {
+                    REPORT(stmt->location, "Type in declaration is not a valid type.");
+                    failure = true;
+                    break;
+                }
+                int frame_offset = 0;
+                variable = ast->addVariable(Identifier::CONST_ID, stmt->declaration_name, current_scopeId, type, frame_offset);
+                if(!variable) {
+                    REPORT(stmt->location, std::string() + "Variable '" + stmt->declaration_name + "' is already declared.");
+                    failure = true;
+                    break;
+                }
+                variable->statement = stmt;
+            } break;
+            default: Assert(false);
+        }
+    }
+    return !failure;
+}
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
     if(function->is_native)
         return; // native funcs can't be generated
@@ -871,32 +974,45 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     context.current_stream = function->origin_stream;
     auto current_stream = context.current_stream;
 
-    
-    // Setup the base/frame pointer (the call instruction handles this automatically)
-    // context.piece->emit_push(REG_BP);
-    // context.piece->emit_mov_rr(REG_BP, REG_SP);
-
-    int param_offset = 16;
-    GeneratorContext::Variable* variable = nullptr;
-    for(int i=function->parameters.size()-1; i>=0; i--) {
-        auto& param = function->parameters[i];
+    if(function->name == "main") {
+        int prev_scope = context.current_scopeId;
+        context.current_scopeId = function->body->scopeId;
+        defer { context.current_scopeId = prev_scope; };
         
-        // int size = ast->sizeOfType(param.typeId);
-
-        // int alignment = (size <= 1 ? 1 : size <= 2 ? 2 : size <= 4 ? 4 : 8) - 1;
-        // param_offset = (param_offset + alignment) & ~alignment;
-
-        // param.offset = param_offset;
-        // param_offset += size;
-        auto variable = context.addVariable(param.name, param.typeId, param.offset);
-        if(!variable) {
-            REPORT(function->location, "Function paramaters must have unique names. At least two are named '"+param.name+"'.");
+        context.piece->push_line(0, "<set-globals>");
+        
+        for(auto imp : ast->imports) {
+            for(auto stmt : imp->body->statements) {
+                if(stmt->kind() != ASTStatement::GLOBAL_DECLARATION)
+                    continue;
+                
+                auto id = ast->findVariable(stmt->declaration_name, context.current_scopeId);
+                if(!id) {
+                    Assert(reporter->errors != 0);
+                    continue;
+                }
+                
+                if(!stmt->expression) {
+                    context.piece->emit_dataptr(REG_B, id->offset);
+                    int size = ast->sizeOfType(id->type);
+                    context.piece->emit_li(REG_A, size);
+                    context.piece->emit_memzero(REG_B, REG_A);
+                } else {
+                    TypeId type = context.generateExpression(stmt->expression);
+                    if(!type.valid())
+                        continue;
+                    
+                    if(id->type != type) {
+                        REPORT(stmt->expression->location, "Type in expression does not match type in declaration. '"+ast->nameOfType(id->type)+"' != '"+ast->nameOfType(type)+"'");
+                        continue;
+                    }
+                
+                    context.piece->emit_dataptr(REG_B, id->offset);
+                    context.generatePop(REG_B, 0, type);
+                }
+            }
         }
-        Assert(("Parameter could not be created. Compiler bug!",variable));
-
     }
-    // param_offset = (param_offset + 7) & ~7;
-    // function->parameters_size = param_offset - 16;
     
     if(function->return_type.valid()) {
         int size = ast->sizeOfType(function->return_type);
@@ -918,33 +1034,6 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
         }
         context.piece->emit_ret();
     }
-}
-
-GeneratorContext::Variable* GeneratorContext::addVariable(const std::string& name, TypeId type, int frame_offset) {
-    auto pair = local_variables.find(name);
-    if(pair != local_variables.end())
-        return nullptr; // variable already exists
-        
-    auto ptr = new Variable();
-    ptr->name = name;
-    ptr->typeId = type;
-    local_variables[name] = ptr;
-    if(frame_offset == 0) {
-        int size = ast->sizeOfType(type);
-        size = (size + 7) & ~7;
-        piece->emit_incr(REG_SP, -size);
-        current_frameOffset -= size;
-        ptr->frame_offset = current_frameOffset;
-    } else {
-        ptr->frame_offset = frame_offset;
-    }
-    return ptr;
-}
-GeneratorContext::Variable* GeneratorContext::findVariable(const std::string& name) {
-    auto pair = local_variables.find(name);
-    if(pair == local_variables.end())
-        return nullptr;
-    return pair->second;
 }
 
 #undef LOCATION

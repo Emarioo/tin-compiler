@@ -6,13 +6,14 @@ int main() {
     // TokenStream* stream = lex_file("test.tin");
     // stream->print();
     
-    CompileFile("test.tin");
+    // CompileFile("test.tin");
     // CompileFile("tests/structs.tin");
     // CompileFile("tests/expr.tin");
     // CompileFile("tests/stmts.tin");
     // CompileFile("tests/fib.tin");
     // CompileFile("tests/loops.tin");
     // CompileFile("tests/ptrs.tin");
+    CompileFile("tests/scoping.tin");
 
     printf("Finished\n");
     return 0;

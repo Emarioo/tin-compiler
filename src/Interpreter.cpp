@@ -23,6 +23,16 @@ void Interpreter::execute() {
     // enable_logging = true;
     
     code->apply_relocations();
+
+    if(code->getSizeOfGlobalData() > 0) {
+        global_data_max = code->getSizeOfGlobalData();
+        global_data = (u8*)malloc(global_data_max);
+        Assert(global_data);
+        memcpy(global_data, code->getGlobalData(), global_data_max);
+    }
+    
+    u8* data = nullptr;
+    int data_max = 0;
     
     memset(registers,0,sizeof(registers));
     
@@ -208,6 +218,9 @@ void Interpreter::execute() {
             }
             break;
         }
+        case INST_DATAPTR: {
+            registers[inst.op0] = (i64)(global_data + imm);
+        } break;
         case INST_CALL: {
             if(imm < 0) { // special native call
                 printed_newline = true;

@@ -464,11 +464,12 @@ ASTStatement* ParseContext::parseIf() {
 
     return out;
 }
-ASTStatement* ParseContext::parseVarDeclaration() {
-    
-    ASTStatement* out = ast->createStatement(ASTStatement::VAR_DECLARATION);
+ASTStatement* ParseContext::parseVarDeclaration(bool is_global, bool is_constant) {
+    Assert(!is_global || !is_constant);
+    ASTStatement* out = ast->createStatement(is_global ? ASTStatement::GLOBAL_DECLARATION : 
+        is_constant ? ASTStatement::CONST_DECLARATION : ASTStatement::VAR_DECLARATION);
 
-    // out->location = getloc();
+    out->location = getloc();
 
     std::string var_name;
     Token* token = gettok(&var_name);
@@ -542,12 +543,10 @@ ASTBody* ParseContext::parseBody() {
         switch(token->type) {
             case TOKEN_IF: {
                 stmt = parseIf();
-                break;
-            }
+            } break;
             case TOKEN_WHILE: {
                 stmt = parseWhile();
-                break;
-            }
+            } break;
             case TOKEN_RETURN: {
                 advance();
 
@@ -566,17 +565,30 @@ ASTBody* ParseContext::parseBody() {
                     return nullptr;
                 }
                 advance();
-                break;
-            }
+            } break;
             case TOKEN_CONST: {
                 advance();
-                break;
-            }
+                loc = getloc();
+                stmt = parseVarDeclaration(false, true);
+                if(!stmt)
+                    return nullptr;
+                    
+                token = gettok();
+                if(token->type != ';') {
+                    REPORT(token, "You forgot a semi-colon after the statement.");
+                    return nullptr;
+                }
+                advance();
+            } break;
+            case TOKEN_GLOBAL: {
+                REPORT(token, "Global declarations are not allowed within functions. Only allowed in the global scope.");
+                return nullptr;
+            } break;
             default: {
                 auto token2 = gettok(1);
                 // v.x.y = 23; is an assignment, checkin for id, colon, and equals tokens won't work
                 if(token->type == TOKEN_ID && token2->type == ':')  {
-                    stmt = parseVarDeclaration();
+                    stmt = parseVarDeclaration(false, false);
                     if(!stmt)
                         return nullptr;
                         
@@ -601,8 +613,7 @@ ASTBody* ParseContext::parseBody() {
                     }
                     advance();
                 }
-                break;
-            }
+            } break;
         }
         if(!stmt)
             return nullptr;
@@ -811,8 +822,7 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                     body->add(ast_struct);
                     // context.ast->structures.push_back(ast_struct);
                 }
-                break;
-            }
+            } break;
             case TOKEN_FUNCTION: {
                 auto ast_func = context.parseFunction();
                 if(!ast_func)
@@ -821,16 +831,24 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                     body->add(ast_func);
                     // context.ast->functions.push_back(ast_func);
                 }
-                break;
-            }
-            case TOKEN_GLOBAL: {
-                context.advance();
-                break;
-            }
+            } break;
+            case TOKEN_GLOBAL:
             case TOKEN_CONST: {
                 context.advance();
-                break;
-            }
+                
+                ASTStatement* stmt = context.parseVarDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
+                if(!stmt)
+                    return nullptr;
+                    
+                token = context.gettok();
+                if(token->type != ';') {
+                    REPORT(token, "You forgot a semi-colon after the statement.");
+                    return nullptr;
+                }
+                context.advance();
+                
+                body->statements.push_back(stmt);
+            } break;
             case TOKEN_IMPORT: {
                 context.advance();
                 
@@ -852,12 +870,11 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                     REPORT(token, "A string literal is expected after 'import'.");
                     return imp;
                 }
-                break;
-            }
+            } break;
             default: {
                 REPORT(token, "Unexpected token.");
                 return imp;
-            }
+            } break;
         }
     }
     return imp;

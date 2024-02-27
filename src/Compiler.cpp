@@ -193,7 +193,7 @@ void Compiler::processTasks() {
                 // LOGC("Checking functions: %s\n", task.name.c_str());
                 for(auto func : task.imp->body->functions)
                     CheckFunction(ast, task.imp, func, reporter);
-                    
+                
                 if(reporter->errors == 0) {
                     task.type = TASK_GEN_FUNCTIONS;
                     tasks.push_back(task);
@@ -201,6 +201,8 @@ void Compiler::processTasks() {
                 } else {
                     log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); 
                 }
+                
+                CheckGlobals(ast, task.imp, code, reporter);
             } break;
             case TASK_GEN_FUNCTIONS: {
                 // LOGC("Gen functions: %s\n", task.name.c_str());

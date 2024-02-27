@@ -1,0 +1,25 @@
+
+global angle: float = pi * start_angle();
+const pi: float = 3.14;
+
+fun main() {
+    const nine: float = 9.0;
+    
+    printf(angle);
+    
+    angle = angle + nine + pi;
+    
+    printf(angle);
+}
+
+fun start_angle(): float {
+    return 100000.0;
+}
+
+// fun failure() {
+//     a: int;
+//     if true {
+//         b: int;
+//     }
+//     a = b;
+// }

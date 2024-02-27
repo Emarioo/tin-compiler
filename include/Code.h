@@ -44,6 +44,9 @@ enum Opcode : u8 {
     
     INST_MOV_MR_DISP, // memory+disp <- reg
     INST_MOV_RM_DISP, // reg <- memory+disp
+    
+    INST_DATAPTR,
+    // don't add non-immediate instructions here (inst.opcode >= INST_IMMEDIATES)
 };
 enum CastType {
     CAST_FLOAT_INT,
@@ -138,6 +141,7 @@ struct CodePiece {
     
     void emit_call(int* out_index_of_imm);
     void emit_ret();
+    void emit_dataptr(Register reg, int offset);
     
     void emit_memzero(Register reg, Register reg_size);
 
@@ -185,6 +189,16 @@ struct Code {
     void apply_relocations();
     
     void print();
+    
+    // returns offset of sub data into the global data
+    int appendData(int size, void* data = nullptr);
+    u8* getGlobalData() { return global_data; }
+    int getSizeOfGlobalData() { return global_data_max; }
+    
+private:
+    u8* global_data = nullptr;
+    int global_data_size = 0;
+    int global_data_max = 0;
 };
 
 enum NativeCalls {

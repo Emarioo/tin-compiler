@@ -133,38 +133,15 @@ ASTStructure* AST::createStructure() {
     return ptr;
 }
 ASTFunction* AST::findFunction(const std::string& name, ScopeId scopeId) {
-    std::vector<ScopeInfo*> searchScopes;
-    int search_index = 0;
-    auto add = [&](ScopeInfo* s) {
-        // TODO: Optimize
-        for (int i=0;i<search_index;i++) {
-            if(searchScopes[i] == s) {
-                return;
-            }
-        }
-        searchScopes.push_back(s);
-    };
-    searchScopes.push_back(getScope(scopeId));
-    while(search_index < searchScopes.size()) {
-        ScopeInfo* info = searchScopes[search_index];
-        search_index++;
-        auto& fs = info->body->functions;
-        
+    auto iterator = createScopeIterator(scopeId);
+    ScopeInfo* scope=nullptr;
+    while((scope = iterate(iterator))) {
+        auto& fs = scope->body->functions;
         for(int i=0;i<fs.size();i++) {
             if(fs[i]->name == name) {
                 return fs[i];
             }
         }
-        
-        if(info->scopeId == info->parent)
-            continue;
-        
-        for(auto s : info->shared_scopes) {
-            add(s);
-        }
-
-        auto s = getScope(info->parent);
-        add(s);
     }
     return nullptr;
 }
@@ -172,9 +149,6 @@ const char* expr_type_table[] {
     "invalid", // INVALID
     "id", // IDENTIFIER
     "call", // FUNCTION_CALL
-    "lit_int", // LITERAL_INT
-    "lit_float", // LITERAL_FLOAT
-    "lit_str", // LITERAL_STR
     "add", // ADD
     "sub", // SUB
     "div", // DIV
@@ -193,15 +167,19 @@ const char* expr_type_table[] {
     "index", // INDEX
     "member", // MEMBER
     "cast", // CAST
-    "sizeof", // SIZEOF
     "assign",
     "pre_increment",
     "post_increment",
     "pre_decrement",
     "post_decrement",
+    
+    "sizeof", // SIZEOF
+    "lit_int", // LITERAL_INT
+    "lit_float", // LITERAL_FLOAT
+    "lit_str", // LITERAL_STR
+    "null",
     "true",
     "false",
-    "null",
 };
 void AST::print(ASTExpression* expr, int depth) {
     Assert(expr);
@@ -304,6 +282,18 @@ void AST::print(ASTBody* body, int depth) {
                 if(s->expression)
                     print(s->expression, depth+1);
             } break;
+            case ASTStatement::GLOBAL_DECLARATION: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("global %s: %s\n", s->declaration_name.c_str(), s->declaration_type.c_str());
+                if(s->expression)
+                    print(s->expression, depth+1);
+            } break;
+            case ASTStatement::CONST_DECLARATION: {
+                for(int i=0;i<depth;i++) printf(" ");
+                printf("const %s: %s\n", s->declaration_name.c_str(), s->declaration_type.c_str());
+                if(s->expression)
+                    print(s->expression, depth+1);
+            } break;
             default: Assert(false);
         }
     }
@@ -344,18 +334,14 @@ void AST::print() {
     // }
 }
 TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
-    ScopeInfo* scope = getScope(scopeId);
-    while(scope) {
+    auto iterator = createScopeIterator(scopeId);
+    ScopeInfo* scope=nullptr;
+    while((scope = iterate(iterator))) {
         auto pair = scope->type_map.find(str);
         if(pair != scope->type_map.end()) {
             return pair->second;
         }
-        if(scope->scopeId == scope->parent) {
-            return nullptr; // global scope
-        }
-        scope = getScope(scope->parent);
     }
-    Assert(("bug?", false));
     return nullptr;
 }
 TypeId AST::convertFullType(const std::string& str, ScopeId scopeId) {
@@ -405,6 +391,35 @@ std::string AST::nameOfType(TypeId typeId) {
     return out;
 }
 
+Identifier* AST::addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset) {
+    auto scope = getScope(scopeId);
+    
+    auto pair = scope->identifiers.find(name);
+    if(pair != scope->identifiers.end())
+        return nullptr; // variable already exists
+        
+    auto ptr = new Identifier(var_type);
+    // ptr->name = name;
+    ptr->type = type;
+    scope->identifiers[name] = ptr;
+    if(var_type == Identifier::CONST_ID) {
+        ptr->statement = nullptr;
+    } else {
+        ptr->offset = frame_offset;
+    }
+    return ptr;
+}
+Identifier* AST::findVariable(const std::string& name, ScopeId scopeId) {
+    auto iterator = createScopeIterator(scopeId);
+    ScopeInfo* scope=nullptr;
+    while((scope = iterate(iterator))) {
+        auto pair = scope->identifiers.find(name);
+        if(pair != scope->identifiers.end())
+            return pair->second;
+    }
+    return nullptr;
+}
+
 const char* primitive_names[] {
     "void",
     "int",
@@ -412,3 +427,36 @@ const char* primitive_names[] {
     "bool",
     "float",
 };
+
+AST::ScopeIterator AST::createScopeIterator(ScopeId scopeId) {
+    ScopeIterator iter{};
+    iter.searchScopes.push_back(getScope(scopeId));
+    return iter;
+}
+ScopeInfo* AST::iterate(AST::ScopeIterator& iterator) {
+    auto add = [&](ScopeInfo* s) {
+        // TODO: Optimize
+        for (int i=0;i<iterator.search_index;i++) {
+            if(iterator.searchScopes[i] == s) {
+                return;
+            }
+        }
+        iterator.searchScopes.push_back(s);
+    };
+    
+    while(iterator.search_index < iterator.searchScopes.size()) {
+        ScopeInfo* info = iterator.searchScopes[iterator.search_index];
+        iterator.search_index++;
+        
+        for(auto s : info->shared_scopes) {
+            add(s);
+        }
+        if(info->scopeId != info->parent) {
+            auto s = getScope(info->parent);
+            add(s);
+        }
+        
+        return info;
+    }
+    return nullptr;
+}
