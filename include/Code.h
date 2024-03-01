@@ -177,12 +177,23 @@ private:
 };
 
 struct Code {
-    std::vector<CodePiece*> pieces;
     
     CodePiece* createPiece() {
         auto ptr = new CodePiece();
+        MUTEX_LOCK(general_lock);
         ptr->code_index = pieces.size();
         pieces.push_back(ptr);
+        MUTEX_UNLOCK(general_lock);
+        return ptr;
+    }
+    CodePiece* getPiece(int index) {
+        MUTEX_LOCK(general_lock);
+        if(pieces.size() <= index) {
+            MUTEX_UNLOCK(general_lock);
+            return nullptr;
+        }
+        auto ptr = pieces[index];
+        MUTEX_UNLOCK(general_lock);
         return ptr;
     }
     
@@ -190,25 +201,42 @@ struct Code {
     
     void print();
     
+    // MUTEX_DECL(data_lock);
+    MUTEX_DECL(general_lock);
+    
     // returns offset of sub data into the global data
     int appendData(int size, void* data = nullptr);
-    u8* getGlobalData() { return global_data; }
-    int getSizeOfGlobalData() { return global_data_max; }
+    // Used by interpreter
+    u8* copyGlobalData(int* size);
+    
+    int appendString(const std::string& str);
+    std::unordered_map<std::string, int> string_map{};
+    
+    // unsafe because direct access without mutex
+    std::vector<CodePiece*>& pieces_unsafe() {
+        return pieces;
+    }
     
 private:
     u8* global_data = nullptr;
     int global_data_size = 0;
     int global_data_max = 0;
+    
+    std::vector<CodePiece*> pieces;
 };
 
 enum NativeCalls {
     NATIVE_printi = 0,
     NATIVE_printf,
+    NATIVE_printc,
+    NATIVE_prints,
     NATIVE_malloc,
     NATIVE_mfree,
     NATIVE_memmove,
     NATIVE_pow,
     NATIVE_sqrt,
+    NATIVE_read_file,
+    NATIVE_write_file,
     NATIVE_MAX,
 };
 #define NAME_OF_NATIVE(X) native_names[X]

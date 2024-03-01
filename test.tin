@@ -1,9 +1,9 @@
-import "tests/test_base.tin"
-
-struct A {
-    arr: ArrayInt,
-}
+import "tests/test_a.tin"
 
 fun main() {
+    a: A;
+    b: B;
     
+    a.b = &b;
+    b.a = &a;
 }

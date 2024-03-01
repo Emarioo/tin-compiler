@@ -34,6 +34,7 @@ void GeneratorContext::generatePush(Register reg, int offset, TypeId type) {
 }
 
 TypeId GeneratorContext::generateReference(ASTExpression* expr) {
+    ZoneScopedC(tracy::Color::Blue2);
     if(expr->kind() == ASTExpression::DEREF) {
         TypeId type = generateExpression(expr->left);
         type.set_pointer_level(type.pointer_level() - 1);
@@ -197,6 +198,7 @@ TypeId GeneratorContext::generateReference(ASTExpression* expr) {
     return type;
 }
 TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
+    ZoneScopedC(tracy::Color::Blue2);
     Assert(expr);
     switch(expr->kind()) {
         case ASTExpression::LITERAL_INT: {
@@ -210,9 +212,10 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             return TYPE_FLOAT;
         } break;
         case ASTExpression::LITERAL_STR: {
-            // TODO: How do we do this?
-            piece->emit_li(REG_A, 0);
+            int off = code->appendString(expr->literal_string);
+            piece->emit_dataptr(REG_A, off);
             piece->emit_push(REG_A);
+            
             TypeId type = TYPE_CHAR;
             type.set_pointer_level(1);
             return type;
@@ -596,6 +599,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
     return TYPE_VOID;
 }
 bool GeneratorContext::generateBody(ASTBody* body) {
+    ZoneScopedC(tracy::Color::Blue2);
     auto prev_scope = current_scopeId;
     current_scopeId = body->scopeId;
     defer {
@@ -826,6 +830,7 @@ bool GeneratorContext::generateStruct(ASTStructure* astStruct) {
     return true;
 }
 bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed, bool ignore_errors) {
+    ZoneScopedC(tracy::Color::Green3);
     GeneratorContext context{};
     context.ast = ast;
     context.reporter = reporter;
@@ -857,6 +862,7 @@ bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed,
 }
 
 bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* reporter) {
+    ZoneScopedC(tracy::Color::Green3);
     GeneratorContext context{};
     context.ast = ast;
     context.function = function;
@@ -907,6 +913,7 @@ bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* 
     return true;
 }
 bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter) {
+    ZoneScopedC(tracy::Color::Green3);
     bool failure = false;
     auto current_stream = imp->stream;
     auto current_scopeId = imp->body->scopeId;
@@ -957,6 +964,7 @@ bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter) {
     return !failure;
 }
 void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
+    ZoneScopedC(tracy::Color::Blue2);
     if(function->is_native)
         return; // native funcs can't be generated
     

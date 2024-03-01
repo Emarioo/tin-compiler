@@ -24,26 +24,19 @@ void Interpreter::execute() {
     
     code->apply_relocations();
 
-    if(code->getSizeOfGlobalData() > 0) {
-        global_data_max = code->getSizeOfGlobalData();
-        global_data = (u8*)malloc(global_data_max);
-        Assert(global_data);
-        memcpy(global_data, code->getGlobalData(), global_data_max);
-    }
-    
-    u8* data = nullptr;
-    int data_max = 0;
+    global_data = code->copyGlobalData(&global_data_max);
     
     memset(registers,0,sizeof(registers));
     
     registers[REG_SP] = (i64)(stack + stack_max); // stack starts at the top and grows down
     
     bool found_main = false;
-    for(int i=0;i<code->pieces.size(); i++) {
-        if(code->pieces[i]->name == "main") {
+    auto unsafe_pieces = code->pieces_unsafe();
+    for(int i=0;i<unsafe_pieces.size(); i++) {
+        if(unsafe_pieces[i]->name == "main") {
             found_main = true;
             piece_index = i;
-            piece = code->pieces[i];
+            piece = unsafe_pieces[i];
             break;
         }
     }
@@ -244,7 +237,7 @@ void Interpreter::execute() {
             // set program counter to start of the function
             registers[REG_PC] = 0;
             piece_index = imm - 1;
-            piece = code->pieces[piece_index];
+            piece = code->getPiece(piece_index);
 
             // push bp
             registers[REG_SP] -= 8;
@@ -285,7 +278,7 @@ void Interpreter::execute() {
             CHECK_STACK
 
             
-            piece = code->pieces[piece_index];
+            piece = code->getPiece(piece_index);
             break;
         }
         case INST_MEMZERO: {
@@ -368,6 +361,16 @@ void Interpreter::run_native_call(NativeCalls callType) {
         
         printf("%f\n", arg0);
     } break;
+     case NATIVE_printc: {
+        char arg0 = *(char*)(registers[REG_SP] + 0);
+        
+        printf("%c", arg0);
+    } break;
+     case NATIVE_prints: {
+        char* arg0 = *(char**)(registers[REG_SP] + 0);
+        
+        printf("%s\n", arg0);
+    } break;
     case NATIVE_malloc: {
         int arg0 = *(int*)(registers[REG_SP] + 0);
         // void* arg1 = *(void**)(registers[REG_SP] + 8);
@@ -415,6 +418,59 @@ void Interpreter::run_native_call(NativeCalls callType) {
         float& ret = *(float*)(registers[REG_SP] - 16 - 8);
         
         ret = sqrtf(arg0);
+    } break;
+    case NATIVE_read_file: {
+        char* path = *(char**)(registers[REG_SP] + 0);
+        char** out_data = *(char***)(registers[REG_SP] + 8);
+        int* out_size = *(int**)(registers[REG_SP] + 16);
+        bool& ret = *(bool*)(registers[REG_SP] - 16 - 8);
+        
+        Assert(path);
+        
+        std::ifstream file(path, std::ifstream::binary);
+        if(!file.is_open()) {
+            ret = false;
+            break;
+        }
+        ret = true;
+
+        file.seekg(0, file.end);
+        int filesize = file.tellg();
+        file.seekg(0, file.beg);
+        
+        if(out_size)
+            *out_size = filesize;
+        
+        if(out_data) {
+            char* text = (char*)malloc(filesize);
+            Assert(text);
+            
+            allocations[text] = {filesize};
+            file.read(text, filesize);
+            
+            *out_data = text;
+        }
+        file.close();
+    } break;
+    case NATIVE_write_file: {
+        char* path = *(char**)(registers[REG_SP] + 0);
+        char* out_data = *(char**)(registers[REG_SP] + 8);
+        int out_size = *(int*)(registers[REG_SP] + 16);
+        bool& ret = *(bool*)(registers[REG_SP] - 16 - 8);
+        
+        Assert(path);
+        
+        std::ofstream file(path, std::ofstream::binary);
+        if(!file.is_open()) {
+            ret = false;
+            break;
+        }
+        ret = true;
+        if(out_size < 0) {
+            Assert(out_data);
+            file.write(out_data, out_size);
+        }
+        file.close();
     } break;
     default: Assert(false);   
     }

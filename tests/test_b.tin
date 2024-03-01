@@ -1,1 +1,6 @@
-import ""
+import "tests/test_a.tin"
+
+struct B {
+    n: int,
+    a: A*,
+}

@@ -29,7 +29,7 @@ void CompileFile(const std::string& path) {
     compiler.tasks.push_back(task);
     }
 
-    int threadcount = 1;
+    int threadcount = 2;
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -76,8 +76,14 @@ void CompileFile(const std::string& path) {
 }
 
 void Compiler::processTasks() {
+    ZoneScopedC(tracy::Color::Gray12);
+    atomic_add(&total_threads, 1);
+    
     bool running = true;
     while(running) {
+        ZoneNamedC(zone0, tracy::Color::Gray12, true);
+        
+        MUTEX_LOCK(tasks_lock);
         
         int task_index=-1;
         for(int i=0;i<tasks.size();i++) {
@@ -88,43 +94,54 @@ void Compiler::processTasks() {
                 continue; // not ready
             }
 
-            // go through includes (scope_info.shared_scopes)
-            // check that all structs are complete
-            // UNLESS there is a circullar dependency
-            // ast->getScope(task.imp->body->scopeId)->shared_scopes;
-            // if() {
-
-            // }
-
             task_index = i;
             break;
         }
         
         if(task_index == -1) {
-            // finished all tasks
-            running = false;
-            break;
+            if(tasks.size() == 0) {
+                // finished all tasks
+                running = false;
+                MUTEX_UNLOCK(tasks_lock);
+                break;
+            }
+            if (threads_processing == 0) {
+                log_color(RED);
+                printf("processTasks: No thread is processing tasks and no task is ready for processing.");
+                log_color(NO_COLOR);
+                MUTEX_UNLOCK(tasks_lock);
+                break;
+            }
+            continue;
         }
         
         Task task = tasks[task_index];
         tasks.erase(tasks.begin() + task_index);
         
+        atomic_add(&threads_processing, 1);
+        MUTEX_UNLOCK(tasks_lock);
+        
+        bool queue_task = false;
+        
         switch(task.type) {
             case TASK_LEX_FILE: {
                 // LOGC("Lexing: %s\n", task.name.c_str());
-                TokenStream* stream = lex_file(task.name);
-                // MEMORY LEAK, stream not destroyed
+                TokenStream* stream = lex_file(task.name); // MEMORY LEAK, stream not destroyed
+                MUTEX_LOCK(tasks_lock);
                 streams.push_back(stream);
                 stream_map[task.name] = stream;
+                MUTEX_UNLOCK(tasks_lock);
                 auto imp = ParseTokenStream(stream, task.imp, ast, reporter);
                 task.imp = imp;
 
-                // TODO: Mutex
+                MUTEX_LOCK(tasks_lock);
                 for(auto& fix_imp : imp->fixups) {
                     fix_imp->deps_now++;
+                    // TODO: Can we access shared_scopes like this, do we need mutex? is task_lock enough?
                     ast->getScope(fix_imp->body->scopeId)->shared_scopes.push_back(ast->getScope(imp->body->scopeId));
                 }
                 imp->fixups.clear();
+                MUTEX_UNLOCK(tasks_lock);
                 
                 if(imp) {
                     log_color(GREEN); LOGC("Lexed: %s\n", task.name.c_str()); log_color(NO_COLOR);
@@ -132,37 +149,47 @@ void Compiler::processTasks() {
                     imp->deps_now = 0;
                     imp->deps_count = 0;
                     for (auto& n : imp->dependencies) {
+                        MUTEX_LOCK(ast->scopes_lock);
                         auto pair = ast->import_map.find(n);
                         if(pair == ast->import_map.end()) {
+                            MUTEX_UNLOCK(ast->scopes_lock);
+                            
                             Task t{};
                             t.type = TASK_LEX_FILE;
                             t.name = n;
                             t.imp = ast->createImport(t.name);
+                            MUTEX_LOCK(tasks_lock);
                             t.imp->fixups.push_back(imp);
                             imp->deps_count++;
                             tasks.push_back(t);
+                            MUTEX_UNLOCK(tasks_lock);
                         } else {
-                            // TODO: Mutex
-                            if(pair->second->body) {
+                            auto ptr = pair->second;
+                            MUTEX_UNLOCK(ast->scopes_lock);
+                            MUTEX_LOCK(tasks_lock);
+                            if(ptr->body) {
+                                // TODO: Is tasks_lock mutex enough for shared_scopes?
                                 ast->getScope(imp->body->scopeId)->shared_scopes.push_back(ast->getScope(pair->second->body->scopeId));
                             } else {
                                 pair->second->fixups.push_back(imp);
                                 imp->deps_count++;
                             }
+                            MUTEX_UNLOCK(tasks_lock);
                             // import is already a task
                         }
                     }
                     task.type = TASK_CHECK_STRUCTS;
                     task.imp = imp;
-                    tasks.push_back(task);
+                    
+                    queue_task = true;
                 } else {
                     log_color(RED); LOGC("Lexer failed: %s\n", task.name.c_str()); log_color(NO_COLOR);
                 }
             } break;
             case TASK_CHECK_STRUCTS: {
                 // LOGC("Checking structs: %s\n", task.name.c_str());
-                // Check structs when dependencies have been calculated.
-                // check shared scopes
+
+                // TODO: Bug if two threads check structs at same time. One thread may be fast and check structs twice where is it hoping a type was evaluated the second time. However, the second thread is so slow on evaluating the type so that the first one thinks there is an invalid type.
 
                 bool ignore_errors = true;
                 bool changed = false;
@@ -179,14 +206,14 @@ void Compiler::processTasks() {
                     task.no_change = !changed;
                     log_color(RED); LOGC("Checking structs failure: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     if(ignore_errors) {
-                        tasks.push_back(task);
+                        queue_task = true;
                     } else {
                         // actual failure
                     }
                 } else {
                     log_color(GREEN); LOGC("Checked structs: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     task.type = TASK_CHECK_FUNCTIONS;
-                    tasks.push_back(task);
+                    queue_task = true;
                 }
             } break;
             case TASK_CHECK_FUNCTIONS: {
@@ -196,7 +223,7 @@ void Compiler::processTasks() {
                 
                 if(reporter->errors == 0) {
                     task.type = TASK_GEN_FUNCTIONS;
-                    tasks.push_back(task);
+                    queue_task = true;
                     log_color(GREEN); LOGC("Checked functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
                 } else {
                     log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); 
@@ -205,14 +232,24 @@ void Compiler::processTasks() {
                 CheckGlobals(ast, task.imp, code, reporter);
             } break;
             case TASK_GEN_FUNCTIONS: {
-                // LOGC("Gen functions: %s\n", task.name.c_str());
+                LOGC("Gen functions: %s\n", task.name.c_str());
+                
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, code, reporter);
+                
                 log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
             } break;
             default: Assert(false);
         }
+        
+        MUTEX_LOCK(tasks_lock);
+        atomic_add(&threads_processing, -1);
+        if(queue_task) {
+            tasks.push_back(task);
+        }
+        MUTEX_UNLOCK(tasks_lock);
     }
+    atomic_add(&total_threads, -1);
 }
 
 void Compiler::init() {

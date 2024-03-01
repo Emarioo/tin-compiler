@@ -294,8 +294,8 @@ struct AST {
         ASTBody* body;
         std::vector<std::string> dependencies; // other imports
         std::vector<Import*> fixups;
-        int deps_count = 0;
-        int deps_now = 0;
+        int deps_count = 0; // locked behind tasks_lock
+        int deps_now = 0; // locked behind tasks_lock
         TokenStream* stream=nullptr;
     };
     std::vector<Import*> imports;
@@ -303,8 +303,10 @@ struct AST {
     Import* createImport(const std::string& name) {
         auto i = new Import();
         i->name = name;
+        MUTEX_LOCK(scopes_lock);
         imports.push_back(i);
-        // import_map[];
+        import_map[name] = i;
+        MUTEX_UNLOCK(scopes_lock);
         return i;
     }
 
@@ -322,17 +324,25 @@ struct AST {
     void print();
 
     // Type functionality
+    MUTEX_DECL(types_lock);
     std::vector<TypeInfo*> typeInfos;
+    MUTEX_DECL(scopes_lock);
     std::vector<ScopeInfo*> scopeInfos;
 
     ScopeInfo* getScope(ScopeId scopeId) {
-        return scopeInfos[scopeId];
+        MUTEX_LOCK(scopes_lock);
+        auto ptr = scopeInfos[scopeId];
+        MUTEX_UNLOCK(scopes_lock);
+        return ptr;
     }
     ScopeInfo* createScope(ScopeId parent) {
         auto ptr = new ScopeInfo();
-        ptr->scopeId = scopeInfos.size();
         ptr->parent = parent;
+        
+        MUTEX_LOCK(scopes_lock);
+        ptr->scopeId = scopeInfos.size();
         scopeInfos.push_back(ptr);
+        MUTEX_UNLOCK(scopes_lock);
         return ptr;
     }
 
@@ -358,6 +368,6 @@ struct AST {
     ScopeInfo* iterate(ScopeIterator& iterator);
 
 private:
-    int next_nodeid() { return _nodeid++; }
-    int _nodeid = 0;
+    int next_nodeid() { return atomic_add(&_nodeid,1) - 1; }
+    volatile int _nodeid = 0;
 };

@@ -62,6 +62,8 @@ ASTExpression::Kind CharToExprType(char chr) {
     return ASTExpression::INVALID;
 }
 ASTExpression* ParseContext::parseExpression() {
+    ZoneScopedC(tracy::Color::Red2);
+    
     std::vector<ASTExpression*> expressions;
     std::vector<ASTExpression::Kind> operations;
     std::vector<std::string> cast_strings;
@@ -514,6 +516,7 @@ ASTStatement* ParseContext::parseVarDeclaration(bool is_global, bool is_constant
 }
 
 ASTBody* ParseContext::parseBody() {
+    ZoneScopedC(tracy::Color::Red2);
     ASTBody* out = ast->createBody(current_scopeId);
 
     auto prev_scope = current_scopeId;
@@ -791,6 +794,7 @@ ASTStructure* ParseContext::parseStruct() {
 }
 
 AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, Reporter* reporter) {
+    ZoneScopedC(tracy::Color::Red2);
     ParseContext context{};
     context.reporter = reporter;
     context.stream = stream;

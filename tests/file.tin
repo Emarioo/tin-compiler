@@ -1,0 +1,15 @@
+
+fun main() {
+    data: char*;
+    size: int;
+    yes: bool = read_file("tests/file.tin", &data, &size);
+    if !yes { return; }
+    
+    i: int = 0;
+    while i < size {
+        printc(data[i]);
+        i++;
+    }
+    
+    mfree(data);
+}

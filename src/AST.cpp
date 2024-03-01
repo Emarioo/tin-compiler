@@ -2,6 +2,7 @@
 #include "Code.h"
 
 AST::AST() {
+    // NOTE: Mutex not needed, the main thread creates the AST and then shares it with other threads.
     // global_scope = createScope(GLOBAL_SCOPE);
     global_body = createBody(GLOBAL_SCOPE);
 
@@ -33,6 +34,26 @@ AST::AST() {
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "float";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_printc - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "v";
+        f->parameters.back().typeString = "char";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_prints - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "v";
+        f->parameters.back().typeString = "char*";
         global_body->add(f);
     }
     {
@@ -95,6 +116,40 @@ AST::AST() {
         f->parameters.back().name = "x";
         f->parameters.back().typeString = "float";
         f->return_typeString = "float";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_read_file - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "path";
+        f->parameters.back().typeString = "char*";
+        f->parameters.push_back({});
+        f->parameters.back().name = "out_data";
+        f->parameters.back().typeString = "char**";
+        f->parameters.push_back({});
+        f->parameters.back().name = "out_size";
+        f->parameters.back().typeString = "int*";
+        f->return_typeString = "bool";
+        global_body->add(f);
+    }
+    {
+        auto f = createFunction();
+        f->is_native = true;
+        f->piece_code_index = NATIVE_write_file - NATIVE_MAX - 1;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->parameters.push_back({});
+        f->parameters.back().name = "path";
+        f->parameters.back().typeString = "char*";
+        f->parameters.push_back({});
+        f->parameters.back().name = "data";
+        f->parameters.back().typeString = "char*";
+        f->parameters.push_back({});
+        f->parameters.back().name = "size";
+        f->parameters.back().typeString = "int";
+        f->return_typeString = "bool";
         global_body->add(f);
     }
 }
@@ -304,43 +359,19 @@ void AST::print() {
     log_color(Color::NO_COLOR);
     
     print(global_body);
-    
-    // if(structures.size() == 0)
-    //     printf(" No structures\n");
-    // if(functions.size() == 0)
-    //     printf(" No functions\n");
-    
-    // for(const auto& st : structures) {
-    //     Assert(st);
-    //     printf("%s {\n", st->name.c_str());
-    //     for(const auto& member : st->members) {
-    //         printf(" %s: %s,\n", member.name.c_str(), member.typeString.c_str());
-    //     }
-    //     printf("}\n");
-    // }
-    // for(const auto& fn : functions) {
-    //     Assert(fn);
-    //     printf("%s(", fn->name.c_str());
-    //     for(const auto& param : fn->parameters) {
-    //         printf("%s: %s, ", param.name.c_str(), param.typeString.c_str());
-    //     }
-    //     if(fn->return_typeString.empty())
-    //         printf(")\n");
-    //     else
-    //         printf("): %s\n", fn->return_typeString.c_str());
-
-    //     if(fn->body)
-    //         print(fn->body, 1);
-    // }
 }
 TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
     auto iterator = createScopeIterator(scopeId);
     ScopeInfo* scope=nullptr;
     while((scope = iterate(iterator))) {
+        MUTEX_LOCK(types_lock);
         auto pair = scope->type_map.find(str);
         if(pair != scope->type_map.end()) {
-            return pair->second;
+            auto ptr = pair->second;
+            MUTEX_UNLOCK(types_lock);
+            return ptr;
         }
+        MUTEX_UNLOCK(types_lock);
     }
     return nullptr;
 }
@@ -365,10 +396,15 @@ TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
     ScopeInfo* scope = getScope(scopeId);
     auto type = new TypeInfo();
     type->name = str;
+    
+    MUTEX_LOCK(types_lock);
     type->typeId = TypeId::Make(typeInfos.size());
     typeInfos.push_back(type);
+    MUTEX_UNLOCK(types_lock);
 
+    MUTEX_LOCK(scopes_lock);
     scope->type_map[str] = type;
+    MUTEX_UNLOCK(scopes_lock);
     return type;
 }
 int AST::sizeOfType(TypeId typeId) {
@@ -394,14 +430,18 @@ std::string AST::nameOfType(TypeId typeId) {
 Identifier* AST::addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset) {
     auto scope = getScope(scopeId);
     
+    MUTEX_LOCK(scopes_lock);
     auto pair = scope->identifiers.find(name);
-    if(pair != scope->identifiers.end())
+    if(pair != scope->identifiers.end()) {
+        MUTEX_UNLOCK(scopes_lock);
         return nullptr; // variable already exists
+    }
         
     auto ptr = new Identifier(var_type);
-    // ptr->name = name;
-    ptr->type = type;
     scope->identifiers[name] = ptr;
+    MUTEX_UNLOCK(scopes_lock);
+        
+    ptr->type = type;
     if(var_type == Identifier::CONST_ID) {
         ptr->statement = nullptr;
     } else {
@@ -413,9 +453,15 @@ Identifier* AST::findVariable(const std::string& name, ScopeId scopeId) {
     auto iterator = createScopeIterator(scopeId);
     ScopeInfo* scope=nullptr;
     while((scope = iterate(iterator))) {
+        MUTEX_LOCK(scopes_lock);
         auto pair = scope->identifiers.find(name);
-        if(pair != scope->identifiers.end())
-            return pair->second;
+        if(pair != scope->identifiers.end()) {
+            auto ptr = pair->second;
+            MUTEX_UNLOCK(scopes_lock);
+            return ptr;
+        }
+            
+        MUTEX_UNLOCK(scopes_lock);
     }
     return nullptr;
 }
@@ -448,9 +494,12 @@ ScopeInfo* AST::iterate(AST::ScopeIterator& iterator) {
         ScopeInfo* info = iterator.searchScopes[iterator.search_index];
         iterator.search_index++;
         
+        MUTEX_LOCK(scopes_lock); // TODO: Optimize
         for(auto s : info->shared_scopes) {
             add(s);
         }
+        MUTEX_UNLOCK(scopes_lock);
+        
         if(info->scopeId != info->parent) {
             auto s = getScope(info->parent);
             add(s);

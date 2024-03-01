@@ -6,10 +6,10 @@
     Struct that handles error reporting
 */
 struct Reporter {
-    int errors = 0;
+    volatile int errors = 0;
     void err(Token* token, const std::string& msg) {
         Assert(token);
-        errors++;
+        atomic_add(&errors,1);
         // TODO: Color
         const char* file = "?";
         if(token->file)
@@ -22,7 +22,7 @@ struct Reporter {
     }
     void err(TokenStream* stream, SourceLocation loc, const std::string& msg) {
         Assert(stream);
-        errors++;
+        atomic_add(&errors,1);
         
         auto token = stream->getToken(loc);
         

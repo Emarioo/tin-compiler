@@ -3,13 +3,15 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/include/*"
+                "${workspaceFolder}/include/*",
+                "${workspaceFolder}/libs/tracy-0.10/public/*"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
-                "OS_WINDOWS"
+                "OS_WINDOWS",
+                "TRACY_ENABLE"
             ],
             "windowsSdkVersion": "10.0.22000.0",
             "compilerPath": "cl.exe",

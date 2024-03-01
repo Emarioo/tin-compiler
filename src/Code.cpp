@@ -216,7 +216,7 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
                     printf(" %s", NAME_OF_NATIVE(imm + NATIVE_MAX));
                 } else {
                     int pi = imm-1;
-                    printf(" %s", code->pieces[pi]->name.c_str());
+                    printf(" %s", code->getPiece(pi)->name.c_str());
 
                     log_color(Color::GRAY);
                     printf(" %d", pi);
@@ -266,11 +266,15 @@ void Code::apply_relocations() {
 const char* native_names[] {
     "printi", // NATIVE_printi
     "printf", // NATIVE_printf
+    "printc", // NATIVE_printf
+    "prints", // NATIVE_printf
     "malloc",
     "mfree",
     "memmove",
     "pow",
     "sqrt",
+    "read_file",
+    "write_file",
 };
 void CodePiece::addRelocation(ASTFunction* func, int imm_index){
     // printf("Reloc %s, %d\n", func->name.c_str(), imm_index);
@@ -278,6 +282,7 @@ void CodePiece::addRelocation(ASTFunction* func, int imm_index){
 }
 int Code::appendData(int size, void* data) {
     Assert(size > 0);
+    MUTEX_LOCK(general_lock);
     if(size + global_data_size > global_data_max) {
         int max = global_data_max * 2 + size * 2;
         global_data = (u8*)realloc(global_data, max);
@@ -292,5 +297,31 @@ int Code::appendData(int size, void* data) {
     } else {
         memset(global_data + off, '_', size);
     }
+    MUTEX_UNLOCK(general_lock);
     return off;
+}
+int Code::appendString(const std::string& str) {
+    MUTEX_LOCK(general_lock);
+    auto pair = string_map.find(str);
+    if(pair != string_map.end()) {
+        auto ptr = pair->second;
+        MUTEX_UNLOCK(general_lock);
+        return ptr;
+    }
+    MUTEX_UNLOCK(general_lock);
+    int off = appendData(str.length() + 1, (void*)str.c_str());
+    MUTEX_LOCK(general_lock);
+    string_map[str] = off;
+    MUTEX_UNLOCK(general_lock);
+    return off;
+}
+u8* Code::copyGlobalData(int* size) {
+    Assert(size);
+    MUTEX_LOCK(general_lock);
+    *size = global_data_size;
+    auto ptr = (u8*)malloc(*size);
+    Assert(ptr);
+    memcpy(ptr, global_data, *size);
+    MUTEX_UNLOCK(general_lock);
+    return ptr;
 }

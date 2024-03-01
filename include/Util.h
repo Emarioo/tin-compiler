@@ -1,5 +1,7 @@
 #pragma once
 
+#include "tracy/Tracy.hpp"
+
 #define Assert(E) ((bool)(E) || (fprintf(stderr,"[ASSERT %s:%d]: %s\n",__FILE__, __LINE__, #E), (bool)(*(int*)nullptr = 9)))
 
 struct DeferFunc {
@@ -136,6 +138,14 @@ private:
     ThreadId m_ownerThread = 0;
     u64 m_internalHandle = 0;
 };
+
+#define MUTEX_DECL(var) Mutex var{}
+#define MUTEX_LOCK(var) var.lock()
+#define MUTEX_UNLOCK(var) var.unlock()
+
+#define SEM_DECL(var) Semaphore var{}
+#define SEM_WAIT(var) var.wait()
+#define SEM_SIGNAL(var) var.signal()
 
 // returns the result
 i32 atomic_add(volatile i32* ptr, i32 value);

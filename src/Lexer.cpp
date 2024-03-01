@@ -4,6 +4,8 @@ void TokenStream::Destroy(TokenStream* stream) {
     delete stream;
 }
 TokenStream* lex_file(const std::string& path) {
+    ZoneScopedC(tracy::Color::Gold);
+    
     std::ifstream file(path, std::ifstream::binary);
     if(!file.is_open())
         return nullptr;

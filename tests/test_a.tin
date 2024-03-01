@@ -1,0 +1,6 @@
+import "tests/test_b.tin"
+
+struct A {
+    n: int,
+    b: B*,
+}
