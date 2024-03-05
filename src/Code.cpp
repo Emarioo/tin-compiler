@@ -207,7 +207,7 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
             }
         }
         
-        if(inst.opcode == INST_LI || inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL || inst.opcode == INST_MOV_MR_DISP || inst.opcode == INST_MOV_RM_DISP) {
+        if(inst.opcode == INST_LI || inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL || inst.opcode == INST_MOV_MR_DISP || inst.opcode == INST_MOV_RM_DISP || inst.opcode == INST_DATAPTR) {
             i++;
             int imm = *(int*)&instructions[i];
             if(code && inst.opcode == INST_CALL) {

@@ -1,4 +1,6 @@
 
+// hello
+
 fun main() {
     data: char*;
     size: int;

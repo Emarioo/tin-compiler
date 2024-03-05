@@ -29,7 +29,8 @@ void CompileFile(const std::string& path) {
     compiler.tasks.push_back(task);
     }
 
-    int threadcount = 2;
+    // int threadcount = 2;
+    int threadcount = 1;
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -77,7 +78,8 @@ void CompileFile(const std::string& path) {
 
 void Compiler::processTasks() {
     ZoneScopedC(tracy::Color::Gray12);
-    atomic_add(&total_threads, 1);
+    int thread_id = atomic_add(&total_threads, 1);
+
     
     bool running = true;
     while(running) {
@@ -144,6 +146,7 @@ void Compiler::processTasks() {
                 MUTEX_UNLOCK(tasks_lock);
                 
                 if(imp) {
+                    LOGC("[%d]: ",thread_id);
                     log_color(GREEN); LOGC("Lexed: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     
                     imp->deps_now = 0;
@@ -180,9 +183,9 @@ void Compiler::processTasks() {
                     }
                     task.type = TASK_CHECK_STRUCTS;
                     task.imp = imp;
-                    
                     queue_task = true;
                 } else {
+                    LOGC("[%d]: ",thread_id);
                     log_color(RED); LOGC("Lexer failed: %s\n", task.name.c_str()); log_color(NO_COLOR);
                 }
             } break;
@@ -204,6 +207,7 @@ void Compiler::processTasks() {
                         }
                     }
                     task.no_change = !changed;
+                    LOGC("[%d]: ",thread_id);
                     log_color(RED); LOGC("Checking structs failure: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     if(ignore_errors) {
                         queue_task = true;
@@ -211,6 +215,7 @@ void Compiler::processTasks() {
                         // actual failure
                     }
                 } else {
+                    LOGC("[%d]: ",thread_id);
                     log_color(GREEN); LOGC("Checked structs: %s\n", task.name.c_str()); log_color(NO_COLOR);
                     task.type = TASK_CHECK_FUNCTIONS;
                     queue_task = true;
@@ -224,14 +229,17 @@ void Compiler::processTasks() {
                 if(reporter->errors == 0) {
                     task.type = TASK_GEN_FUNCTIONS;
                     queue_task = true;
+                    LOGC("[%d]: ",thread_id);
                     log_color(GREEN); LOGC("Checked functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
                 } else {
+                    LOGC("[%d]: ",thread_id);
                     log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); 
                 }
                 
                 CheckGlobals(ast, task.imp, code, reporter);
             } break;
             case TASK_GEN_FUNCTIONS: {
+                LOGC("[%d]: ",thread_id);
                 LOGC("Gen functions: %s\n", task.name.c_str());
                 
                 for(auto func : task.imp->body->functions)

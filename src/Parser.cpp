@@ -569,10 +569,11 @@ ASTBody* ParseContext::parseBody() {
                 }
                 advance();
             } break;
+            case TOKEN_GLOBAL:
             case TOKEN_CONST: {
                 advance();
                 loc = getloc();
-                stmt = parseVarDeclaration(false, true);
+                stmt = parseVarDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
                 if(!stmt)
                     return nullptr;
                     
@@ -582,10 +583,8 @@ ASTBody* ParseContext::parseBody() {
                     return nullptr;
                 }
                 advance();
-            } break;
-            case TOKEN_GLOBAL: {
-                REPORT(token, "Global declarations are not allowed within functions. Only allowed in the global scope.");
-                return nullptr;
+                // REPORT(token, "Global declarations are not allowed within functions. Only allowed in the global scope.");
+                // return nullptr;
             } break;
             default: {
                 auto token2 = gettok(1);

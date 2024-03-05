@@ -1,0 +1,297 @@
+struct Type0 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type1 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type2 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type3 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type4 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+fun proc0(arg0: int, arg1: int, arg2: int): int {
+    const var: int;
+    const var: int;
+    return 2;
+    return 2;
+    const var: int;
+    return 2;
+    return 0;
+}
+fun proc1(arg0: int): int {
+    return 2;
+    global var: int;
+    const var: int;
+    return 0;
+}
+fun proc2(arg0: int, arg1: int): int {
+    var: int;
+    if falsefunc(23,5) {
+        global var: int;
+        return 2;
+        var: int;
+    }
+    else {
+        var: int;
+    }
+    while falsefunc(23,5) {
+        while false1 {
+            const var: int;
+            return 2;
+        }
+        if falsefunc(23,5) {
+            return 2;
+            break;
+            const var: int;
+            global var: int;
+            var: int;
+            global var: int;
+        }
+        else {
+            var: int;
+            continue;
+            var: int;
+            const var: int;
+            const var: int;
+        }
+        return 2;
+        var: int;
+        break;
+        if false1 {
+            const var: int;
+            return 2;
+            while false1 {
+                continue;
+            }
+            continue;
+            var: int;
+        }
+        else {
+            var: int;
+            var: int;
+            const var: int;
+        }
+    }
+    return 2;
+    return 0;
+}
+fun proc3(arg0: int, arg1: int, arg2: int): int {
+    global var: int;
+    var: int;
+    const var: int;
+    return 0;
+}
+fun proc4(arg0: int, arg1: int): int {
+    var: int;
+    global var: int;
+    if falsefunc(23,5) {
+        return 2;
+        global var: int;
+        while false1 {
+            continue;
+            return 2;
+            global var: int;
+            global var: int;
+            if falsefunc(23,5) {
+                return 2;
+                continue;
+            }
+            else {
+                global var: int;
+                return 2;
+                continue;
+                var: int;
+                continue;
+            }
+            while falsefunc(23,5) {
+                break;
+                var: int;
+            }
+            var: int;
+            while falsefunc(23,5) {
+                if falsefunc(23,5) {
+                    var: int;
+                    break;
+                    return 2;
+                }
+                else {
+                    return 2;
+                    if falsefunc(23,5) {
+                        continue;
+                        global var: int;
+                        continue;
+                        continue;
+                        break;
+                    }
+                    else {
+                        const var: int;
+                        const var: int;
+                        var: int;
+                    }
+                    const var: int;
+                    if false1 {
+                        global var: int;
+                        var: int;
+                        global var: int;
+                        break;
+                        var: int;
+                        break;
+                    }
+                    else {
+                        break;
+                        break;
+                        continue;
+                    }
+                }
+                var: int;
+                const var: int;
+                while falsefunc(23,5) {
+                    break;
+                    global var: int;
+                    while falsefunc(23,5) {
+                        var: int;
+                        global var: int;
+                    }
+                    continue;
+                }
+                if falsefunc(23,5) {
+                    while false1 {
+                        continue;
+                        const var: int;
+                    }
+                    return 2;
+                    return 2;
+                    var: int;
+                }
+                else {
+                    return 2;
+                    break;
+                    break;
+                }
+                const var: int;
+            }
+            continue;
+        }
+        return 2;
+        if falsefunc(23,5) {
+            var: int;
+            const var: int;
+        }
+        else {
+            const var: int;
+            return 2;
+            var: int;
+            while falsefunc(23,5) {
+                break;
+                break;
+                var: int;
+            }
+        }
+        return 2;
+        return 2;
+    }
+    else {
+        return 2;
+        const var: int;
+        global var: int;
+        if falsefunc(23,5) {
+            var: int;
+            if false1 {
+                var: int;
+                return 2;
+                while falsefunc(23,5) {
+                    global var: int;
+                    global var: int;
+                    var: int;
+                    break;
+                    var: int;
+                    continue;
+                    var: int;
+                    continue;
+                }
+                return 2;
+                const var: int;
+                if falsefunc(23,5) {
+                    var: int;
+                    global var: int;
+                    return 2;
+                    global var: int;
+                    return 2;
+                    if falsefunc(23,5) {
+                        const var: int;
+                        return 2;
+                        const var: int;
+                        var: int;
+                    }
+                    else {
+                        return 2;
+                        var: int;
+                        global var: int;
+                    }
+                }
+                else {
+                    const var: int;
+                    global var: int;
+                    const var: int;
+                    const var: int;
+                }
+                return 2;
+            }
+            else {
+                const var: int;
+                while falsefunc(23,5) {
+                    while false1 {
+                        break;
+                        return 2;
+                        const var: int;
+                        const var: int;
+                        continue;
+                    }
+                    var: int;
+                    return 2;
+                }
+                while falsefunc(23,5) {
+                    break;
+                }
+                return 2;
+            }
+            const var: int;
+            while falsefunc(23,5) {
+                return 2;
+                var: int;
+            }
+            var: int;
+        }
+        else {
+            return 2;
+            var: int;
+        }
+        var: int;
+        const var: int;
+    }
+    return 0;
+}

@@ -20,11 +20,13 @@ void Interpreter::execute() {
     bool interactive = false;
     bool enable_logging = false;
     // interactive = true;
-    // enable_logging = true;
+    enable_logging = true;
     
     code->apply_relocations();
 
     global_data = code->copyGlobalData(&global_data_max);
+
+    // printf("global size %d\n",global_data_max);
     
     memset(registers,0,sizeof(registers));
     

@@ -4,3 +4,11 @@ struct A {
     n: int,
     b: B*,
 }
+
+fun main() {
+    a: A;
+    b: B;
+    
+    a.b = &b;
+    b.a = &a;
+}

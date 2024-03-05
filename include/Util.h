@@ -139,6 +139,12 @@ private:
     u64 m_internalHandle = 0;
 };
 
+void SleepMS(int ms);
+
+int RandomInt(int min, int max);
+float RandomFloat();
+
+
 #define MUTEX_DECL(var) Mutex var{}
 #define MUTEX_LOCK(var) var.lock()
 #define MUTEX_UNLOCK(var) var.unlock()

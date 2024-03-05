@@ -60,10 +60,10 @@ struct Identifier {
     Kind kind;
     TypeId type;
     
-    union {
+    // union {
         int offset; // frame offset or global offset
         ASTStatement* statement = nullptr;
-    };
+    // };
 };
 struct ScopeInfo {
     ScopeId scopeId;
@@ -190,7 +190,8 @@ private:
 struct ASTStatement : public ASTNode {
     enum Kind {
         INVALID = 0,
-        VAR_DECLARATION, // variable declaration
+        KIND_BEGIN,
+        VAR_DECLARATION = KIND_BEGIN, // variable declaration
         GLOBAL_DECLARATION,
         CONST_DECLARATION,
         EXPRESSION,
@@ -199,6 +200,7 @@ struct ASTStatement : public ASTNode {
         BREAK,
         CONTINUE,
         RETURN,
+        KIND_END,
     };
     ASTStatement(Kind kind) : _kind(kind) {}
     Kind kind() const { return _kind; }

@@ -3,10 +3,7 @@
 #include "Util.h"
 
 enum TokenType {
-
-    // 0-256
-    // 48 '0'
-    // 65 'A'
+    // 0-255 is reserved for ASCII
     
     TOKEN_EOF = 256,
     TOKEN_ID,
@@ -32,7 +29,7 @@ enum TokenType {
 };
 
 struct Token {
-    TokenType type; // don't rearrange, token initializer assume {type, data_index}
+    TokenType type; // don't rearrange, token initializer assumes {type, data_index}
     int data_index;
 
     int line;

@@ -18,3 +18,4 @@ Turn on logging: `comp main.txt -log`. Maybe you can choose which parts of the c
 - Strings
 - Native functions (print, read, write file)
 - Index operator `ptr[4]` instead of `*(ptr + 4)`
+- Allow globals in local scopes, this makes the global keyword meaningful since it wouldn't be necessary if declarations where only allowed in the global scope.

@@ -1,7 +1,8 @@
 #include "Util.h"
 
 #ifdef OS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
+// tracy doesn't want lean and mean
+// #define WIN32_LEAN_AND_MEAN
 #include "Windows.h"
 #include <intrin.h>
 
@@ -13,6 +14,24 @@
 
 #define TO_INTERNAL(X) ((u64)X+1)
 #define TO_HANDLE(X) (HANDLE)((u64)X-1)
+
+
+void SleepMS(int ms) {
+    Sleep(ms);
+}
+
+static std::mt19937 s_random_gen = std::mt19937(time(0));
+void SetRandomSeed(int seed) {
+    s_random_gen = std::mt19937(seed);
+}
+int RandomInt(int min, int max) {
+    std::uniform_int_distribution<int> dist(min, max);
+    return dist(s_random_gen);
+}
+float RandomFloat() {
+    std::uniform_real_distribution<float> dist(0.f, 1.0f);
+    return dist(s_random_gen);
+}
 
 void log_color(Color color){
     if(color == Color::NO_COLOR)

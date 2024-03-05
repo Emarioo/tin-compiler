@@ -1,9 +1,21 @@
-import "tests/test_a.tin"
+// import "tests/test_base.tin"
+
+fun p() {
+    // v++;
+    // global v: int = 2;
+    // printi(v);
+}
 
 fun main() {
-    a: A;
-    b: B;
-    
-    a.b = &b;
-    b.a = &a;
+    // p();
+    // p();
+    // p();
+
+    // arr: char = 'h';
+
+    // arr: char* = "Hello world";
+
+    // printc(arr[3]);
+
+    // test_array();
 }

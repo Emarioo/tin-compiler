@@ -12,7 +12,7 @@ struct ::= "struct" id "{" members "}"
 members ::= { id ":" type "," } *
 
 function ::= "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
-parameters ::= id ":" type { "," id ":" type "," } *
+parameters ::= id ":" type { "," id ":" type } *
 
 statements ::= { while | if | return | function_call | constant | declaration | assignment } *
 
