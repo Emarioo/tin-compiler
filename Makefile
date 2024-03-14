@@ -34,12 +34,13 @@ bin/%.o: src/%.cpp
 bin/tracy.o:
 	$(CC) -c $(GCC_COMPILE_OPTIONS) $(GCC_INCLUDE_DIRS) $(GCC_DEFINITIONS) libs\tracy-0.10\public\TracyClient.cpp -o bin/tracy.o
 
-build: $(OBJ) bin/tracy.o
+build: $(OBJ) 
 	@rem echo $(OUTPUT)
 	$(CC) -o $(OUTPUT) $(OBJ) $(GCC_LIBS)
 	@rem $(CC) -o $(OUTPUT) $(OBJ) bin/tracy.o $(GCC_LIBS)
+	@rem $(CC) -o $(OUTPUT) bin/main.o bin/tracy.o $(GCC_LIBS)
 	@rem cp bin/app.exe app.exe
-	echo f | xcopy bin\app.exe app.exe /y /q > nul
+	@rem echo f | xcopy bin\app.exe app.exe /y /q > nul
 
 clean:
 	del /Q bin

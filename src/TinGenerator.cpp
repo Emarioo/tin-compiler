@@ -23,12 +23,16 @@ void GenerateTin(Config* config) {
 }
 
 void TinContext::genProgram() {
+    pushScope();
+
     int struct_count = RandomInt(config->struct_frequency.min, config->struct_frequency.max);
     for(int i=0;i<struct_count;i++) {
-        std::string name = "Type"+std::to_string(i);
+        std::string name = "Type" + std::to_string(type_counter++);
         output += "struct ";
         output += name;
         output += " {\n";
+        
+        auto id = addType(name);
 
         indent_level++;
         int member_count = RandomInt(config->member_frequency.min, config->member_frequency.max);
@@ -47,10 +51,14 @@ void TinContext::genProgram() {
     }
     int fun_count = RandomInt(config->function_frequency.min, config->function_frequency.max);
     for(int i=0;i<fun_count;i++) {
-        std::string name = "proc"+std::to_string(i);
+        std::string name = "Func" + std::to_string(fun_counter++);
         output += "fun ";
         output += name;
         output += "(";
+
+        auto id = addFunc(name);
+
+        pushScope();
 
         int arg_count = RandomInt(config->argument_frequency.min, config->argument_frequency.max);
         for(int j=0;j<arg_count;j++) {
@@ -62,6 +70,9 @@ void TinContext::genProgram() {
             output += name;
             output += ": ";
             output += type;
+
+            auto id = addVar(name, Identifier::LOCAL);
+            id->typeString = type;
         }
 
         output += ")";
@@ -73,7 +84,9 @@ void TinContext::genProgram() {
         output += " {\n";
         indent_level++;
 
-        genStatements();
+        genStatements(false);
+
+        popScope();
 
         indent();
         output += "return 0;\n";
@@ -81,8 +94,12 @@ void TinContext::genProgram() {
         indent_level--;
         output += "}\n";
     }
+    popScope();
+
 }
-void TinContext::genStatements() {
+void TinContext::genStatements(bool inherit_scope) {
+    if(!inherit_scope)
+        pushScope();
     // printf("gen stmt %d\n",indent_level);
     int stmt_count = RandomInt(config->statement_frequency.min, config->statement_frequency.max);
     for(int i=0;i<stmt_count;i++) {
@@ -96,15 +113,31 @@ void TinContext::genStatements() {
         switch(kind) {
             case ASTStatement::VAR_DECLARATION: {
                 indent();
-                output += "var: int;\n";
+                std::string type = "int";
+                std::string name = "var"+std::to_string(var_counter++);
+                output += name +": "+type+";\n";
+                
+                auto id = addVar(name, Identifier::LOCAL);
+                id->typeString = type;
             } break;
             case ASTStatement::GLOBAL_DECLARATION: {
                 indent();
-                output += "global var: int;\n";
+                std::string type = "int";
+                std::string name = "g_var"+std::to_string(var_counter++);
+                output += "global "+ name + ": " + type + ";\n";
+                
+                auto id = addVar(name, Identifier::GLOBAL);
+                id->typeString = type;
             } break;
             case ASTStatement::CONST_DECLARATION: {
                 indent();
-                output += "const var: int;\n";
+                
+                std::string type = "int";
+                std::string name = "CONST"+std::to_string(var_counter++);
+                output += "const "+ name + ": "+type+";\n";
+                
+                auto id = addVar(name, Identifier::CONSTANT);
+                id->typeString = type;
             } break;
             case ASTStatement::EXPRESSION: {
                 
@@ -170,6 +203,8 @@ void TinContext::genStatements() {
             default: break;
         }
     }
+    if(!inherit_scope)
+        popScope();
 }
 void TinContext::genExpression() {
     // TODO: Generate random expressions, numbers, strings, function calls, math whatever you want. You can use these random functions:
@@ -177,9 +212,9 @@ void TinContext::genExpression() {
     //  RandomFloat(); // returns float between 0.0 - 1.0
     output += "false";
 
-    int rand = RandomInt(0,2);
-    if( rand == 0)
-        output += "1";
-    else
-        output += "func(23,5)"; // for function call or variable expressions we need to make sure they exist first, perhaps an unordered_map of identifiers?
+    // int rand = RandomInt(0,2);
+    // if( rand == 0)
+    //     output += "1";
+    // else
+    //     output += "func(23,5)"; // for function call or variable expressions we need to make sure they exist first, perhaps an unordered_map of identifiers?
 }

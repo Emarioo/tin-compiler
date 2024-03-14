@@ -3,6 +3,8 @@
 #include "Compiler.h"
 #include "TinGenerator.h"
 
+// #include "Windows.h"
+
 int main(int argc, const char** argv) {
     printf("Start\n");
 
@@ -32,6 +34,7 @@ int main(int argc, const char** argv) {
     printf("Finished\n");
     
     // SleepMS(500); // TCP connection to tracy will close to fast unless we sleep a bit.
+    // Sleep(500); // TCP connection to tracy will close to fast unless we sleep a bit.
     
     return 0;
 }
