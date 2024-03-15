@@ -5,6 +5,7 @@
 
 u32 ThreadProc(void* arg) {
     auto compiler = (Compiler*)arg;
+    // SleepMS(100);
     compiler->processTasks();
     return 0;
 }
@@ -29,8 +30,8 @@ void CompileFile(const std::string& path) {
     compiler.tasks.push_back(task);
     }
 
-    // int threadcount = 2;
-    int threadcount = 1;
+    int threadcount = 2;
+    // int threadcount = 1;
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -77,9 +78,13 @@ void CompileFile(const std::string& path) {
 }
 
 void Compiler::processTasks() {
+    // return;
+    
     ZoneScopedC(tracy::Color::Gray12);
+    
     int thread_id = atomic_add(&total_threads, 1);
 
+    // SleepMS(100);
     
     bool running = true;
     while(running) {

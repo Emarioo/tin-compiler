@@ -14,7 +14,11 @@ TokenStream* lex_file(const std::string& path) {
     int filesize = file.tellg();
     file.seekg(0, file.beg);
 
-    char* text = (char*)malloc(filesize);
+    char* text = (char*)Alloc(filesize);
+    Assert(text);
+    defer {
+        Free(text);
+    };
     file.read(text, filesize);
     file.close();
 
@@ -187,7 +191,6 @@ TokenStream* lex_file(const std::string& path) {
             else CASE(TOKEN_FALSE)
             else CASE(TOKEN_NULL)
             else {
-
                 stream->add_id(str, start_ln, start_col);
             }
             is_id = false;
@@ -200,10 +203,8 @@ TokenStream* lex_file(const std::string& path) {
 
         start_col = col;
         start_ln = ln;
-        stream->add((TokenType)chr, start_ln, start_col);
+        stream->add((TokenKind)chr, start_ln, start_col);
     }
-
-    free(text);
 
     return stream;
 }

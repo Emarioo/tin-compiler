@@ -2,7 +2,7 @@
 #include "AST.h"
 #include "Util.h"
 
-void GenerateTin(Config* config) {
+void GenerateTin(TinConfig* config) {
     TinContext context{};
     context.config = config;
     context.output = "";
@@ -140,7 +140,8 @@ void TinContext::genStatements(bool inherit_scope) {
                 id->typeString = type;
             } break;
             case ASTStatement::EXPRESSION: {
-                
+                indent();
+                genExpression();
             } break;
             case ASTStatement::IF: {
                 indent();
@@ -199,6 +200,7 @@ void TinContext::genStatements(bool inherit_scope) {
             case ASTStatement::RETURN: {
                 indent();
                 output += "return 2;\n";
+                i = stmt_count; // quit
             } break;
             default: break;
         }
@@ -207,6 +209,10 @@ void TinContext::genStatements(bool inherit_scope) {
         popScope();
 }
 void TinContext::genExpression() {
+    // decide what kind of type we are expecting
+    // bool, int, float, string, struct?
+    
+    
     // TODO: Generate random expressions, numbers, strings, function calls, math whatever you want. You can use these random functions:
     //  RandomInt(0, 10);
     //  RandomFloat(); // returns float between 0.0 - 1.0

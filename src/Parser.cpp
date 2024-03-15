@@ -263,12 +263,12 @@ ASTExpression* ParseContext::parseExpression() {
                     expressions.push_back(expr);
                 }
             } else if(token->type == TOKEN_TRUE) {
-                ASTExpression* expr = ast->createExpression(ASTExpression::TRUE);
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_TRUE);
                 expr->location = getloc();
                 advance();
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_FALSE) {
-                ASTExpression* expr = ast->createExpression(ASTExpression::FALSE);
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FALSE);
                 expr->location = getloc();
                 advance();
                 expressions.push_back(expr);

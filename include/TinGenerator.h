@@ -1,6 +1,6 @@
 #pragma once
 
-struct Config {
+struct TinConfig {
     struct Range {
         int min, max;
     };
@@ -15,7 +15,7 @@ struct Config {
 };
 
 struct TinContext {
-    Config* config = nullptr;
+    TinConfig* config = nullptr;
     std::string output = "";
     int indent_level = 0;
     bool in_loop = false;
@@ -110,4 +110,4 @@ struct TinContext {
     }
 };
 
-void GenerateTin(Config* config);
+void GenerateTin(TinConfig* config);

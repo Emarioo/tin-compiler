@@ -116,8 +116,8 @@ struct ASTExpression : public ASTNode {
         LITERAL_FLOAT,
         LITERAL_STR,
         LITERAL_NULL,
-        TRUE,
-        FALSE,
+        LITERAL_TRUE,
+        LITERAL_FALSE,
     };
     ASTExpression(Kind kind) : _kind(kind) {
         // switch(_kind){
