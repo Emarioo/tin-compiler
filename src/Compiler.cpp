@@ -65,6 +65,8 @@ void CompileFile(const std::string& path) {
         
     //     // code->print();
     // }
+
+    // printf("hello %d\n",compiler.reporter->errors);
     
     if(compiler.reporter->errors == 0) {
         Interpreter* interpreter = new Interpreter();

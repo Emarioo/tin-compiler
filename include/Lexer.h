@@ -8,7 +8,7 @@ enum TokenType {
     TOKEN_EOF = 256,
     TOKEN_ID,
     TOKEN_LITERAL_INTEGER,
-    TOKEN_LITERAL_FLOAT,
+    TOKEN_LITERAL_DECIMAL,
     TOKEN_LITERAL_STRING,
     TOKEN_STRUCT,
     TOKEN_FUNCTION,
@@ -60,7 +60,7 @@ struct TokenStream {
             *str = strings[tokens[index].data_index];
         else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
-        else if(dec && tokens[index].type == TOKEN_LITERAL_FLOAT) 
+        else if(dec && tokens[index].type == TOKEN_LITERAL_DECIMAL) 
             *dec = floats[tokens[index].data_index];
         return &tokens[index];
     }
@@ -102,7 +102,7 @@ struct TokenStream {
     void add_float(float number, int line, int column) {
         int index = floats.size();
         floats.push_back(number);
-        tokens.push_back({TOKEN_LITERAL_FLOAT, index});
+        tokens.push_back({TOKEN_LITERAL_DECIMAL, index});
 
         auto& tok = tokens.back();
         tok.line = line;

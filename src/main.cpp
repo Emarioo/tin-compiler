@@ -8,19 +8,19 @@
 int main(int argc, const char** argv) {
     printf("Start\n");
 
-    Config config{};
-    config.struct_frequency = { 5, 5 };
-    config.member_frequency = { 5, 5 };
-    config.function_frequency = { 5, 5 };
-    config.argument_frequency = { 1, 3 };
-    config.statement_frequency = { 2, 10 };
-    GenerateTin(&config);
+    // Config config{};
+    // config.struct_frequency = { 5, 5 };
+    // config.member_frequency = { 5, 5 };
+    // config.function_frequency = { 5, 5 };
+    // config.argument_frequency = { 1, 3 };
+    // config.statement_frequency = { 2, 10 };
+    // GenerateTin(&config);
 
     // if(argc == 2 && !strcmp(argv[1], "-enable-logging")) {
 
     // }
 
-    // CompileFile("test.tin");
+    CompileFile("test.tin");
     // CompileFile("tests/file.tin");
     // // CompileFile("tests/expr.tin");
     // // CompileFile("tests/structs.tin");

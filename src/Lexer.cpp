@@ -209,10 +209,10 @@ TokenStream* lex_file(const std::string& path) {
 }
 
 const char* token_names[] {
-    "eof",        // TOKEN_EOF,
+    "EOF",        // TOKEN_EOF,
     "id",        // TOKEN_ID,
     "lit_int",   // TOKEN_LITERAL_INTEGER,
-    "lit_float", // TOKEN_LITERAL_FLOAT,
+    "lit_dec", // TOKEN_LITERAL_DECIMAL,
     "lit_str",   // TOKEN_LITERAL_STRING,
     "struct",    // TOKEN_STRUCT,
     "fun",       // TOKEN_FUNCTION,
@@ -242,7 +242,7 @@ void TokenStream::print() {
             printf("%s (str) ",strings[tok.data_index].c_str());
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             printf("%d (int) ",integers[tok.data_index]);
-        } else if(tok.type == TOKEN_LITERAL_FLOAT) {
+        } else if(tok.type == TOKEN_LITERAL_DECIMAL) {
             printf("%f (float) ",floats[tok.data_index]);
         } else {
             printf("%s ",NAME_OF_TOKEN(tok.type));
@@ -265,7 +265,7 @@ std::string TokenStream::feed(int start, int end) {
             out += "\"";
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             out += std::to_string(integers[tok.data_index]);
-        } else if(tok.type == TOKEN_LITERAL_FLOAT) {
+        } else if(tok.type == TOKEN_LITERAL_DECIMAL) {
             out += std::to_string(floats[tok.data_index]);
         } else {
             out += NAME_OF_TOKEN(tok.type);

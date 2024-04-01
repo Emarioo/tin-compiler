@@ -283,7 +283,7 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 expr->literal_integer = number;
                 expressions.push_back(expr);
-            } else if(token->type == TOKEN_LITERAL_FLOAT) {
+            } else if(token->type == TOKEN_LITERAL_DECIMAL) {
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
                 expr->location = getloc();
                 advance();

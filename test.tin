@@ -7,6 +7,13 @@ fun p() {
 }
 
 fun main() {
+
+    // a: char* = "yoo"
+
+    a: float = 2.3.5
+
+    printf(a)
+
     // p();
     // p();
     // p();
