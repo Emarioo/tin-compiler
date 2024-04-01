@@ -26,8 +26,8 @@ typedef int8_t  i8;
 
 
 // Can't have this here
-// Windows defines TokenType which we call our enum
-// We could undefine TokenType but let's not go down that route
+// Windows defines TokenKind which we call our enum
+// We could undefine TokenKind but let's not go down that route
 // #ifdef OS_WINDOWS
 //     #define WIN32_LEAN_AND_MEAN
 //     #include "Windows.h"

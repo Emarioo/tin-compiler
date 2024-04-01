@@ -2,7 +2,7 @@
 
 #include "Util.h"
 
-enum TokenType {
+enum TokenKind {
     // 0-255 is reserved for ASCII
     
     TOKEN_EOF = 256,
@@ -29,7 +29,7 @@ enum TokenType {
 };
 
 struct Token {
-    TokenType type; // don't rearrange, token initializer assumes {type, data_index}
+    TokenKind type; // don't rearrange, token initializer assumes {type, data_index}
     int data_index;
 
     int line;
@@ -68,7 +68,7 @@ struct TokenStream {
         return getToken(loc.token_index, str, num, dec);
     }
 
-    void add(TokenType t, int line, int column) {
+    void add(TokenKind t, int line, int column) {
         tokens.push_back({t});
         auto& tok = tokens.back();
         tok.line = line;

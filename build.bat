@@ -1,40 +1,59 @@
 @echo off
 @setlocal enabledelayedexpansion
 
-make -j 8
-if !errorlevel!==0 (
-    app
-)
+@REM make -j 8
+@REM if !errorlevel!==0 (
+@REM     bin\app
+@REM )
 
 @REM ##################
 @REM      NO MAKE
 @REM #################
 
 @REM Toggle comments on the variables below to change compiler
-@REM SET USE_MSVC=1
+SET USE_MSVC=1
 @REM SET USE_GCC=1
 
-@REM SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp Interpreter.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
-@REM SET SRC=!SRC: = src/!
+SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp Interpreter.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
+SET SRC=!SRC: = src/!
 
-@REM SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp
+SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp
 
-@REM mkdir bin 2> nul
+SET UNITY_FILE=bin/all.cpp
+type nul > !UNITY_FILE!
 
-@REM if !USE_MSVC!==1 (
-@REM     SET DEFS=/DOS_WINDOWS
+for /r %%i in (*.cpp) do (
+    SET file=%%i
+    if "x!file:__=!"=="x!file!" if "x!file:bin=!"=="x!file!" if not "x!file:src=!"=="x!file!" (
+        echo #include ^"!file:\=/!^">> !UNITY_FILE!
+    )
+)
+@REM echo #include "D:/Backup/CodeProjects/exjobb-compiler/libs/tracy-0.10/public/TracyClient.cpp" >> !UNITY_FILE!
 
-@REM     cl /nologo /Zi !SRC! !DEFS! /EHsc /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link /DEBUG /OUT:app.exe
-@REM     SET error=!errorlevel!
+SET SRC=!UNITY_FILE!
 
-@REM ) else if !USE_GCC!==1 (
-@REM     SET DEFS=-DOS_WINDOWS
+mkdir bin 2> nul
 
-@REM     g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o app.exe
-@REM     SET error=!errorlevel!
-@REM )
+if !USE_MSVC!==1 (
+    SET DEFS=/DOS_WINDOWS
+    SET DEFS=!DEFS! /DTRACY_ENABLE
 
-@REM if !errorlevel!==0 (
-@REM     echo f | xcopy bin\app.exe app.exe /y /q > nul
-@REM     app
-@REM )
+    if not exist bin\TracyClient.obj (
+        cl /nologo /c /Zi /std:c++14 /TP /DTRACY_ENABLE libs/tracy-0.10/public/TracyClient.cpp /EHsc /I libs/tracy-0.10/public /Fobin\
+    )
+    
+    cl /nologo /Zi !SRC! !DEFS! /EHsc /std:c++14 /TP /I . /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link /DEBUG bin\TracyClient.obj /OUT:bin\app.exe
+    
+    SET error=!errorlevel!
+
+) else if !USE_GCC!==1 (
+    SET DEFS=-DOS_WINDOWS
+
+    g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o app.exe
+    SET error=!errorlevel!
+)
+
+if !errorlevel!==0 (
+    bin\app
+    @REM echo f | xcopy bin\app.exe app.exe /y /q > nul
+)
