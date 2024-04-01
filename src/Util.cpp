@@ -16,6 +16,35 @@
 #define TO_HANDLE(X) (HANDLE)((u64)X-1)
 
 
+struct Allocation {
+    int size;
+};
+std::unordered_map<void*, Allocation> allocations;
+
+void* Alloc(int size) {
+    auto ptr = malloc(size);
+    allocations[ptr] = { size };
+    return ptr;
+}
+void* Realloc(void* ptr, int old_size, int new_size) {
+    auto pair = allocations.find(ptr);
+    if(pair == allocations.end()) {
+        Assert(false);
+    }
+    allocations.erase(ptr);
+    auto np = realloc(ptr, new_size);
+    allocations[ptr] = { new_size };
+    return np;
+}
+void Free(void* ptr) {
+    auto pair = allocations.find(ptr);
+    if(pair == allocations.end()) {
+        Assert(false);
+    }
+    allocations.erase(ptr);
+    free(ptr);
+}
+
 void SleepMS(int ms) {
     Sleep(ms);
 }
@@ -175,14 +204,14 @@ struct DataForThread {
         // Heap allocated at the moment but you could create a bucket array
         // instead. Or store 40 of these as global data and then use heap
         // allocation if it fills up.
-        auto ptr = (DataForThread*)malloc(sizeof(DataForThread));
+        auto ptr = (DataForThread*)Alloc(sizeof(DataForThread));
         // auto ptr = (DataForThread*)Allocate(sizeof(DataForThread));
         new(ptr)DataForThread();
         return ptr;
     }
     static void Destroy(DataForThread* ptr){
         ptr->~DataForThread();
-        free(ptr);
+        Free(ptr);
         // Free(ptr,sizeof(DataForThread));
     }
 };

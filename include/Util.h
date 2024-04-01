@@ -155,3 +155,7 @@ float RandomFloat();
 
 // returns the result
 i32 atomic_add(volatile i32* ptr, i32 value);
+
+void* Alloc(int size);
+void* Realloc(void* ptr, int old_size, int new_size);
+void Free(void* ptr);

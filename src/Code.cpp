@@ -319,7 +319,7 @@ u8* Code::copyGlobalData(int* size) {
     Assert(size);
     MUTEX_LOCK(general_lock);
     *size = global_data_size;
-    auto ptr = (u8*)malloc(*size);
+    auto ptr = (u8*)Alloc(*size);
     Assert(ptr);
     memcpy(ptr, global_data, *size);
     MUTEX_UNLOCK(general_lock);

@@ -116,8 +116,8 @@ struct ASTExpression : public ASTNode {
         LITERAL_FLOAT,
         LITERAL_STR,
         LITERAL_NULL,
-        TRUE,
-        FALSE,
+        LITERAL_TRUE,
+        LITERAL_FALSE,
     };
     ASTExpression(Kind kind) : _kind(kind) {
         // switch(_kind){
@@ -293,12 +293,13 @@ struct AST {
 
     struct Import {
         std::string name;
+        TokenStream* stream=nullptr;
         ASTBody* body;
         std::vector<std::string> dependencies; // other imports
+        
         std::vector<Import*> fixups;
         int deps_count = 0; // locked behind tasks_lock
         int deps_now = 0; // locked behind tasks_lock
-        TokenStream* stream=nullptr;
     };
     std::vector<Import*> imports;
     std::unordered_map<std::string, Import*> import_map;

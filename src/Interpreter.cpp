@@ -11,7 +11,7 @@
 
 void Interpreter::init() {
     int max = 0x10000;
-    stack = (u8*)malloc(max);
+    stack = (u8*)Alloc(max);
     Assert(stack);
     stack_max = max;
 }
@@ -379,7 +379,7 @@ void Interpreter::run_native_call(NativeCalls callType) {
         // int arg2 = *(int*)(registers[REG_SP] + 12);
         void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
         
-        ret = malloc(arg0);
+        ret = Alloc(arg0);
         if(!ret) {
             allocations[ret] = {arg0};
         }
@@ -444,7 +444,7 @@ void Interpreter::run_native_call(NativeCalls callType) {
             *out_size = filesize;
         
         if(out_data) {
-            char* text = (char*)malloc(filesize);
+            char* text = (char*)Alloc(filesize);
             Assert(text);
             
             allocations[text] = {filesize};

@@ -421,7 +421,8 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
         }
         case ASTExpression::MEMBER: {
             TypeId type = generateReference(expr);
-
+            if(!type.valid())
+                return TYPE_VOID;
             piece->emit_pop(REG_B);
 
             generatePush(REG_B, 0, type);
@@ -577,12 +578,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
 
             return type;
         } break;
-        case ASTExpression::TRUE: {
+        case ASTExpression::LITERAL_TRUE: {
             piece->emit_li(REG_A, 1);
             piece->emit_push(REG_A);
             return TYPE_BOOL;
         } break;
-        case ASTExpression::FALSE: {
+        case ASTExpression::LITERAL_FALSE: {
             piece->emit_li(REG_A, 0);
             piece->emit_push(REG_A);
             return TYPE_BOOL;

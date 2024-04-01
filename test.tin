@@ -10,9 +10,9 @@ fun main() {
 
     // a: char* = "yoo"
 
-    a: float = 2.3.5
+    a: float = 2.3.2;
 
-    printf(a)
+    printf(a);
 
     // p();
     // p();
