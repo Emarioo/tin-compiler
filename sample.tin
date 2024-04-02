@@ -3,11 +3,30 @@ struct Type0 {
 }
 fun Func0(arg0: int, arg1: int): int {
     while false {
+fun Func0(arg0: int, arg1: int, arg2: int): int {
+    var0: int;
+    if false {
+        return 2;
+    }
+    var: int;
+    global var: int;
+    while false1 {
+        var: int;
+        global var: int;
+        var: int;
+    }
+    while falsefunc(23,5) {
+        return 2;
+    }
+    if false {
         while false {
             var0: int;
             return 2;
         }
         return 2;
+    }
+    else {
+        var3: int;
     }
     return 0;
 }
