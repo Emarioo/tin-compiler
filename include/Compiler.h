@@ -4,7 +4,7 @@
 #include "Parser.h"
 #include "Lexer.h"
 #include "Generator.h"
-#include "Interpreter.h"
+#include "VirtualMachine.h"
 
 enum TaskType {
     TASK_LEX_FILE,
@@ -40,4 +40,4 @@ struct Compiler {
     void processTasks();
 };
 
-void CompileFile(const std::string& path);
+Code* CompileFile(const std::string& path, bool run = false);

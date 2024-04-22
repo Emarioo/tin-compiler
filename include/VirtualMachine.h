@@ -3,7 +3,7 @@
 #include "Code.h"
 
 
-struct Interpreter {
+struct VirtualMachine {
     Code* code=nullptr;
     
     u8* global_data = nullptr;

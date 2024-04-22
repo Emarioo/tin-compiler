@@ -629,7 +629,8 @@ ASTBody* ParseContext::parseBody() {
 ##################*/
 ASTFunction* ParseContext::parseFunction() {
     Token* token = gettok();
-    Assert(token->type == TOKEN_FUNCTION);
+    if(token->type != TOKEN_FUNCTION)
+        return nullptr;
     advance();
 
     ASTFunction* out = ast->createFunction();
@@ -719,12 +720,13 @@ ASTFunction* ParseContext::parseFunction() {
 }
 ASTStructure* ParseContext::parseStruct() {
     Token* token = gettok();
-    Assert(token->type == TOKEN_STRUCT);
+    if(token->type != TOKEN_STRUCT)
+        return nullptr;
     advance();
 
-    ASTStructure* out = ast->createStructure();
+    ASTStructure* ast_struct = ast->createStructure();
 
-    out->location = getloc();
+    ast_struct->location = getloc();
     std::string name="";
     token = gettok(&name);
     if(token->type != TOKEN_ID) {
@@ -732,7 +734,7 @@ ASTStructure* ParseContext::parseStruct() {
         return nullptr;
     }
     advance();
-    out->name = name;
+    ast_struct->name = name;
 
     token = gettok();
     if(token->type != '{') {
@@ -745,7 +747,7 @@ ASTStructure* ParseContext::parseStruct() {
         token = gettok();
         if(token->type == TOKEN_EOF) {
             REPORT(token, "Sudden end of file.");
-            break;
+            return nullptr;
         }
         if(token->type == '}') {
             advance();
@@ -755,7 +757,7 @@ ASTStructure* ParseContext::parseStruct() {
         token = gettok(&member_name);
         auto name_loc = getloc();
         if(token->type != TOKEN_ID) {
-            REPORT(token, "Should be an identifier.");
+            REPORT(token, "Should be an identifier or curly brace.");
             return nullptr;
         }
         advance();
@@ -777,7 +779,7 @@ ASTStructure* ParseContext::parseStruct() {
         member.name = member_name;
         member.typeString = type;
         member.location = name_loc;
-        out->members.push_back(member);
+        ast_struct->members.push_back(member);
 
         token = gettok();
         if(token->type == ',') {
@@ -789,7 +791,7 @@ ASTStructure* ParseContext::parseStruct() {
             return nullptr;
         }
     }
-    return out;
+    return ast_struct;
 }
 
 AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, Reporter* reporter) {
@@ -807,7 +809,6 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
         imp = ast->createImport(stream->path);
     }
     imp->body = body; // TODO: Mutex, compiler checks body and modifies shared_scopes
-
     imp->stream = stream;
 
     bool running = true;

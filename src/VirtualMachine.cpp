@@ -1,4 +1,4 @@
-#include "Interpreter.h"
+#include "VirtualMachine.h"
 
 #ifdef OS_WINDOWS
     #define WIN32_LEAN_AND_MEAN
@@ -9,14 +9,14 @@
 #define LOG(X) if(enable_logging || interactive) { X; }
 // #define LOG(X)
 
-void Interpreter::init() {
+void VirtualMachine::init() {
     int max = 0x10000;
     stack = (u8*)Alloc(max);
     Assert(stack);
     stack_max = max;
 }
 
-void Interpreter::execute() {
+void VirtualMachine::execute() {
     bool interactive = false;
     bool enable_logging = false;
     // interactive = true;
@@ -44,22 +44,22 @@ void Interpreter::execute() {
     }
     if(!found_main) {
         log_color(RED);
-        printf("Interpreter: main was not found.\n");
+        printf("VirtualMachine: main was not found.\n");
         log_color(NO_COLOR);
         return;
     }
     if(piece->instructions.size() == 0) {
         log_color(YELLOW);
-        printf("Interpreter: '%s' has no instructions.\n", piece->name.c_str());
+        printf("VirtualMachine: '%s' has no instructions.\n", piece->name.c_str());
         log_color(NO_COLOR);
         return;
     }
     
-    // printf("Interpreter: Stack overflow (sp: %ld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);
+    // printf("VirtualMachine: Stack overflow (sp: %ld, stack range: %d - %d)\n", (i64)registers[REG_SP], (int)stack_max, 0);
     #define CHECK_STACK if(registers[REG_SP] > (i64)stack + stack_max || registers[REG_SP] < (i64)stack) {\
         printf("\n");\
         log_color(Color::RED);\
-        printf("Interpreter: Stack overflow (d_sp: %lld, max: %d)\n", (i64)registers[REG_SP] - (i64)stack, (int)stack_max);\
+        printf("VirtualMachine: Stack overflow (d_sp: %lld, max: %d)\n", (i64)registers[REG_SP] - (i64)stack, (int)stack_max);\
         log_color(Color::NO_COLOR);\
         return;\
     }
@@ -77,7 +77,7 @@ void Interpreter::execute() {
     };
     
     log_color(GOLD);
-    printf("Interpreter:\n");
+    printf("VirtualMachine:\n");
     log_color(NO_COLOR);
     
     int debug_last_piece = -1;
@@ -339,7 +339,7 @@ void Interpreter::execute() {
     }
     print_registers();
 }
-void Interpreter::run_native_call(NativeCalls callType) {
+void VirtualMachine::run_native_call(NativeCalls callType) {
     // auto inst_pop = [&](Register reg) {
     //     Assert(reg >= REG_T0 && reg <= REG_T1);
     //     registers[reg] = *(i64*)registers[REG_SP];
@@ -477,7 +477,7 @@ void Interpreter::run_native_call(NativeCalls callType) {
     default: Assert(false);   
     }
 }
-void Interpreter::print_registers(bool subtle) {
+void VirtualMachine::print_registers(bool subtle) {
     log_color(Color::GOLD);
     if(!subtle)
         printf("Registers:\n");
@@ -493,7 +493,7 @@ void Interpreter::print_registers(bool subtle) {
         log_color(Color::NO_COLOR);
     }   
 }
-void Interpreter::print_frame(int high, int low) {
+void VirtualMachine::print_frame(int high, int low) {
     for(int i=0;i<high;i++) {
         int off = 16 + (high-1 - i) * 8;
         if(registers[REG_BP] + off >= (i64)stack + stack_max)
@@ -523,7 +523,7 @@ void Interpreter::print_frame(int high, int low) {
         log_color(Color::NO_COLOR);
     }
 }
-void Interpreter::print_stack() {
+void VirtualMachine::print_stack() {
     i64 off = registers[REG_BP];
     while (true) {
         off -= 8;

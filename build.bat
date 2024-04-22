@@ -14,7 +14,7 @@
 SET USE_MSVC=1
 @REM SET USE_GCC=1
 
-SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp Interpreter.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
+SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
 SET SRC=!SRC: = src/!
 
 SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp
@@ -42,18 +42,18 @@ if !USE_MSVC!==1 (
         cl /nologo /c /Zi /std:c++14 /TP /DTRACY_ENABLE libs/tracy-0.10/public/TracyClient.cpp /EHsc /I libs/tracy-0.10/public /Fobin\
     )
     
-    cl /nologo /Zi !SRC! !DEFS! /EHsc /std:c++14 /TP /I . /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link /DEBUG bin\TracyClient.obj /OUT:bin\app.exe
+    cl /nologo /Zi !SRC! !DEFS! /EHsc /std:c++14 /TP /I . /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link /DEBUG bin\TracyClient.obj /OUT:bin\tin.exe
     
     SET error=!errorlevel!
 
 ) else if !USE_GCC!==1 (
     SET DEFS=-DOS_WINDOWS
 
-    g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o app.exe
+    g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o bin/tin.exe
     SET error=!errorlevel!
 )
 
 if !errorlevel!==0 (
-    bin\app
+    bin\tin -dev
     @REM echo f | xcopy bin\app.exe app.exe /y /q > nul
 )

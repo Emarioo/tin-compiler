@@ -10,7 +10,7 @@ u32 ThreadProc(void* arg) {
     return 0;
 }
 
-void CompileFile(const std::string& path) {
+Code* CompileFile(const std::string& path, bool run) {
     Compiler compiler{};
     compiler.init();
 
@@ -69,14 +69,33 @@ void CompileFile(const std::string& path) {
 
     // printf("hello %d\n",compiler.reporter->errors);
     
+    // if(compiler.reporter->errors == 0) {
+    //     VirtualMachine* interpreter = new VirtualMachine();
+    //     interpreter->code = compiler.code;
+    //     interpreter->init();
+    //     interpreter->execute();
+        
+    //     delete interpreter;
+    // }
+    
     if(compiler.reporter->errors == 0) {
-        Interpreter* interpreter = new Interpreter();
+        return nullptr;
+    }
+    
+    if(run) {
+        VirtualMachine* interpreter = new VirtualMachine();
         interpreter->code = compiler.code;
         interpreter->init();
         interpreter->execute();
         
         delete interpreter;
+        return nullptr;
     }
+    
+    Code* tmp_code = compiler.code;
+    compiler.code = nullptr;
+    return tmp_code;
+    
 }
 
 void Compiler::processTasks() {

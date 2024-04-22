@@ -1,32 +1,256 @@
 struct Type0 {
     mem0: int,
 }
-fun Func0(arg0: int, arg1: int): int {
-    while false {
 fun Func0(arg0: int, arg1: int, arg2: int): int {
-    var0: int;
     if false {
-        return 2;
-    }
-    var: int;
-    global var: int;
-    while false1 {
-        var: int;
-        global var: int;
-        var: int;
-    }
-    while falsefunc(23,5) {
-        return 2;
-    }
-    if false {
-        while false {
-            var0: int;
+        false        if false {
+            global g_var0: int;
+            var1: int;
+            var2: int;
+        }
+        else {
+            const CONST3: int;
+            if false {
+                const CONST4: int;
+                global g_var5: int;
+                const CONST6: int;
+                while false {
+                    if false {
+                        global g_var7: int;
+                        var8: int;
+                        continue;
+                        const CONST9: int;
+                    }
+                    else {
+                        false                    }
+                    false                }
+                const CONST10: int;
+            }
+            else {
+                return 2;
+            }
+        }
+        var11: int;
+        global g_var12: int;
+        const CONST13: int;
+        var14: int;
+        const CONST15: int;
+        if false {
+            false            if false {
+                var16: int;
+                const CONST17: int;
+                const CONST18: int;
+                const CONST19: int;
+                return 2;
+            }
+            else {
+                const CONST20: int;
+                global g_var21: int;
+                var22: int;
+            }
+            while false {
+                global g_var23: int;
+                global g_var24: int;
+                break;
+                continue;
+                false                const CONST25: int;
+                if false {
+                    false                    const CONST26: int;
+                    var27: int;
+                    const CONST28: int;
+                    while false {
+                        var29: int;
+                        const CONST30: int;
+                        return 2;
+                    }
+                    break;
+                    global g_var31: int;
+                    while false {
+                        global g_var32: int;
+                        continue;
+                        continue;
+                        return 2;
+                    }
+                    var33: int;
+                }
+                else {
+                    false                    continue;
+                    while false {
+                        false                        false                        false                        var34: int;
+                        return 2;
+                    }
+                    false                    false                    global g_var35: int;
+                }
+            }
+            var36: int;
+            if false {
+                if false {
+                    if false {
+                        return 2;
+                    }
+                    else {
+                        false                        const CONST37: int;
+                        false                        var38: int;
+                        const CONST39: int;
+                        false                    }
+                    return 2;
+                }
+                else {
+                    global g_var40: int;
+                    if false {
+                        false                        const CONST41: int;
+                        return 2;
+                    }
+                    else {
+                        var42: int;
+                        false                        return 2;
+                    }
+                    global g_var43: int;
+                    var44: int;
+                }
+                while false {
+                    while false {
+                        false                    }
+                    break;
+                    const CONST45: int;
+                    return 2;
+                }
+            }
+            else {
+                const CONST46: int;
+                if false {
+                    false                    var47: int;
+                    if false {
+                        false                        global g_var48: int;
+                        return 2;
+                    }
+                    else {
+                        false                        global g_var49: int;
+                        false                    }
+                    while false {
+                        continue;
+                        const CONST50: int;
+                        var51: int;
+                        break;
+                        continue;
+                        var52: int;
+                    }
+                    while false {
+                        var53: int;
+                        break;
+                        var54: int;
+                        return 2;
+                    }
+                    global g_var55: int;
+                    var56: int;
+                    if false {
+                        var57: int;
+                        const CONST58: int;
+                        return 2;
+                    }
+                    else {
+                        global g_var59: int;
+                        return 2;
+                    }
+                }
+                else {
+                    if false {
+                        global g_var60: int;
+                        var61: int;
+                        false                    }
+                    else {
+                        return 2;
+                    }
+                    const CONST62: int;
+                    return 2;
+                }
+                false                var63: int;
+                while false {
+                    if false {
+                        var64: int;
+                        const CONST65: int;
+                        continue;
+                        const CONST66: int;
+                    }
+                    else {
+                        var67: int;
+                        continue;
+                        continue;
+                        const CONST68: int;
+                        break;
+                        break;
+                        break;
+                        continue;
+                    }
+                    var69: int;
+                }
+                if false {
+                    false                    false                }
+                else {
+                    while false {
+                        var70: int;
+                        return 2;
+                    }
+                    return 2;
+                }
+                return 2;
+            }
             return 2;
+        }
+        else {
+            false            var71: int;
+            var72: int;
         }
         return 2;
     }
     else {
-        var3: int;
+        while false {
+            while false {
+                break;
+                var73: int;
+                const CONST74: int;
+                break;
+                const CONST75: int;
+                var76: int;
+                while false {
+                    global g_var77: int;
+                    global g_var78: int;
+                    const CONST79: int;
+                    global g_var80: int;
+                }
+                continue;
+            }
+            return 2;
+        }
+        if false {
+            global g_var81: int;
+            if false {
+                const CONST82: int;
+                global g_var83: int;
+            }
+            else {
+                false                const CONST84: int;
+                global g_var85: int;
+            }
+            return 2;
+        }
+        else {
+            var86: int;
+        }
+        global g_var87: int;
+        const CONST88: int;
+        while false {
+            return 2;
+        }
+    }
+    var89: int;
+    const CONST90: int;
+    global g_var91: int;
+    if false {
+        return 2;
+    }
+    else {
+        return 2;
     }
     return 0;
 }
