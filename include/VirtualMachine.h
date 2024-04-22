@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Code.h"
+#include "Bytecode.h"
 
 
 struct VirtualMachine {
-    Code* code=nullptr;
+    Bytecode* bytecode=nullptr;
     
     u8* global_data = nullptr;
     int global_data_max = 0;
@@ -15,7 +15,7 @@ struct VirtualMachine {
     i64 registers[REG_COUNT];
     
     int piece_index = -1;
-    CodePiece* piece = nullptr;
+    BytecodePiece* piece = nullptr;
     
     void init();
     void execute();

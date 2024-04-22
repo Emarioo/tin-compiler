@@ -1,21 +1,33 @@
 #pragma once
 
 #include "AST.h"
-#include "Code.h"
+#include "Bytecode.h"
 #include "Reporter.h"
 
 struct GeneratorContext {
     Reporter* reporter;
     AST* ast;
     ASTFunction* function;
-    Code* code;
-    CodePiece* piece;
+    Bytecode* bytecode;
+    BytecodePiece* piece;
     bool ignore_errors = false;
 
     TokenStream* current_stream=nullptr;
     
     int current_frameOffset = 0; // used for allocating local variables
     ScopeId current_scopeId;
+
+    // We need to store continue and break offsets to the bytecode.
+    // That is what loop scopes are. Each while statement creates a loop
+    // scope.
+    struct LoopScope {
+        int continue_pc = 0;
+        int frame_offset = 0;
+        std::vector<int> breaks_to_resolve;
+    };
+    std::vector<LoopScope*> loopScopes;
+    LoopScope* pushLoop(int continue_pc, int cur_frame_offset);
+    void popLoop();
 
     // struct Variable {
     //     int frame_offset;
@@ -39,5 +51,5 @@ struct GeneratorContext {
 
 bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed, bool ignore_errors);
 bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* reporter);
-bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter);
-void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter);
+bool CheckGlobals(AST* ast, AST::Import* imp, Bytecode* bytecode, Reporter* reporter);
+void GenerateFunction(AST* ast, ASTFunction* function, Bytecode* bytecode, Reporter* reporter);

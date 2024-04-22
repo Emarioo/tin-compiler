@@ -14,7 +14,7 @@
 SET USE_MSVC=1
 @REM SET USE_GCC=1
 
-SET SRC= AST.cpp Code.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
+SET SRC= AST.cpp Bytecode.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
 SET SRC=!SRC: = src/!
 
 SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp

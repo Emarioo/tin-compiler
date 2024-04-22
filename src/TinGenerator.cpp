@@ -7,6 +7,12 @@ void GenerateTin(TinConfig* config) {
     context.config = config;
     context.output = "";
 
+    if(config->seed == 0) {
+        config->seed = (int)time(NULL);
+        printf("Seed: %d\n", config->seed);
+    }
+    SetRandomSeed(config->seed);
+
     // printf("start gen\n");
 
     context.genProgram();
@@ -103,7 +109,7 @@ void TinContext::genStatements(bool inherit_scope) {
     // printf("gen stmt %d\n",indent_level);
     int stmt_count = RandomInt(config->statement_frequency.min, config->statement_frequency.max);
     for(int i=0;i<stmt_count;i++) {
-        ASTStatement::Kind kind = (ASTStatement::Kind)RandomInt(ASTStatement::KIND_BEGIN, ASTStatement::KIND_END);
+        ASTStatement::Kind kind = (ASTStatement::Kind)RandomInt(ASTStatement::KIND_BEGIN, ASTStatement::KIND_END-1);
 
         if(indent_level > 5) {
             if(kind == ASTStatement::IF || kind == ASTStatement::WHILE)
@@ -141,12 +147,13 @@ void TinContext::genStatements(bool inherit_scope) {
             } break;
             case ASTStatement::EXPRESSION: {
                 indent();
-                genExpression();
+                genExpression(0);
+                output += ";\n";
             } break;
             case ASTStatement::IF: {
                 indent();
                 output += "if ";
-                genExpression();
+                genExpression(0);
 
                 output += " {\n";
                 indent_level++;
@@ -171,7 +178,7 @@ void TinContext::genStatements(bool inherit_scope) {
             case ASTStatement::WHILE: {
                 indent();
                 output += "while ";
-                genExpression();
+                genExpression(0);
 
                 output += " {\n";
                 indent_level++;
@@ -199,28 +206,227 @@ void TinContext::genStatements(bool inherit_scope) {
             } break;
             case ASTStatement::RETURN: {
                 indent();
-                output += "return 2;\n";
+                output += "return ";
+                genExpression(0);
+                output += ";\n";
+
                 i = stmt_count; // quit
             } break;
-            default: break;
+            default: Assert(false);
         }
     }
     if(!inherit_scope)
         popScope();
 }
-void TinContext::genExpression() {
-    // decide what kind of type we are expecting
-    // bool, int, float, string, struct?
-    
-    
-    // TODO: Generate random expressions, numbers, strings, function calls, math whatever you want. You can use these random functions:
-    //  RandomInt(0, 10);
-    //  RandomFloat(); // returns float between 0.0 - 1.0
-    output += "false";
+#define ARR_LEN(A) (sizeof(A)/sizeof(*A))
+static const ASTExpression::Kind binary_kinds[]{
+    ASTExpression::FUNCTION_CALL,
+    ASTExpression::ADD,
+    ASTExpression::SUB,
+    ASTExpression::DIV,
+    ASTExpression::MUL,
+    ASTExpression::AND,
+    ASTExpression::OR,
+    ASTExpression::EQUAL,
+    ASTExpression::NOT_EQUAL,
+    ASTExpression::LESS,
+    ASTExpression::GREATER,
+    ASTExpression::LESS_EQUAL,
+    ASTExpression::GREATER_EQUAL,
+    ASTExpression::INDEX,
+};
+static const ASTExpression::Kind unary_kinds[]{
+    ASTExpression::NOT,
+    ASTExpression::REFER, // take reference
+    ASTExpression::DEREF, // dereference
+    ASTExpression::MEMBER,
+    ASTExpression::CAST,
+};
+static const ASTExpression::Kind value_kinds[]{
+    ASTExpression::PRE_INCREMENT,  // we generate thesee such that they refer to one identifier, in real code is just has to be a referable expression but that's annoying to generate
+    ASTExpression::POST_INCREMENT,
+    ASTExpression::PRE_DECREMENT,
+    ASTExpression::POST_DECREMENT,
 
-    // int rand = RandomInt(0,2);
-    // if( rand == 0)
-    //     output += "1";
-    // else
-    //     output += "func(23,5)"; // for function call or variable expressions we need to make sure they exist first, perhaps an unordered_map of identifiers?
+    ASTExpression::SIZEOF,
+    ASTExpression::LITERAL_INT,
+    ASTExpression::LITERAL_FLOAT,
+    ASTExpression::LITERAL_STR,
+    ASTExpression::LITERAL_NULL,
+    ASTExpression::LITERAL_TRUE,
+    ASTExpression::LITERAL_FALSE,
+};
+void TinContext::genExpression(int expr_depth) {
+    expr_depth++;
+    if(expr_depth == 0)
+        expr_count++;
+    
+    float exponential_chance = (1.f-expr_count/10.f) * (1.f-expr_depth/5.f) * RandomFloat();
+
+    ASTExpression::Kind kind = ASTExpression::INVALID;
+    int kind_index = 0;
+    if(exponential_chance > 0) {
+        // expression with multiple values
+        // we must be carefule to not cause infinite recursion
+        kind_index = RandomInt(0, ARR_LEN(binary_kinds) - 1 + ARR_LEN(unary_kinds) - 1);
+        if(kind_index<ARR_LEN(binary_kinds)) {
+            kind = binary_kinds[kind_index];
+        } else {
+            kind = unary_kinds[kind_index - ARR_LEN(binary_kinds)];
+        }
+    } else {
+        kind_index = RandomInt(0, ARR_LEN(value_kinds) - 1);
+        kind = value_kinds[kind_index];
+    }
+    
+    switch(kind) {
+        case ASTExpression::FUNCTION_CALL: {
+            auto id = requestFunction();
+            if(id) {
+                output += id->name;
+                output += "(";
+                int args = RandomInt(0,5);
+                for(int i=0;i<args;i++){
+                    if(i!=0) output+=", ";
+                    genExpression(expr_depth);
+                }
+                output += ")";
+            } else output += "null";
+        } break;
+        case ASTExpression::ADD:
+        case ASTExpression::SUB:
+        case ASTExpression::DIV:
+        case ASTExpression::MUL:
+        case ASTExpression::AND:
+        case ASTExpression::OR:
+        case ASTExpression::EQUAL:
+        case ASTExpression::NOT_EQUAL:
+        case ASTExpression::LESS:
+        case ASTExpression::GREATER:
+        case ASTExpression::LESS_EQUAL:
+        case ASTExpression::GREATER_EQUAL: {
+            output += "(";
+            genExpression(expr_depth);
+            switch(kind) {
+                case ASTExpression::ADD:            output += " + "; break;
+                case ASTExpression::SUB:            output += " - "; break;
+                case ASTExpression::DIV:            output += " / "; break;
+                case ASTExpression::MUL:            output += " * "; break;
+                case ASTExpression::AND:            output += " && "; break;
+                case ASTExpression::OR:             output += " || "; break;
+                case ASTExpression::EQUAL:          output += " == "; break;
+                case ASTExpression::NOT_EQUAL:      output += " != "; break;
+                case ASTExpression::LESS:           output += " < "; break;
+                case ASTExpression::GREATER:        output += " > "; break;
+                case ASTExpression::LESS_EQUAL:     output += " <= "; break;
+                case ASTExpression::GREATER_EQUAL:  output += " >= "; break;
+                default: Assert(false);
+            }
+            genExpression(expr_depth);
+            output += ")";
+        } break;
+        case ASTExpression::INDEX: {
+            auto id = requestVariable();
+            if(id) {
+                output += id->name;
+                output += "[";
+                output += std::to_string(RandomInt(0,50));
+                output += "]";
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::NOT: {
+            auto id = requestVariable();
+            if(id) {
+                output += "!";
+                genExpression(expr_depth);
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::REFER: {
+            auto id = requestVariable();
+            if(id) {
+                output += "&"+id->name;
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::DEREF: {
+            output += "*";
+            genExpression(expr_depth);
+        } break;
+        case ASTExpression::MEMBER: {
+            auto id = requestVariable();
+            if(id) {
+                output += id->name;
+                output += ".member0";
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::CAST: {
+            output += "cast int ";
+            genExpression(expr_depth);
+        } break;
+        case ASTExpression::PRE_INCREMENT: {
+            auto id = requestVariable();
+            if(id) {
+                output += "++";
+                output += id->name;
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::POST_INCREMENT: {
+            auto id = requestVariable();
+            if(id) {
+                output += id->name;
+                output += "++";
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::PRE_DECREMENT: {
+            auto id = requestVariable();
+            if(id) {
+                output += "--";
+                output += id->name;
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::POST_DECREMENT: {
+            auto id = requestVariable();
+            if(id) {
+                output += id->name;
+                output += "--";
+            } else {
+                output += "null";
+            }
+        } break;
+        case ASTExpression::SIZEOF: {
+            output += "sizeof T";
+        } break;
+        case ASTExpression::LITERAL_INT: {
+            output += std::to_string(RandomInt(-1000,1000));
+        } break;
+        case ASTExpression::LITERAL_FLOAT: {
+            output += std::to_string(RandomFloat() * 200 - 100);
+        } break;
+        case ASTExpression::LITERAL_STR: {
+            output += "\"My string\"";
+        } break;
+        case ASTExpression::LITERAL_NULL: {
+            output += "null";
+        } break;
+        case ASTExpression::LITERAL_TRUE: {
+            output += "true";
+        } break;
+        case ASTExpression::LITERAL_FALSE: {
+            output += "false";
+        } break;
+        default: Assert(false);
+    }
 }

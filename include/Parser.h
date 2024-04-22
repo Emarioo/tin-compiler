@@ -34,7 +34,7 @@ struct ParseContext {
     
     ASTStatement* parseIf();
     ASTStatement* parseWhile();
-    ASTStatement* parseVarDeclaration(bool is_global, bool is_constant);
+    ASTStatement* parseDeclaration(bool is_global, bool is_constant);
 
     ASTExpression* parseExpression();
     ASTBody* parseBody();

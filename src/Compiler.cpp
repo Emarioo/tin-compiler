@@ -10,14 +10,15 @@ u32 ThreadProc(void* arg) {
     return 0;
 }
 
-Code* CompileFile(const std::string& path, bool run) {
+Bytecode* CompileFile(const std::string& path, bool run) {
     Compiler compiler{};
     compiler.init();
 
     auto pre_imp = compiler.ast->createImport("preload");
     pre_imp->body = compiler.ast->global_body;
     {
-    Compiler::Task task{}; // process native function
+    // Process native functions added in constructor of AST
+    Compiler::Task task{};
     task.name = "preload";
     task.imp = pre_imp;
     task.type = TASK_CHECK_STRUCTS;
@@ -31,7 +32,14 @@ Code* CompileFile(const std::string& path, bool run) {
     }
 
     int threadcount = 2;
-    // int threadcount = 1;
+    threadcount = 1;
+
+#ifndef ENABLE_MULTITHREADING
+    if(threadcount > 1) {
+        threadcount = 1;
+        printf("Thread count of %d was specified while compiler wasn't built with ENABLE_MULTITHREADING. (compiler will use 1 thread unless you recompile the compiler)\n");
+    }
+#endif
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -84,7 +92,7 @@ Code* CompileFile(const std::string& path, bool run) {
     
     if(run) {
         VirtualMachine* interpreter = new VirtualMachine();
-        interpreter->code = compiler.code;
+        interpreter->bytecode = compiler.bytecode;
         interpreter->init();
         interpreter->execute();
         
@@ -92,15 +100,14 @@ Code* CompileFile(const std::string& path, bool run) {
         return nullptr;
     }
     
-    Code* tmp_code = compiler.code;
-    compiler.code = nullptr;
+    Bytecode* tmp_code = compiler.bytecode;
+    compiler.bytecode = nullptr;
     return tmp_code;
     
 }
 
 void Compiler::processTasks() {
     // return;
-    
     ZoneScopedC(tracy::Color::Gray12);
     
     int thread_id = atomic_add(&total_threads, 1);
@@ -161,6 +168,8 @@ void Compiler::processTasks() {
                 MUTEX_UNLOCK(tasks_lock);
                 auto imp = ParseTokenStream(stream, task.imp, ast, reporter);
                 task.imp = imp;
+
+                // ast->print();
 
                 MUTEX_LOCK(tasks_lock);
                 for(auto& fix_imp : imp->fixups) {
@@ -262,14 +271,19 @@ void Compiler::processTasks() {
                     log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); 
                 }
                 
-                CheckGlobals(ast, task.imp, code, reporter);
+                CheckGlobals(ast, task.imp, bytecode, reporter);
             } break;
             case TASK_GEN_FUNCTIONS: {
                 LOGC("[%d]: ",thread_id);
                 LOGC("Gen functions: %s\n", task.name.c_str());
                 
                 for(auto func : task.imp->body->functions)
-                    GenerateFunction(ast, func, code, reporter);
+                    GenerateFunction(ast, func, bytecode, reporter);
+                
+                if(bytecode->pieces_unsafe().size()) {
+                    auto p = bytecode->pieces_unsafe().back();
+                    // p->print(bytecode);
+                }
                 
                 log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
             } break;
@@ -289,6 +303,6 @@ void Compiler::processTasks() {
 void Compiler::init() {
     ast = new AST();
     reporter = new Reporter();
-    code = new Code();
+    bytecode = new Bytecode();
     // TODO: Memory leak
 }

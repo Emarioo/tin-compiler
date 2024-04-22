@@ -15,7 +15,7 @@ enum TaskType {
 struct Compiler {
     AST* ast = nullptr;
     Reporter* reporter = nullptr;
-    Code* code = nullptr;
+    Bytecode* bytecode = nullptr;
     
     struct Task {
         TaskType type;
@@ -40,4 +40,4 @@ struct Compiler {
     void processTasks();
 };
 
-Code* CompileFile(const std::string& path, bool run = false);
+Bytecode* CompileFile(const std::string& path, bool run = false);

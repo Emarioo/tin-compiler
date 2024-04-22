@@ -2,255 +2,213 @@ struct Type0 {
     mem0: int,
 }
 fun Func0(arg0: int, arg1: int, arg2: int): int {
-    if false {
-        false        if false {
-            global g_var0: int;
-            var1: int;
-            var2: int;
-        }
-        else {
-            const CONST3: int;
-            if false {
-                const CONST4: int;
-                global g_var5: int;
-                const CONST6: int;
-                while false {
-                    if false {
-                        global g_var7: int;
+    if (&arg2 || null) {
+        const CONST0: int;
+        return (null - (null > !null));
+    }
+    else {
+        const CONST1: int;
+        const CONST2: int;
+        if ((CONST0[38] + ((null <= null) <= (true + null))) != *((true > null) >= null)) {
+            if CONST1.member0 {
+                if (((CONST0.member0 < (false / false)) / ((false < null) != (true + null))) && (((null == -34.889717) == (false == 20.254776)) * ((++CONST1 <= false) * null))) {
+                    var3: int;
+                    const CONST4: int;
+                    while &CONST0 {
+                        break;
+                        break;
+                        global g_var5: int;
+                        global g_var6: int;
+                        null;
+                        continue;
+                        var7: int;
+                    }
+                    if ((null >= (null > (343 != null))) <= (((null * sizeof T) != (null + 799)) && arg0[11])) {
+                        ((((false - sizeof T) != (--CONST0 || arg1++)) >= *(sizeof T - "My string")) / (null >= ((sizeof T <= sizeof T) == *sizeof T)));
                         var8: int;
-                        continue;
-                        const CONST9: int;
+                        arg0[30];
                     }
                     else {
-                        false                    }
-                    false                }
-                const CONST10: int;
-            }
-            else {
-                return 2;
-            }
-        }
-        var11: int;
-        global g_var12: int;
-        const CONST13: int;
-        var14: int;
-        const CONST15: int;
-        if false {
-            false            if false {
-                var16: int;
-                const CONST17: int;
-                const CONST18: int;
-                const CONST19: int;
-                return 2;
-            }
-            else {
-                const CONST20: int;
-                global g_var21: int;
-                var22: int;
-            }
-            while false {
-                global g_var23: int;
-                global g_var24: int;
-                break;
-                continue;
-                false                const CONST25: int;
-                if false {
-                    false                    const CONST26: int;
-                    var27: int;
-                    const CONST28: int;
-                    while false {
-                        var29: int;
-                        const CONST30: int;
-                        return 2;
+                        global g_var9: int;
                     }
-                    break;
-                    global g_var31: int;
-                    while false {
-                        global g_var32: int;
-                        continue;
-                        continue;
-                        return 2;
+                    while arg0[49] {
+                        ((((false < ++arg1) - (-86.996262 != --var8)) || ((--g_var9 != ++g_var6) < (null == null))) || *(null * (true <= null)));
+                        const CONST10: int;
+                        return (&CONST4 - (((var8-- + false) >= (86 + var8--)) / ((null * CONST2++) <= (null || true))));
                     }
-                    var33: int;
+                    (null > ((Func0(sizeof T, sizeof T) < (591 != --var3)) <= var7[13]));
                 }
                 else {
-                    false                    continue;
-                    while false {
-                        false                        false                        false                        var34: int;
-                        return 2;
-                    }
-                    false                    false                    global g_var35: int;
-                }
-            }
-            var36: int;
-            if false {
-                if false {
-                    if false {
-                        return 2;
+                    if ((((-61.038673 == "My string") == null) - (g_var6[7] * var8.member0)) == (((--arg0 - 66.081589) == (sizeof T / "My string")) == (var7[40] + (null > sizeof T)))) {
+                        var8[35];
+                        global g_var11: int;
                     }
                     else {
-                        false                        const CONST37: int;
-                        false                        var38: int;
-                        const CONST39: int;
-                        false                    }
-                    return 2;
-                }
-                else {
-                    global g_var40: int;
-                    if false {
-                        false                        const CONST41: int;
-                        return 2;
                     }
-                    else {
-                        var42: int;
-                        false                        return 2;
-                    }
-                    global g_var43: int;
-                    var44: int;
                 }
-                while false {
-                    while false {
-                        false                    }
+                ((((null < false) && (var3++ <= null)) + (*sizeof T != (null > 80.686157))) != (null != ((CONST2++ >= null) > null)));
+                while ((null - null) + (((-425 - null) >= (var8++ + 594)) > !(++arg1 > null))) {
+                    var12: int;
                     break;
-                    const CONST45: int;
-                    return 2;
                 }
-            }
-            else {
-                const CONST46: int;
-                if false {
-                    false                    var47: int;
-                    if false {
-                        false                        global g_var48: int;
-                        return 2;
+                while null {
+                    if null {
+                        null;
+                        continue;
+                        const CONST13: int;
+                        return (((null < ("My string" <= null)) / *arg2.member0) * (((true < 873) * (arg2++ == --CONST4)) != ((null && "My string") * (arg1++ * null))));
                     }
                     else {
-                        false                        global g_var49: int;
-                        false                    }
-                    while false {
-                        continue;
-                        const CONST50: int;
-                        var51: int;
+                        const CONST14: int;
                         break;
-                        continue;
+                        break;
+                        break;
+                        return (null >= *(arg0[38] != (--var7 + 353)));
+                    }
+                    return arg0.member0;
+                }
+                if !(((false && true) != &CONST0) + ((null >= sizeof T) <= (--CONST10 != "My string"))) {
+                    return ((*(null < true) / null) / (null != ((--CONST2 || true) + (-11.617302 < --arg2))));
+                }
+                else {
+                    while null {
+                        const CONST15: int;
+                        var16: int;
+                    }
+                    var17: int;
+                }
+                while (*(("My string" * null) || null) < (((null || true) + g_var9.member0) == ((sizeof T + sizeof T) && (false >= false)))) {
+                    var18: int;
+                    const CONST19: int;
+                    continue;
+                    const CONST20: int;
+                    var21: int;
+                    *(((null <= null) / (false + --arg2)) && arg2[37]);
+                }
+                (((g_var5[13] - (true <= arg1++)) == ((true <= null) + !true)) <= null);
+            }
+            else {
+                if arg1.member0 {
+                    if ((null > (*++arg1 + arg1.member0)) - Func0(((false || --var16) / (true || arg2--)), (CONST1[43] != (false > 398)), g_var6[9], ((-953 == --arg1) > (false / arg1--)), null)) {
+                        var22: int;
+                        global g_var23: int;
+                    }
+                    else {
+                        return (((&arg1 + arg1[1]) != (null < (--g_var11 + false))) && ((g_var5[4] * ("My string" <= false)) >= arg1[36]));
+                    }
+                    global g_var24: int;
+                    global g_var25: int;
+                    var26: int;
+                    if null {
+                        (null != (arg2.member0 + (&arg1 && arg2[3])));
+                        const CONST27: int;
+                        global g_var28: int;
+                        const CONST29: int;
+                        var30: int;
+                        var31: int;
+                    }
+                    else {
+                    }
+                }
+                else {
+                    var32: int;
+                    return (((&arg0 < (true == sizeof T)) && ((var26-- && -121) - (CONST19++ < g_var5--))) + Func0());
+                }
+                const CONST33: int;
+                const CONST34: int;
+                const CONST35: int;
+                var36: int;
+            }
+            if ((*(false == ++var31) && (CONST29[16] < (41.824310 && arg0++))) * ((*--arg2 * (null == "My string")) <= (null * &var32))) {
+                var37: int;
+                if *null {
+                    (*null || (Func0((null == null), (76.503571 < CONST14--), (null <= "My string"), (++arg0 <= arg0++), &arg1) + (g_var28.member0 - (++var17 != sizeof T))));
+                    global g_var38: int;
+                    if ((((93.852219 == "My string") <= arg2[17]) >= ((true != -2) > &arg2)) * *(("My string" / "My string") && (false * arg0++))) {
+                        global g_var39: int;
+                        *(((39.249054 + 766) <= arg1.member0) == ((null / -182) != null));
+                        global g_var40: int;
+                        global g_var41: int;
+                    }
+                    else {
+                        global g_var42: int;
+                        global g_var43: int;
+                    }
+                    const CONST44: int;
+                    ((null <= CONST2[42]) || ((null <= (false * null)) <= ((null >= 391) + *g_var43++)));
+                    global g_var45: int;
+                    (((arg1.member0 != !false) + (null >= ("My string" >= false))) == ((g_var5[13] + g_var41.member0) + CONST13[33]));
+                    while ((((false || null) * (false != "My string")) != (("My string" > null) < arg0.member0)) == (null > ((-21.263817 - null) > (-77.139717 > "My string")))) {
+                        global g_var46: int;
+                        return arg2.member0;
+                    }
+                }
+                else {
+                    if ((((null - sizeof T) * (CONST44++ && true)) - (&g_var24 / null)) < ((null + (arg1-- > null)) == (!null || (++arg2 == "My string")))) {
+                        return &g_var41;
+                    }
+                    else {
+                        *(((49 - CONST35++) + &arg1) < ((612 && true) != (true >= 47.931747)));
+                        var47: int;
+                        const CONST48: int;
+                        const CONST49: int;
+                    }
+                    const CONST50: int;
+                    while arg0[8] {
+                        const CONST51: int;
                         var52: int;
-                    }
-                    while false {
                         var53: int;
-                        break;
-                        var54: int;
-                        return 2;
+                        const CONST54: int;
                     }
-                    global g_var55: int;
-                    var56: int;
-                    if false {
-                        var57: int;
-                        const CONST58: int;
-                        return 2;
-                    }
-                    else {
-                        global g_var59: int;
-                        return 2;
-                    }
+                    const CONST55: int;
                 }
-                else {
-                    if false {
+                global g_var56: int;
+                (g_var42[14] || ((CONST0.member0 > (--var12 + sizeof T)) / CONST35.member0));
+                while ((((sizeof T == "My string") || (--arg0 <= sizeof T)) && ((true != --var36) <= (--var37 - 970))) == (((++CONST20 + 388) / arg1.member0) == ((--arg2 - arg2--) != (--arg1 / false)))) {
+                    continue;
+                    global g_var57: int;
+                    global g_var58: int;
+                    if !(((null && -60.149090) && *723) < g_var43.member0) {
+                        ((((null < ++arg0) * (null > true)) >= CONST44[19]) < !((sizeof T && false) != (sizeof T && 22.205566)));
+                        const CONST59: int;
+                        continue;
                         global g_var60: int;
+                        break;
                         var61: int;
-                        false                    }
-                    else {
-                        return 2;
+                        return null;
                     }
-                    const CONST62: int;
-                    return 2;
-                }
-                false                var63: int;
-                while false {
-                    if false {
+                    else {
+                        const CONST62: int;
+                        var63: int;
                         var64: int;
+                        continue;
+                        !(((arg1-- <= null) + null) == ((null == "My string") >= (true || null)));
                         const CONST65: int;
-                        continue;
-                        const CONST66: int;
                     }
-                    else {
-                        var67: int;
-                        continue;
-                        continue;
-                        const CONST68: int;
-                        break;
-                        break;
-                        break;
-                        continue;
-                    }
-                    var69: int;
+                    var66: int;
+                    continue;
                 }
-                if false {
-                    false                    false                }
-                else {
-                    while false {
-                        var70: int;
-                        return 2;
-                    }
-                    return 2;
+                ((((false && sizeof T) || (-65.802635 >= null)) != (&arg0 <= (true + arg1--))) == null);
+                const CONST67: int;
+                while ((!(CONST20-- < ++arg2) + ((-91.185295 < null) == null)) || (((--arg2 <= -51) - (12.142502 && true)) < (null + (-710 != "My string")))) {
+                    var68: int;
+                    continue;
+                    continue;
                 }
-                return 2;
-            }
-            return 2;
-        }
-        else {
-            false            var71: int;
-            var72: int;
-        }
-        return 2;
-    }
-    else {
-        while false {
-            while false {
-                break;
-                var73: int;
-                const CONST74: int;
-                break;
-                const CONST75: int;
-                var76: int;
-                while false {
-                    global g_var77: int;
-                    global g_var78: int;
-                    const CONST79: int;
-                    global g_var80: int;
-                }
-                continue;
-            }
-            return 2;
-        }
-        if false {
-            global g_var81: int;
-            if false {
-                const CONST82: int;
-                global g_var83: int;
             }
             else {
-                false                const CONST84: int;
-                global g_var85: int;
+                (((g_var60[11] < (false > ++arg0)) < ((397 < null) == (sizeof T || null))) >= Func0());
+                (null / (null * (null && (253 + true))));
             }
-            return 2;
         }
         else {
-            var86: int;
+            global g_var69: int;
+            const CONST70: int;
+            return ((!!-720 < &CONST27) >= (CONST13.member0 <= &arg2));
         }
-        global g_var87: int;
-        const CONST88: int;
-        while false {
-            return 2;
-        }
+        global g_var71: int;
     }
-    var89: int;
-    const CONST90: int;
-    global g_var91: int;
-    if false {
-        return 2;
-    }
-    else {
-        return 2;
-    }
+    ((null || (arg0.member0 != null)) * (((--CONST1 == arg2--) * (-948 || ++arg0)) * (*arg2++ >= ("My string" * sizeof T))));
+    return (*(null + (null + null)) - (null < ((-15.315643 - --arg2) * ("My string" * ++var61))));
     return 0;
 }

@@ -76,17 +76,18 @@ ASTExpression* ParseContext::parseExpression() {
     while(true) {
         Token* token = gettok(&name, &number, &decimal);
         Token* token2 = gettok(1);
+        bool compact = !(token->flags & TOKEN_FLAG_SUFFIX_ANY);
 
         bool ending = false;
         // TODO: Handle eof
         if(is_operator) {
             ASTExpression::Kind operationType = CharToExprType((char)token->type);
-            if(token->type == '+' && token2->type == '+') {
+            if(token->type == '+' && token2->type == '+' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::POST_INCREMENT);
                 is_operator = !is_operator;
-            } else if(token->type == '-' && token2->type == '-') {
+            } else if(token->type == '-' && token2->type == '-' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::POST_DECREMENT);
@@ -95,28 +96,28 @@ ASTExpression* ParseContext::parseExpression() {
                 saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(operationType);
-            } else if (token->type == '&' && token2->type == '&') {
+            } else if (token->type == '&' && token2->type == '&' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 // && is okay but & & is also considered an AND operation. Is that okay?
                 operations.push_back(ASTExpression::AND);
-            } else if (token->type == '|' && token2->type == '|') {
+            } else if (token->type == '|' && token2->type == '|' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::OR);
-            } else if (token->type == '=' && token2->type == '=') {
+            } else if (token->type == '=' && token2->type == '=' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::EQUAL);
-            } else if (token->type == '!' && token2->type == '=') {
+            } else if (token->type == '!' && token2->type == '=' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::NOT_EQUAL);
-            } else if (token->type == '<' && token2->type == '=') {
+            } else if (token->type == '<' && token2->type == '=' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::LESS_EQUAL);
-            } else if (token->type == '>' && token2->type == '=') {
+            } else if (token->type == '>' && token2->type == '=' && compact) {
                 saved_locations.push_back(getloc());
                 advance(2);
                 operations.push_back(ASTExpression::GREATER_EQUAL);
@@ -128,10 +129,6 @@ ASTExpression* ParseContext::parseExpression() {
                 saved_locations.push_back(getloc());
                 advance();
                 operations.push_back(ASTExpression::GREATER);
-            } else if (token->type == '|' && token2->type == '|') {
-                saved_locations.push_back(getloc());
-                advance(2);
-                operations.push_back(ASTExpression::OR);
             } else if (token->type == '.') {
                 advance();
                 // operations.push_back(ASTExpression::MEMBER);
@@ -201,13 +198,13 @@ ASTExpression* ParseContext::parseExpression() {
                 cast_strings.push_back(type);
                 continue;
             }
-            if(token->type == '+' && token2->type == '+') {
+            if(token->type == '+' && token2->type == '+' && compact) {
                 saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::PRE_INCREMENT);
                 advance(2);
                 continue;
             }
-            if(token->type == '-' && token2->type == '-') {
+            if(token->type == '-' && token2->type == '-' && compact) {
                 saved_locations.push_back(getloc());
                 operations.push_back(ASTExpression::PRE_DECREMENT);
                 advance(2);
@@ -283,11 +280,23 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 expr->literal_integer = number;
                 expressions.push_back(expr);
+            } else if(token->type == '-' && token2->type == TOKEN_LITERAL_INTEGER) {
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_INT);
+                expr->location = getloc();
+                advance(2);
+                expr->literal_integer = -number;
+                expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_DECIMAL) {
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
                 expr->location = getloc();
                 advance();
                 expr->literal_float = decimal;
+                expressions.push_back(expr);
+            } else if(token->type == '-' && token2->type == TOKEN_LITERAL_DECIMAL) {
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_FLOAT);
+                expr->location = getloc();
+                advance(2);
+                expr->literal_float = -decimal;
                 expressions.push_back(expr);
             } else if(token->type == TOKEN_LITERAL_STRING) {
                 ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_STR);
@@ -312,7 +321,7 @@ ASTExpression* ParseContext::parseExpression() {
                 if(token->type == ')') {
                     advance();
                 } else {
-                    REPORT(token, "Expected closing parentheses.");
+                    REPORT(token, "Unexpected token. You possible forgot a closing parenthesis.");
                     return nullptr;
                 }
 
@@ -364,6 +373,7 @@ ASTExpression* ParseContext::parseExpression() {
                             // }
                             
                             expressions.push_back(expr);
+                            continue;
                         }
                     }
 
@@ -466,7 +476,7 @@ ASTStatement* ParseContext::parseIf() {
 
     return out;
 }
-ASTStatement* ParseContext::parseVarDeclaration(bool is_global, bool is_constant) {
+ASTStatement* ParseContext::parseDeclaration(bool is_global, bool is_constant) {
     Assert(!is_global || !is_constant);
     ASTStatement* out = ast->createStatement(is_global ? ASTStatement::GLOBAL_DECLARATION : 
         is_constant ? ASTStatement::CONST_DECLARATION : ASTStatement::VAR_DECLARATION);
@@ -517,10 +527,10 @@ ASTStatement* ParseContext::parseVarDeclaration(bool is_global, bool is_constant
 
 ASTBody* ParseContext::parseBody() {
     ZoneScopedC(tracy::Color::Red2);
-    ASTBody* out = ast->createBody(current_scopeId);
+    ASTBody* local_body = ast->createBody(current_scopeId);
 
     auto prev_scope = current_scopeId;
-    current_scopeId = out->scopeId;
+    current_scopeId = local_body->scopeId;
     defer {
         current_scopeId = prev_scope;
     };
@@ -534,33 +544,59 @@ ASTBody* ParseContext::parseBody() {
 
     while(true) {
         token = gettok();
-        if(token->type == TOKEN_EOF)
-            break;
+        if(token->type == TOKEN_EOF) {
+            REPORT(token, "Sudden end of file.");
+            return nullptr;
+        }
         if(token->type == '}') {
             advance();
             break;
         }
 
-        ASTStatement* stmt = nullptr;
+        ASTStatement* parsed_stmt = nullptr;
         auto loc = getloc();
         switch(token->type) {
             case TOKEN_IF: {
-                stmt = parseIf();
+                parsed_stmt = parseIf();
             } break;
             case TOKEN_WHILE: {
-                stmt = parseWhile();
+                parsed_stmt = parseWhile();
             } break;
             case TOKEN_RETURN: {
                 advance();
 
-                stmt = ast->createStatement(ASTStatement::RETURN);
+                parsed_stmt = ast->createStatement(ASTStatement::RETURN);
 
                 token = gettok();
                 if(token->type != ';') {
-                    stmt->expression = parseExpression();
-                    if(!stmt->expression)
+                    parsed_stmt->expression = parseExpression();
+                    if(!parsed_stmt->expression)
                         return nullptr;
                 }
+
+                token = gettok();
+                if(token->type != ';') {
+                    REPORT(token, "You forgot a semi-colon after the statement.");
+                    return nullptr;
+                }
+                advance();
+            } break;
+            case TOKEN_CONTINUE: {
+                advance();
+
+                parsed_stmt = ast->createStatement(ASTStatement::CONTINUE);
+
+                token = gettok();
+                if(token->type != ';') {
+                    REPORT(token, "You forgot a semi-colon after the statement.");
+                    return nullptr;
+                }
+                advance();
+            } break;
+            case TOKEN_BREAK: {
+                advance();
+
+                parsed_stmt = ast->createStatement(ASTStatement::BREAK);
 
                 token = gettok();
                 if(token->type != ';') {
@@ -573,8 +609,8 @@ ASTBody* ParseContext::parseBody() {
             case TOKEN_CONST: {
                 advance();
                 loc = getloc();
-                stmt = parseVarDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
-                if(!stmt)
+                parsed_stmt = parseDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
+                if(!parsed_stmt)
                     return nullptr;
                     
                 token = gettok();
@@ -583,15 +619,12 @@ ASTBody* ParseContext::parseBody() {
                     return nullptr;
                 }
                 advance();
-                // REPORT(token, "Global declarations are not allowed within functions. Only allowed in the global scope.");
-                // return nullptr;
             } break;
             default: {
                 auto token2 = gettok(1);
-                // v.x.y = 23; is an assignment, checkin for id, colon, and equals tokens won't work
                 if(token->type == TOKEN_ID && token2->type == ':')  {
-                    stmt = parseVarDeclaration(false, false);
-                    if(!stmt)
+                    parsed_stmt = parseDeclaration(false, false);
+                    if(!parsed_stmt)
                         return nullptr;
                         
                     token = gettok();
@@ -605,8 +638,8 @@ ASTBody* ParseContext::parseBody() {
                     ASTExpression* expr = parseExpression();
                     if(!expr)
                         return nullptr;
-                    stmt = ast->createStatement(ASTStatement::EXPRESSION);
-                    stmt->expression = expr;
+                    parsed_stmt = ast->createStatement(ASTStatement::EXPRESSION);
+                    parsed_stmt->expression = expr;
                     
                     token = gettok();
                     if(token->type != ';') {
@@ -617,12 +650,12 @@ ASTBody* ParseContext::parseBody() {
                 }
             } break;
         }
-        if(!stmt)
-            return nullptr;
-        stmt->location = loc;
-        out->statements.push_back(stmt);
+        if(!parsed_stmt)
+            return nullptr; // error handled in sub-function
+        parsed_stmt->location = loc;
+        local_body->statements.push_back(parsed_stmt);
     }
-    return out;
+    return local_body;
 }
 /*################
     FUNCTIONS AND STRUCTURES
@@ -802,13 +835,14 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
     context.ast = ast;
     
     // context.current_scopeId = AST::GLOBAL_SCOPE;
-    auto body = ast->createBody(AST::GLOBAL_SCOPE);
-    context.current_scopeId = body->scopeId;
+    auto global_body = ast->createBody(AST::GLOBAL_SCOPE);
+    context.current_scopeId = global_body->scopeId;
     
     if(!imp) {
         imp = ast->createImport(stream->path);
     }
-    imp->body = body; // TODO: Mutex, compiler checks body and modifies shared_scopes
+    imp->body = global_body; // TODO: Mutex, compiler checks global_body and modifies shared_scopes
+
     imp->stream = stream;
 
     bool running = true;
@@ -823,8 +857,7 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                 if(!ast_struct)
                     running = false; // stop running, parsing failed
                 else {
-                    body->add(ast_struct);
-                    // context.ast->structures.push_back(ast_struct);
+                    global_body->add(ast_struct);
                 }
             } break;
             case TOKEN_FUNCTION: {
@@ -832,15 +865,14 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                 if(!ast_func)
                     running = false; // stop running, parsing failed
                 else {
-                    body->add(ast_func);
-                    // context.ast->functions.push_back(ast_func);
+                    global_body->add(ast_func);
                 }
             } break;
             case TOKEN_GLOBAL:
             case TOKEN_CONST: {
                 context.advance();
                 
-                ASTStatement* stmt = context.parseVarDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
+                ASTStatement* stmt = context.parseDeclaration(token->type == TOKEN_GLOBAL, token->type == TOKEN_CONST);
                 if(!stmt)
                     return nullptr;
                     
@@ -851,14 +883,14 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                 }
                 context.advance();
                 
-                body->statements.push_back(stmt);
+                global_body->statements.push_back(stmt);
             } break;
             case TOKEN_IMPORT: {
                 context.advance();
                 
                 std::string path{};
-                auto token = context.gettok(&path);
-                if(token->type == TOKEN_LITERAL_STRING) {
+                auto import_path_token = context.gettok(&path);
+                if(import_path_token->type == TOKEN_LITERAL_STRING) {
                     context.advance();
                     
                     bool found = false;
@@ -871,13 +903,13 @@ AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, R
                     if(!found)
                         imp->dependencies.push_back(path);
                 } else {
-                    REPORT(token, "A string literal is expected after 'import'.");
-                    return imp;
+                    REPORT(import_path_token, "A string literal is expected after 'import'.");
+                    return nullptr;
                 }
             } break;
             default: {
                 REPORT(token, "Unexpected token.");
-                return imp;
+                return nullptr;
             } break;
         }
     }

@@ -65,7 +65,7 @@ int main(int argc, const char** argv) {
         auto program = CompileFile(source_file);
         if(program) {
             VirtualMachine* interpreter = new VirtualMachine();
-            interpreter->code = program;
+            interpreter->bytecode = program;
             interpreter->init();
             interpreter->execute();
             
@@ -79,6 +79,7 @@ int main(int argc, const char** argv) {
         config.function_frequency = { 1, 1 };
         config.argument_frequency = { 1, 3 };
         config.statement_frequency = { 2, 10 };
+        config.seed = 1713772214;
         GenerateTin(&config);
 
         // if(argc == 2 && !strcmp(argv[1], "-enable-logging")) {

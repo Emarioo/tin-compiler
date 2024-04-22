@@ -1,20 +1,20 @@
-#include "Code.h"
+#include "Bytecode.h"
 #include "AST.h"
 
-#define DEF_EMIT2(FN,OP) void CodePiece::emit_##FN(Register r0, Register r1) { emit({INST_##OP, r0, r1}); }
-#define DEF_EMIT2F(FN,OP) void CodePiece::emit_##FN(Register r0, Register r1, bool is_float) { emit({INST_##OP, r0, r1, (Register)is_float}); }
-#define DEF_EMIT1(FN,OP) void CodePiece::emit_##FN(Register r0) { emit({INST_##OP, r0}); }
-#define DEF_EMIT0(FN,OP) void CodePiece::emit_##FN() { emit({INST_##OP}); }
+#define DEF_EMIT2(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1) { emit({INST_##OP, r0, r1}); }
+#define DEF_EMIT2F(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1, bool is_float) { emit({INST_##OP, r0, r1, (Register)is_float}); }
+#define DEF_EMIT1(FN,OP) void BytecodePiece::emit_##FN(Register r0) { emit({INST_##OP, r0}); }
+#define DEF_EMIT0(FN,OP) void BytecodePiece::emit_##FN() { emit({INST_##OP}); }
 
-void CodePiece::emit_li(Register reg, int imm) {
+void BytecodePiece::emit_li(Register reg, int imm) {
     emit({INST_LI,reg});
     emit_imm(imm);
 }
-void CodePiece::emit_push(Register r0) {
+void BytecodePiece::emit_push(Register r0) {
     emit({INST_PUSH, r0});
     virtual_sp -= 8;
 }
-void CodePiece::emit_pop(Register r0) {
+void BytecodePiece::emit_pop(Register r0) {
     // This code will remove redundant push and pop.
     // "push a" followed by "pop a" can be removed as they are opposites of each other.
     virtual_sp += 8;
@@ -28,27 +28,27 @@ void CodePiece::emit_pop(Register r0) {
     
     emit({INST_POP, r0});
 }
-void CodePiece::emit_incr(Register reg, int imm) {
+void BytecodePiece::emit_incr(Register reg, int imm) {
     // Assert((imm >> 16) == 0);
     // BUG HERE, 32 bits truncated to 16 bits
     emit({INST_INCR, reg, (Register)(imm&0xFF), (Register)(imm >> 8) }); // we cast to register but it's not actually registers, it's immediate values
     if(reg == REG_SP)
         virtual_sp += imm;
 }
-void CodePiece::emit_cast(Register reg, CastType castType) {
+void BytecodePiece::emit_cast(Register reg, CastType castType) {
     emit({INST_CAST, reg, (Register)castType});
 }
 DEF_EMIT2(mov_rr,MOV_RR)
 
-void CodePiece::emit_mov_mr(Register r0, Register r1, u8 size) {
+void BytecodePiece::emit_mov_mr(Register r0, Register r1, u8 size) {
     Assert(size != 0);
     emit({INST_MOV_MR, r0, r1, (Register)size});
 }
-void CodePiece::emit_mov_rm(Register r0, Register r1, u8 size) {
+void BytecodePiece::emit_mov_rm(Register r0, Register r1, u8 size) {
     Assert(size != 0);
     emit({INST_MOV_RM, r0, r1, (Register)size});
 }
-void CodePiece::emit_mov_mr_disp(Register to_reg, Register from_reg, u8 size, int offset) {
+void BytecodePiece::emit_mov_mr_disp(Register to_reg, Register from_reg, u8 size, int offset) {
     Assert(size != 0);
     if(offset == 0) {
         emit_mov_mr(to_reg, from_reg, size);
@@ -60,7 +60,7 @@ void CodePiece::emit_mov_mr_disp(Register to_reg, Register from_reg, u8 size, in
         // emit_mov_mr(REG_T0, from_reg, size);
     }
 }
-void CodePiece::emit_mov_rm_disp(Register to_reg, Register from_reg, u8 size, int offset) {
+void BytecodePiece::emit_mov_rm_disp(Register to_reg, Register from_reg, u8 size, int offset) {
     Assert(size != 0);
     if(offset == 0) {
         emit_mov_rm(to_reg, from_reg, size);
@@ -87,41 +87,41 @@ DEF_EMIT2F(greater, GREATER)
 DEF_EMIT2F(less_equal, LESS_EQUAL)
 DEF_EMIT2F(greater_equal, GREATER_EQUAL)
 
-void CodePiece::emit_jmp(int pc) {
+void BytecodePiece::emit_jmp(int pc) {
     emit({INST_JMP});
     emit_imm(pc - get_pc());
 }
-void CodePiece::emit_jmp(int* out_index_of_imm) {
+void BytecodePiece::emit_jmp(int* out_index_of_imm) {
     emit({INST_JMP});
     *out_index_of_imm = get_pc();
     emit_imm(0);
 }
-void CodePiece::emit_jz(Register reg, int pc) {
+void BytecodePiece::emit_jz(Register reg, int pc) {
     emit({INST_JZ, reg});
     emit_imm(pc - get_pc());
 }
-void CodePiece::emit_jz(Register reg, int* out_index_of_imm) {
+void BytecodePiece::emit_jz(Register reg, int* out_index_of_imm) {
     emit({INST_JZ, reg});
     *out_index_of_imm = get_pc();
     emit_imm(0);
 }
-void CodePiece::emit_dataptr(Register reg, int offset) {
+void BytecodePiece::emit_dataptr(Register reg, int offset) {
     emit({INST_DATAPTR,reg});
     emit_imm(offset);
 }
-void CodePiece::emit_call(int* out_index_of_imm) {
+void BytecodePiece::emit_call(int* out_index_of_imm) {
     emit({INST_CALL});
     *out_index_of_imm = get_pc();
     emit_imm(0);
 }
 DEF_EMIT0(ret,RET)
-void CodePiece::emit_memzero(Register reg, Register reg_size) {
+void BytecodePiece::emit_memzero(Register reg, Register reg_size) {
     emit({INST_MEMZERO, reg, reg_size});
 }
-void CodePiece::fix_jump_here(int imm_index) {
+void BytecodePiece::fix_jump_here(int imm_index) {
     *(int*)&instructions[imm_index] = get_pc() - imm_index;
 }
-// void CodePiece::fix_jump_to(int imm_index, int pc) {
+// void BytecodePiece::fix_jump_to(int imm_index, int pc) {
 //     *(int*)&instructions[imm_index] = pc - imm_index;
 // }
 
@@ -181,12 +181,32 @@ const char* register_names[] {
     "t1", // REG_T1
 };
 
-void CodePiece::print(int low_index, int high_index, Code* code) {
+void BytecodePiece::print(Bytecode* bytecode, bool with_debug_info, int low_index, int high_index) {
     if(high_index == -1 || high_index > instructions.size())
         high_index = instructions.size();
         
+    
+    int debug_last_piece = -1;
+    int debug_last_line = -1;
+
     for(int i=low_index;i<high_index;i++) {
         Instruction inst = instructions[i];
+        int prev_pc = i;
+
+        if(with_debug_info) {
+            if(line_of_instruction.size() > prev_pc) {
+                int line_index = line_of_instruction[prev_pc];
+                if(line_index != -1 && (debug_last_piece != piece_index || debug_last_line != line_index)) {
+                    auto& line = lines[line_index];
+                    log_color(Color::AQUA);
+                    printf(" %d: %s\n", line.line_number, line.text.c_str());
+                    log_color(Color::NO_COLOR);
+                    debug_last_piece = piece_index;
+                    debug_last_line = line_index;
+                }
+            }
+        }
+
         log_color(Color::GRAY);
         printf(" %3d:", i);
         log_color(Color::PURPLE);
@@ -210,17 +230,30 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
         if(inst.opcode == INST_LI || inst.opcode == INST_JMP || inst.opcode == INST_JZ || inst.opcode == INST_CALL || inst.opcode == INST_MOV_MR_DISP || inst.opcode == INST_MOV_RM_DISP || inst.opcode == INST_DATAPTR) {
             i++;
             int imm = *(int*)&instructions[i];
-            if(code && inst.opcode == INST_CALL) {
+            if(bytecode && inst.opcode == INST_CALL) {
                 log_color(Color::GREEN);
-                if(imm < 0) {
-                    printf(" %s", NAME_OF_NATIVE(imm + NATIVE_MAX));
-                } else {
-                    int pi = imm-1;
-                    printf(" %s", code->getPiece(pi)->name.c_str());
+                std::string fname = "unresolved";
+                if(imm == 0) {
+                    for(int j=0;j<relocations.size();j++) {
+                        auto& r = relocations[j];
+                        if(r.index_of_immediate == i) {
+                            if(r.function->piece_code_index == 0) {
 
-                    log_color(Color::GRAY);
-                    printf(" %d", pi);
+                            } else if(r.function->piece_code_index < 0) {
+                                fname = NAME_OF_NATIVE(r.function->piece_code_index + NATIVE_MAX);
+                                break;
+                            } else {
+                                fname = bytecode->getPiece(r.function->piece_code_index - 1)->name;
+                                break;
+                            }
+                        }
+                    }
+                } else if(imm < 0) {
+                    fname = NAME_OF_NATIVE(imm + NATIVE_MAX);
+                } else {
+                    fname = bytecode->getPiece(imm - 1)->name;
                 }
+                printf(" %s", fname.c_str());
             } else if(inst.opcode == INST_JMP || inst.opcode == INST_JZ) {
                 printf(", ");
                 int addr = imm + i;
@@ -237,9 +270,9 @@ void CodePiece::print(int low_index, int high_index, Code* code) {
             printf("\n");
     }
 }
-void Code::print() {
+void Bytecode::print() {
     log_color(Color::GOLD);
-    printf("Printing Code:\n");
+    printf("Printing Bytecode:\n");
     log_color(Color::NO_COLOR);
     if(pieces.size() == 0)
     printf(" No pieces (generated functions)\n");
@@ -248,15 +281,19 @@ void Code::print() {
         log_color(Color::GOLD);
         printf("%s[%d]:\n", p->name.c_str(), (int)p->instructions.size());
         log_color(Color::NO_COLOR);
-        p->print();
+        p->print(this);
     }
 }
-void Code::apply_relocations() {
+void Bytecode::apply_relocations() {
     for(auto p : pieces) {
         for(const auto& rel : p->relocations) {
             if(rel.function) {
-                // printf("Apply %s:%d = %d\n", rel.function->name.c_str(), rel.index_of_immediate, rel.function->piece_code_index + 1);
-                *(int*)&p->instructions[rel.index_of_immediate] = rel.function->piece_code_index + 1; // +1 because 0 is seen as invalid
+                if(rel.function->piece_code_index < 0) {
+                    *(int*)&p->instructions[rel.index_of_immediate] = rel.function->piece_code_index;
+                } else {
+                    // printf("Apply %s:%d = %d\n", rel.function->name.c_str(), rel.index_of_immediate, rel.function->piece_code_index + 1);
+                    *(int*)&p->instructions[rel.index_of_immediate] = rel.function->piece_code_index + 1; // +1 because 0 is seen as invalid
+                }
             } else {
                 printf("Function was null when applying relocations\n");
             }
@@ -270,17 +307,17 @@ const char* native_names[] {
     "prints", // NATIVE_printf
     "malloc",
     "mfree",
-    "memmove",
+    "memcpy",
     "pow",
     "sqrt",
     "read_file",
     "write_file",
 };
-void CodePiece::addRelocation(ASTFunction* func, int imm_index){
+void BytecodePiece::addRelocation(ASTFunction* func, int imm_index){
     // printf("Reloc %s, %d\n", func->name.c_str(), imm_index);
     relocations.push_back({func, imm_index});
 }
-int Code::appendData(int size, void* data) {
+int Bytecode::appendData(int size, void* data) {
     Assert(size > 0);
     MUTEX_LOCK(general_lock);
     if(size + global_data_size > global_data_max) {
@@ -300,7 +337,7 @@ int Code::appendData(int size, void* data) {
     MUTEX_UNLOCK(general_lock);
     return off;
 }
-int Code::appendString(const std::string& str) {
+int Bytecode::appendString(const std::string& str) {
     MUTEX_LOCK(general_lock);
     auto pair = string_map.find(str);
     if(pair != string_map.end()) {
@@ -315,7 +352,7 @@ int Code::appendString(const std::string& str) {
     MUTEX_UNLOCK(general_lock);
     return off;
 }
-u8* Code::copyGlobalData(int* size) {
+u8* Bytecode::copyGlobalData(int* size) {
     Assert(size);
     MUTEX_LOCK(general_lock);
     *size = global_data_size;
