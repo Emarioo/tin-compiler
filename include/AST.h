@@ -84,7 +84,8 @@ struct ASTNode {
 struct ASTExpression : public ASTNode {
     enum Kind {
         INVALID = 0,
-        IDENTIFIER,
+        KIND_BEGIN,
+        IDENTIFIER = KIND_BEGIN,
         FUNCTION_CALL,
         ADD,
         SUB,
@@ -110,7 +111,7 @@ struct ASTExpression : public ASTNode {
         PRE_DECREMENT,
         POST_DECREMENT,
         
-        CONST_EXPR,
+        CONST_EXPR, // quick value for checking if kind is constant expressions/value
         SIZEOF = CONST_EXPR,
         LITERAL_INT,
         LITERAL_FLOAT,
@@ -118,6 +119,7 @@ struct ASTExpression : public ASTNode {
         LITERAL_NULL,
         LITERAL_TRUE,
         LITERAL_FALSE,
+        KIND_END
     };
     ASTExpression(Kind kind) : _kind(kind) {
         // switch(_kind){

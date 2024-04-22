@@ -17,7 +17,8 @@ void CompileFile(const std::string& path) {
     auto pre_imp = compiler.ast->createImport("preload");
     pre_imp->body = compiler.ast->global_body;
     {
-    Compiler::Task task{}; // process native function
+    // Process native functions added in constructor of AST
+    Compiler::Task task{};
     task.name = "preload";
     task.imp = pre_imp;
     task.type = TASK_CHECK_STRUCTS;
@@ -31,7 +32,14 @@ void CompileFile(const std::string& path) {
     }
 
     int threadcount = 2;
-    // int threadcount = 1;
+    threadcount = 1;
+
+#ifndef ENABLE_MULTITHREADING
+    if(threadcount > 1) {
+        threadcount = 1;
+        printf("Thread count of %d was specified while compiler wasn't built with ENABLE_MULTITHREADING. (compiler will use 1 thread unless you recompile the compiler)\n");
+    }
+#endif
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -81,7 +89,6 @@ void CompileFile(const std::string& path) {
 
 void Compiler::processTasks() {
     // return;
-    
     ZoneScopedC(tracy::Color::Gray12);
     
     int thread_id = atomic_add(&total_threads, 1);
@@ -142,6 +149,8 @@ void Compiler::processTasks() {
                 MUTEX_UNLOCK(tasks_lock);
                 auto imp = ParseTokenStream(stream, task.imp, ast, reporter);
                 task.imp = imp;
+
+                // ast->print();
 
                 MUTEX_LOCK(tasks_lock);
                 for(auto& fix_imp : imp->fixups) {
@@ -252,6 +261,11 @@ void Compiler::processTasks() {
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, code, reporter);
                 
+                if(code->pieces_unsafe().size()) {
+                    auto p = code->pieces_unsafe().back();
+                    // p->print(code);
+                }
+                
                 log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
             } break;
             default: Assert(false);
@@ -270,6 +284,6 @@ void Compiler::processTasks() {
 void Compiler::init() {
     ast = new AST();
     reporter = new Reporter();
-    code = new Code();
+    code = new Bytecode();
     // TODO: Memory leak
 }

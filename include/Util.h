@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tracy/Tracy.hpp"
+#include "Config.h"
 
 #define Assert(E) ((bool)(E) || (fprintf(stderr,"[ASSERT %s:%d]: %s\n",__FILE__, __LINE__, #E), (bool)(*(int*)nullptr = 9)))
 
@@ -143,16 +144,25 @@ void SleepMS(int ms);
 
 int RandomInt(int min, int max);
 float RandomFloat();
+void SetRandomSeed(int seed);
 
+#ifdef ENABLE_MULTITHREADING
+    #define MUTEX_DECL(var)   Mutex var{}
+    #define MUTEX_LOCK(var)   var.lock()
+    #define MUTEX_UNLOCK(var) var.unlock()
 
-#define MUTEX_DECL(var) Mutex var{}
-#define MUTEX_LOCK(var) var.lock()
-#define MUTEX_UNLOCK(var) var.unlock()
+    #define SEM_DECL(var)   Semaphore var{}
+    #define SEM_WAIT(var)   var.wait()
+    #define SEM_SIGNAL(var) var.signal()
+#else
+    #define MUTEX_DECL(var)  
+    #define MUTEX_LOCK(var)  
+    #define MUTEX_UNLOCK(var)
 
-#define SEM_DECL(var) Semaphore var{}
-#define SEM_WAIT(var) var.wait()
-#define SEM_SIGNAL(var) var.signal()
-
+    #define SEM_DECL(var)  
+    #define SEM_WAIT(var)  
+    #define SEM_SIGNAL(var)
+#endif
 // returns the result
 i32 atomic_add(volatile i32* ptr, i32 value);
 

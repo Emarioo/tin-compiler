@@ -1,6 +1,6 @@
 Extended Backus-Naur form
 ```c
-program ::= { struct | function | global_var | constant | include } *
+    program> ::= { struct | function | global_var | constant | include }
 
 global_var ::= "global" declaration
 constant ::= "const" declaration
@@ -9,16 +9,16 @@ import ::= "import" "\"" filepath "\""
 filepath ::= any characters except?
 
 struct ::= "struct" id "{" members "}"
-members ::= { id ":" type "," } *
+members ::= { id ":" type "," }
 
 function ::= "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
-parameters ::= id ":" type { "," id ":" type } *
+parameters ::= id ":" type { "," id ":" type }
 
-statements ::= { while | if | return | function_call | constant | declaration | assignment } *
+statements ::= { while | if | return | function_call | constant | declaration | assignment }
 
 declaration ::= id ":" type [ "=" expression ] ";"
 
-loop_statements ::= statements | { "break" | "continue" } *
+loop_statements ::= statements | { "break" | "continue" }
 
 return ::= "return" [ expression ] ";"
 while ::= "while" expression "{" loop_statements "}"
@@ -26,21 +26,21 @@ if ::= "if" expression "{" statements "}" [ else ]
 else ::= "else" [ if | "{" statements "}" ]
 
 function_call ::= id "(" [ arguments ] ")"
-arguments ::= expression { "," expression } *
+arguments ::= expression { "," expression }
 
-expression ::= logical { "=" expression } *
-logical ::= comparison { ( "||" | "&&" ) logical } *
-comparison ::= arithmetic_low { ( "==" | "<" | ">" | "<=" | ">=" ) comparison } *
-arithmetic_low ::= arithmetic_high { ( "+" | "-" ) arithmetic_low } *
-arithmetic_high ::= unary_operation { ( "*" | "/" ) arithmetic_high } *
+expression ::= logical { "=" expression }
+logical ::= comparison { ( "||" | "&&" ) logical }
+comparison ::= arithmetic_low { ( "==" | "<" | ">" | "<=" | ">=" ) comparison }
+arithmetic_low ::= arithmetic_high { ( "+" | "-" ) arithmetic_low }
+arithmetic_high ::= unary_operation { ( "*" | "/" ) arithmetic_high }
 unary_operation ::= "!" unary_operation | "*" unary_operation | "&" id | "sizeof" type | "cast" type unary_operation | index_operation
-index_operation ::= value { "[" expression "]" } *
+index_operation ::= value { "[" expression "]" }
 value ::= "(" expression ")" | id | number | function_call | string
 
-number ::= [0-9]*
+type ::= id { "*" }
+number ::= [0-9]* | [0-9]*.[0-9]*
 string ::= any characters in quotes
 id ::= [a-zA-Z][a-zA-Z0-9]*
-type ::= id [ "*" ] *
 ```
 
 Language examples

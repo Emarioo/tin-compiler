@@ -7,12 +7,25 @@ fun p() {
 }
 
 fun main() {
-
+    a: int = 1 - -2;
+    // i: int = -1;
+    // while i < 5 {
+    //     i++;
+    //     if i - (i / 2) * 2 == 0 {
+    //         prints("Even\n");
+    //         continue;
+    //     }
+    //     if i == 3 {
+    //         break;
+    //     }
+                
+    //     prints("Okay\n");
+    // }
     // a: char* = "yoo"
 
-    a: float = 2.3.2;
+    // a: float = 2.3.2;
 
-    printf(a);
+    // printf(a);
 
     // p();
     // p();

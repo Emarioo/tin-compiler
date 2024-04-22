@@ -31,7 +31,7 @@ fun array_int_remove(this: ArrayInt*, index: int) {
         return;
     }
     // memove allows memory overlap
-    memmove(this.data + index * sizeof int, this.data + (index+1) * sizeof int, (this.len - index - 1) * sizeof int);
+    memcpy(this.data + index * sizeof int, this.data + (index+1) * sizeof int, (this.len - index - 1) * sizeof int);
     this.len--;
 }
 fun array_int_reserve(this: ArrayInt*, size: int): bool {
@@ -45,7 +45,7 @@ fun array_int_reserve(this: ArrayInt*, size: int): bool {
     }
 
     if this.data {
-        memmove(new_data, this.data, this.max * sizeof int);
+        memcpy(new_data, this.data, this.max * sizeof int);
         mfree(this.data);
     } else {
         this.len = 0;

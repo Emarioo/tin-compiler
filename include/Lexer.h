@@ -27,9 +27,16 @@ enum TokenKind {
     TOKEN_FALSE,
     TOKEN_NULL,
 };
+enum TokenFlags {
+    TOKEN_FLAG_NONE             = 0,
+    TOKEN_FLAG_SUFFIX_SPACE     = 0x1,
+    TOKEN_FLAG_SUFFIX_NEWLINE   = 0x2,
+    TOKEN_FLAG_SUFFIX_ANY =     TOKEN_FLAG_SUFFIX_SPACE | TOKEN_FLAG_SUFFIX_NEWLINE,
+};
 
 struct Token {
     TokenKind type; // don't rearrange, token initializer assumes {type, data_index}
+    int flags = 0;
     int data_index;
 
     int line;

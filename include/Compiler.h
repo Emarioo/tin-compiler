@@ -15,7 +15,7 @@ enum TaskType {
 struct Compiler {
     AST* ast = nullptr;
     Reporter* reporter = nullptr;
-    Code* code = nullptr;
+    Bytecode* code = nullptr;
     
     struct Task {
         TaskType type;

@@ -2,31 +2,82 @@ struct Type0 {
     mem0: int,
 }
 fun Func0(arg0: int, arg1: int): int {
-    while false {
-fun Func0(arg0: int, arg1: int, arg2: int): int {
-    var0: int;
-    if false {
-        return 2;
-    }
-    var: int;
-    global var: int;
-    while false1 {
-        var: int;
-        global var: int;
-        var: int;
-    }
-    while falsefunc(23,5) {
-        return 2;
-    }
-    if false {
-        while false {
-            var0: int;
-            return 2;
-        }
-        return 2;
+    if !((*"My string" < (null - null)) * arg0[34]) {
     }
     else {
-        var3: int;
+        while ((null || !(null || null)) / (null * null)) {
+            global g_var0: int;
+            var1: int;
+            continue;
+            return g_var0.member0;
+        }
+        return *(((null * arg1--) != null) + (*sizeof T != (--arg0 != true)));
+    }
+    if ((((arg1-- == ++var1) > (++arg0 >= "My string")) != arg1.member0) <= *((-769 * sizeof T) / (true - true))) {
+        if ((((-4 && --g_var0) * (false == false)) - ((arg1-- > -9.750481) || g_var0.member0)) - null) {
+        }
+        else {
+            ((((null < -382) == (true || ++arg1)) || ((0.803413 != null) - *null)) >= (((false || false) && (false > --arg0)) / ((null - true) < null)));
+            var2: int;
+            *null;
+            Func0((((null <= false) || null) > ((g_var0++ || true) && (null / "My string"))), ((null + (sizeof T > --var2)) >= ((null || 685) != null)), (arg0.member0 - *(true != -878)), (((true || true) != (true && null)) != ((sizeof T < null) && (false == null))));
+            global g_var3: int;
+            global g_var4: int;
+        }
+        global g_var5: int;
+    }
+    else {
+        const CONST6: int;
+        g_var4[30];
+        (((null <= arg0.member0) >= g_var4.member0) && (((false >= true) && (arg0-- / --arg1)) <= (("My string" <= 21.832703) / (-77.449203 < null))));
+        const CONST7: int;
+    }
+    while ((*("My string" - true) == ((899 <= "My string") < (false / ++var1))) == (((false >= false) - (null - ++arg0)) <= ((--CONST7 > arg0--) <= (null && true)))) {
+        var8: int;
+        continue;
+        while (*(null < (arg0++ || false)) * *((-1.786644 <= g_var0++) || (CONST6++ == false))) {
+            while g_var3[29] {
+                var9: int;
+                if !null {
+                    while (!(&arg1 >= (g_var5++ * -586)) - (((g_var0++ * null) + (g_var4++ || false)) != *(false <= --arg0))) {
+                        const CONST10: int;
+                        (arg1.member0 - (((462 && --var2) == !-207) == ((sizeof T && null) + (null == null))));
+                        ((((sizeof T != sizeof T) == &arg1) && g_var3[2]) - (((sizeof T <= null) != &arg1) * (null - ("My string" == "My string"))));
+                    }
+                    break;
+                    const CONST11: int;
+                    var12: int;
+                    const CONST13: int;
+                    var14: int;
+                }
+                else {
+                    if (((Func0(355, ++var12) || (null - false)) >= (!sizeof T + (true || arg1--))) - !((sizeof T || --CONST11) + (++arg0 <= sizeof T))) {
+                        continue;
+                        return (((null - ("My string" != -81.618317)) && (null / (++var12 - -930))) / *((76 && null) != var2.member0));
+                    }
+                    else {
+                        const CONST15: int;
+                        (null != var9.member0);
+                        global g_var16: int;
+                        global g_var17: int;
+                    }
+                    continue;
+                }
+                global g_var18: int;
+                continue;
+                const CONST19: int;
+                &arg0;
+                global g_var20: int;
+                while ((arg0.member0 && (null >= (--var8 < null))) - null) {
+                    return ((((false < 59.751556) / null) > !(sizeof T || null)) == (((CONST19++ + true) / (false < "My string")) || ((arg1++ * arg1--) || (--arg0 != 773))));
+                }
+                break;
+            }
+            null;
+            return &arg0;
+        }
+        var21: int;
+        return *&g_var16;
     }
     return 0;
 }

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Code.h"
+#include "Bytecode.h"
 
 
 struct Interpreter {
-    Code* code=nullptr;
+    Bytecode* code=nullptr;
     
     u8* global_data = nullptr;
     int global_data_max = 0;
@@ -15,7 +15,7 @@ struct Interpreter {
     i64 registers[REG_COUNT];
     
     int piece_index = -1;
-    CodePiece* piece = nullptr;
+    BytecodePiece* piece = nullptr;
     
     void init();
     void execute();

@@ -1,5 +1,5 @@
 #include "AST.h"
-#include "Code.h"
+#include "Bytecode.h"
 
 AST::AST() {
     // NOTE: Mutex not needed, the main thread creates the AST and then shares it with other threads.
@@ -19,8 +19,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_printi - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_printi - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "int";
@@ -29,8 +29,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_printf - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_printf - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "float";
@@ -39,8 +39,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_printc - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_printc - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "char";
@@ -49,8 +49,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_prints - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_prints - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "v";
         f->parameters.back().typeString = "char*";
@@ -59,8 +59,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_malloc - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_malloc - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "size";
         f->parameters.back().typeString = "int";
@@ -70,8 +70,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_mfree - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_mfree - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "ptr";
         f->parameters.back().typeString = "void*";
@@ -80,8 +80,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_memmove - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_memcpy - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "dst";
         f->parameters.back().typeString = "void*";
@@ -96,8 +96,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_pow - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_pow - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "x";
         f->parameters.back().typeString = "float";
@@ -110,8 +110,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_sqrt - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_sqrt - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "x";
         f->parameters.back().typeString = "float";
@@ -121,8 +121,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_read_file - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_read_file - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "path";
         f->parameters.back().typeString = "char*";
@@ -138,8 +138,8 @@ AST::AST() {
     {
         auto f = createFunction();
         f->is_native = true;
-        f->piece_code_index = NATIVE_write_file - NATIVE_MAX - 1;
-        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX + 1);
+        f->piece_code_index = NATIVE_write_file - NATIVE_MAX;
+        f->name = NAME_OF_NATIVE(f->piece_code_index + NATIVE_MAX);
         f->parameters.push_back({});
         f->parameters.back().name = "path";
         f->parameters.back().typeString = "char*";
@@ -359,6 +359,8 @@ void AST::print() {
     log_color(Color::NO_COLOR);
     
     print(global_body);
+    for(auto& a : imports)
+        print(a->body);
 }
 TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
     auto iterator = createScopeIterator(scopeId);

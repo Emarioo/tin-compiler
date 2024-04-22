@@ -20,7 +20,7 @@ void Interpreter::execute() {
     bool interactive = false;
     bool enable_logging = false;
     // interactive = true;
-    enable_logging = true;
+    // enable_logging = true;
     
     code->apply_relocations();
 
@@ -147,7 +147,7 @@ void Interpreter::execute() {
             if(piece->line_of_instruction.size() > prev_pc) {
                 int line_index = piece->line_of_instruction[prev_pc];
                 if(line_index != -1 && (debug_last_piece != piece_index || debug_last_line != line_index)) {
-                    CodePiece::Line& line = piece->lines[line_index];
+                    BytecodePiece::Line& line = piece->lines[line_index];
                     log_color(Color::AQUA);
                     printf(" %d: %s\n", line.line_number, line.text.c_str());
                     log_color(Color::NO_COLOR);
@@ -155,7 +155,7 @@ void Interpreter::execute() {
                     debug_last_line = line_index;
                 }
             }
-            piece->print(prev_pc, prev_pc+1, code);
+            piece->print(code, false, prev_pc, prev_pc+1);
         )
         
         switch(inst.opcode) {
@@ -218,10 +218,16 @@ void Interpreter::execute() {
         } break;
         case INST_CALL: {
             if(imm < 0) { // special native call
-                printed_newline = true;
-                LOG(printf("\n");) // native call may print something so we should print newline here
-                
-                run_native_call((NativeCalls)(imm + NATIVE_MAX));
+                NativeCalls type = (NativeCalls)(imm + NATIVE_MAX);
+                bool will_print = type == NATIVE_printc || type == NATIVE_printf || type == NATIVE_printi || type == NATIVE_prints;
+                if(will_print) {
+                    LOG(printf("\n");)
+                }
+                run_native_call(type);
+                if(will_print) {
+                    printed_newline = true;
+                    LOG(printf("\n");)
+                }
                 break;
             }
             
@@ -288,12 +294,12 @@ void Interpreter::execute() {
             break;
         }
         case INST_JMP: {
-            registers[REG_PC] += imm -1; // -1 because imm is relative to the immediates address and not the end of the jump instruction. See CodePiece::fix_jump_here for specifics.
+            registers[REG_PC] += imm -1; // -1 because imm is relative to the immediates address and not the end of the jump instruction. See BytecodePiece::fix_jump_here for specifics.
             break;
         }
         case INST_JZ: {
             if(registers[inst.op0] == 0) {
-                registers[REG_PC] += imm -1; // -1 because imm is relative to the immediates address and not the end of the jump instruction. See CodePiece::fix_jump_here for specifics.
+                registers[REG_PC] += imm -1; // -1 because imm is relative to the immediates address and not the end of the jump instruction. See BytecodePiece::fix_jump_here for specifics.
             }
             break;
         }
@@ -356,12 +362,12 @@ void Interpreter::run_native_call(NativeCalls callType) {
     case NATIVE_printi: {
         int arg0 = *(int*)(registers[REG_SP] + 0);
         
-        printf("%d\n", arg0);
+        printf("%d", arg0);
     } break;
     case NATIVE_printf: {
         float arg0 = *(float*)(registers[REG_SP] + 0);
         
-        printf("%f\n", arg0);
+        printf("%f", arg0);
     } break;
      case NATIVE_printc: {
         char arg0 = *(char*)(registers[REG_SP] + 0);
@@ -371,7 +377,7 @@ void Interpreter::run_native_call(NativeCalls callType) {
      case NATIVE_prints: {
         char* arg0 = *(char**)(registers[REG_SP] + 0);
         
-        printf("%s\n", arg0);
+        printf("%s", arg0);
     } break;
     case NATIVE_malloc: {
         int arg0 = *(int*)(registers[REG_SP] + 0);
@@ -400,7 +406,7 @@ void Interpreter::run_native_call(NativeCalls callType) {
             }
         }
     } break;
-    case NATIVE_memmove: {
+    case NATIVE_memcpy: {
         void* arg0 = *(void**)(registers[REG_SP] + 0);
         void* arg1 = *(void**)(registers[REG_SP] + 8);
         int arg2 = *(int*)(registers[REG_SP] + 16);

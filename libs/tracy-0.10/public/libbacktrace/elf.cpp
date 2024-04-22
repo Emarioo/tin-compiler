@@ -4355,7 +4355,7 @@ elf_zstd_unpack_seq_decode (int mode,
   return 1;
 }
 
-/* Decompress a zstd stream from PIN/SIN to POUT/SOUT.  Code based on RFC 8878.
+/* Decompress a zstd stream from PIN/SIN to POUT/SOUT.  Bytecode based on RFC 8878.
    Return 1 on success, 0 on error.  */
 
 static int

@@ -42,6 +42,8 @@ TokenStream* lex_file(const std::string& path) {
 
     int data_start = 0;
 
+    std::string string_content{};
+
     int index=0;
     while(index<filesize) {
         char chr = text[index];
@@ -64,6 +66,19 @@ TokenStream* lex_file(const std::string& path) {
 
         bool ending = index == filesize;
         bool delim = chr == ' ' || chr == '\n' || chr == '\r' || chr == '\t';
+
+        if(stream->tokens.size() > 0) {
+            if(chr == '\n') {
+                stream->tokens.back().flags |= TOKEN_FLAG_SUFFIX_NEWLINE;
+                stream->tokens.back().flags &= ~TOKEN_FLAG_SUFFIX_SPACE;
+            }
+            if(chr == ' ') {
+                if(0 == (stream->tokens.back().flags & TOKEN_FLAG_SUFFIX_NEWLINE)) {
+                    stream->tokens.back().flags |= TOKEN_FLAG_SUFFIX_SPACE;
+                }
+            }
+        }
+
 
         if(is_comment) {
             if(chr == '\n')
@@ -97,14 +112,28 @@ TokenStream* lex_file(const std::string& path) {
                 start_ln = ln;
                 continue;
             }
-            int data_end = index-1 - data_start;
-            auto str = std::string(text + data_start, data_end);
-            stream->add_string(str, start_ln, start_col);
+            // This code does not handle newlines in quotes
+            // int data_end = index-1 - data_start;
+            // auto str = std::string(text + data_start, data_end);
+            // stream->add_string(str, start_ln, start_col);
+
+            stream->add_string(string_content, start_ln, start_col);
+            string_content.clear();
             is_str = false;
             continue;
         }
-        if(is_str)
+        if(is_str) {
+            if(chr == '\\' && nextChr == '\\') {
+                index++;
+                string_content += '\\';
+            } else if(chr == '\\' && nextChr == 'n') {
+                index++;
+                string_content += '\n';
+            } else {
+                string_content += chr;
+            }
             continue;
+        }
 
         if((chr >= 'A' && chr <= 'Z') || (chr >= 'a' && chr <= 'z') || chr == '_') {
             if(!is_id) {
@@ -262,7 +291,16 @@ std::string TokenStream::feed(int start, int end) {
             out += strings[tok.data_index];
         } else if(tok.type == TOKEN_LITERAL_STRING){
             out += "\"";
-            out += strings[tok.data_index];
+            auto& s = strings[tok.data_index];
+            for(int j=0;j<s.size();j++) {
+                char chr = s[j];
+                if(chr == '\n') {
+                    out += "\\n";
+                } else {
+                    out += chr;
+                }
+            }
+            // out += strings[tok.data_index];
             out += "\"";
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             out += std::to_string(integers[tok.data_index]);

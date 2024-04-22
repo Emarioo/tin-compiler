@@ -81,9 +81,9 @@ struct Instruction {
         Register operands[3];
     };
 };
-struct Code;
-struct CodePiece {
-    int code_index=0;
+struct Bytecode;
+struct BytecodePiece {
+    int piece_index=0;
     std::string name;
     std::vector<Instruction> instructions;
     
@@ -151,7 +151,7 @@ struct CodePiece {
     
     Instruction* get(int index) { return &instructions[index]; }
     
-    void print(int low_index = 0, int high_index = -1, Code* code = nullptr);
+    void print(Bytecode* code, bool with_debug_info = true, int low_index = 0, int high_index = -1);
     
 private:
     std::vector<int> index_of_non_immediates;
@@ -176,17 +176,17 @@ private:
     }
 };
 
-struct Code {
+struct Bytecode {
     
-    CodePiece* createPiece() {
-        auto ptr = new CodePiece();
+    BytecodePiece* createPiece() {
+        auto ptr = new BytecodePiece();
         MUTEX_LOCK(general_lock);
-        ptr->code_index = pieces.size();
+        ptr->piece_index = pieces.size();
         pieces.push_back(ptr);
         MUTEX_UNLOCK(general_lock);
         return ptr;
     }
-    CodePiece* getPiece(int index) {
+    BytecodePiece* getPiece(int index) {
         MUTEX_LOCK(general_lock);
         if(pieces.size() <= index) {
             MUTEX_UNLOCK(general_lock);
@@ -213,7 +213,7 @@ struct Code {
     std::unordered_map<std::string, int> string_map{};
     
     // unsafe because direct access without mutex
-    std::vector<CodePiece*>& pieces_unsafe() {
+    std::vector<BytecodePiece*>& pieces_unsafe() {
         return pieces;
     }
     
@@ -222,7 +222,7 @@ private:
     int global_data_size = 0;
     int global_data_max = 0;
     
-    std::vector<CodePiece*> pieces;
+    std::vector<BytecodePiece*> pieces;
 };
 
 enum NativeCalls {
@@ -232,7 +232,7 @@ enum NativeCalls {
     NATIVE_prints,
     NATIVE_malloc,
     NATIVE_mfree,
-    NATIVE_memmove,
+    NATIVE_memcpy,
     NATIVE_pow,
     NATIVE_sqrt,
     NATIVE_read_file,

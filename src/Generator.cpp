@@ -239,8 +239,8 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                     // piece->emit_mov_rm(REG_A, REG_B, 4); // reg_a = *reg_b
                     // piece->emit_push(REG_A);
                     
-                    piece->emit_mov_rr(REG_B, REG_BP);
-                    generatePush(REG_B, var_offset, variable->type);
+                    // piece->emit_mov_rr(REG_B, REG_BP);
+                    generatePush(REG_BP, var_offset, variable->type);
                     return variable->type;
                 } break;
                 case Identifier::GLOBAL_ID: {
@@ -411,8 +411,6 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             }
 
             piece->emit_pop(REG_B);
-            // piece->emit_mov_rm(REG_A, REG_B, 4);
-            // piece->emit_push(REG_A);
             generatePush(REG_B, 0, type);
 
             type.set_pointer_level(type.pointer_level()-1);
@@ -426,9 +424,6 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             piece->emit_pop(REG_B);
 
             generatePush(REG_B, 0, type);
-
-            // piece->emit_mov_rm(REG_A, REG_B, 4);
-            // piece->emit_push(REG_A);
             return type;
             break;   
         }
@@ -599,6 +594,17 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
     }
     return TYPE_VOID;
 }
+
+GeneratorContext::LoopScope* GeneratorContext::pushLoop(int continue_pc, int cur_frame_offset){
+    auto ptr = new LoopScope();
+    ptr->continue_pc = continue_pc;
+    ptr->frame_offset = cur_frame_offset;
+    loopScopes.push_back(ptr);
+    return ptr;
+}
+void GeneratorContext::popLoop(){
+    loopScopes.pop_back();
+}
 bool GeneratorContext::generateBody(ASTBody* body) {
     ZoneScopedC(tracy::Color::Blue2);
     auto prev_scope = current_scopeId;
@@ -655,7 +661,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
         case ASTStatement::VAR_DECLARATION: {
             auto type = ast->convertFullType(stmt->declaration_type, current_scopeId);
             if(!type.valid()) {
-                REPORT(stmt->location, "Type in declaration is not a valid type.");
+                REPORT(stmt->location, "Invalid type in declaration.");
                 return false;
             }
             int size = ast->sizeOfType(type);
@@ -686,8 +692,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     // TODO: Implicit casting
                     return false;
                 }
-                piece->emit_mov_rr(REG_B, REG_BP);
-                generatePop(REG_B, var_offset, type);
+                generatePop(REG_BP, var_offset, type);
             } else {
                 int size = ast->sizeOfType(variable->type);
                 piece->emit_li(REG_B, var_offset);
@@ -697,7 +702,7 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             }
         } break;
         case ASTStatement::WHILE: {
-            int pc_loop = piece->get_pc();
+            auto loop = pushLoop(piece->get_pc(), current_frameOffset);
             
             TypeId type = generateExpression(stmt->expression);
             piece->emit_pop(REG_A);
@@ -705,11 +710,51 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             int reloc_while = 0;
             piece->emit_jz(REG_A, &reloc_while);
             
-            bool yes = generateBody(stmt->body);
+            generateBody(stmt->body);
             
-            piece->emit_jmp(pc_loop);
+            piece->emit_jmp(loop->continue_pc);
             
             piece->fix_jump_here(reloc_while);
+            for(auto imm_offset : loop->breaks_to_resolve) {
+                piece->fix_jump_here(imm_offset);
+            }
+            popLoop();
+        } break;
+        case ASTStatement::CONTINUE: {
+            if(loopScopes.size() == 0) {
+                REPORT(stmt->location, "Continue statements are only allowed in loops.");
+                return false;
+            }
+            auto loop = loopScopes.back();
+
+            if(current_frameOffset != loop->frame_offset) {
+                piece->emit_incr(REG_SP, loop->frame_offset - (current_frameOffset));
+            }
+            
+            piece->emit_jmp(loop->continue_pc);
+            
+            stop = true; // continue statement makes the rest of the statments useless
+            if(stop)
+                current_frameOffset = prev_frame_offset;
+        } break;
+        case ASTStatement::BREAK: {
+            if(loopScopes.size() == 0) {
+                REPORT(stmt->location, "Break statements are only allowed in loops.");
+                return false;
+            }
+            auto loop = loopScopes.back();
+
+            if(current_frameOffset != loop->frame_offset) {
+                piece->emit_incr(REG_SP, loop->frame_offset - (current_frameOffset));
+            }
+            
+            int reloc;
+            piece->emit_jmp(&reloc);
+            loop->breaks_to_resolve.push_back(reloc);
+            
+            stop = true; // continue statement makes the rest of the statments useless
+            if(stop)
+                current_frameOffset = prev_frame_offset;
         } break;
         case ASTStatement::IF: {
             generateExpression(stmt->expression);
@@ -744,8 +789,8 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     return false;
                 }
                 
-                piece->emit_mov_rr(REG_B, REG_BP);
-                generatePop(REG_B, function->return_offset, type);
+                // piece->emit_mov_rr(REG_B, REG_BP);
+                generatePop(REG_BP, function->return_offset, type);
             }
             if(current_frameOffset != 0) {
                 piece->emit_incr(REG_SP, - (current_frameOffset));
@@ -753,7 +798,6 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             piece->emit_ret();
             
             stop = true; // return statement makes the rest of the statments useless
-            
             if(stop)
                 current_frameOffset = prev_frame_offset;
         } break;
@@ -918,7 +962,7 @@ bool CheckFunction(AST* ast, AST::Import* imp, ASTFunction* function, Reporter* 
     }
     return true;
 }
-bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter) {
+bool CheckGlobals(AST* ast, AST::Import* imp, Bytecode* code, Reporter* reporter) {
     ZoneScopedC(tracy::Color::Green3);
     GeneratorContext context{};
     context.ast = ast;
@@ -996,7 +1040,7 @@ bool CheckGlobals(AST* ast, AST::Import* imp, Code* code, Reporter* reporter) {
     }
     return !failure;
 }
-void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* reporter) {
+void GenerateFunction(AST* ast, ASTFunction* function, Bytecode* code, Reporter* reporter) {
     ZoneScopedC(tracy::Color::Blue2);
     if(function->is_native)
         return; // native funcs can't be generated
@@ -1008,7 +1052,7 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
     context.piece = code->createPiece();
     context.reporter = reporter;
     context.current_scopeId = AST::GLOBAL_SCOPE;
-    function->piece_code_index = context.piece->code_index;
+    function->piece_code_index = context.piece->piece_index;
     
     context.piece->name = function->name;
     context.piece->virtual_sp = 0;
@@ -1022,6 +1066,7 @@ void GenerateFunction(AST* ast, ASTFunction* function, Code* code, Reporter* rep
         
         context.piece->push_line(0, "<set-globals>");
         
+        // Find all globals in all imports and set their default value at the start of the main function
         for(auto imp : ast->imports) {
             std::vector<ASTBody*> check_bodies;
             check_bodies.push_back(imp->body);
