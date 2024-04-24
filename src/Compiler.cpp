@@ -2,6 +2,8 @@
 
 #define LOGC(...) printf(__VA_ARGS__)
 // #define LOGC(...)
+// #define LOGIT(X) X
+#define LOGIT(X)
 
 u32 ThreadProc(void* arg) {
     auto compiler = (Compiler*)arg;
@@ -31,15 +33,19 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     compiler.tasks.push_back(task);
     }
 
-    int threadcount = 2;
-    threadcount = 1;
+    int threadcount = 6;
+    // threadcount = 1;
 
 #ifndef ENABLE_MULTITHREADING
     if(threadcount > 1) {
+        log_color(YELLOW);
+        printf("Thread count of %d was specified while compiler wasn't built with ENABLE_MULTITHREADING. (compiler will use 1 thread unless you recompile the compiler)\n", threadcount);
+        log_color(NO_COLOR);
         threadcount = 1;
-        printf("Thread count of %d was specified while compiler wasn't built with ENABLE_MULTITHREADING. (compiler will use 1 thread unless you recompile the compiler)\n");
     }
 #endif
+
+    auto start_time = StartMeasure();
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -58,6 +64,31 @@ Bytecode* CompileFile(const std::string& path, bool run) {
         delete t;
     }
     threads.clear();
+    
+    double time = StopMeasure(start_time);
+    
+    int total_lines = 0;
+    int non_blank_lines = 0;
+    for(int i=0;i<compiler.streams.size();i++) {
+        auto& s = compiler.streams[i];
+        total_lines += s->total_lines;
+        non_blank_lines += s->non_blank_lines;
+    }
+    
+    
+    double line_per_sec = total_lines/time;
+    printf("Compiled %d lines in ", total_lines);
+    if(time >= 1.0)
+        printf("%.3f sec", (float)time);
+    else if(time >= 0.001)
+        printf("%.3f ms", (float)(time*1000));
+    else
+        printf("%.3f us", (float)(time*1000'000));
+        
+    printf(" (%f l/s)\n", (float)line_per_sec);
+    printf(" %d non-blank lines\n", non_blank_lines);
+    printf(" %d files\n", (int)compiler.streams.size());
+    printf(" %d threads\n", (int)threadcount);
     
     if(compiler.reporter->errors != 0) {
         return nullptr;
@@ -83,12 +114,13 @@ void Compiler::processTasks() {
     ZoneScopedC(tracy::Color::Gray12);
     
     int thread_id = atomic_add(&total_threads, 1);
+    // printf("Start T\n");
 
     // SleepMS(100);
     
     bool running = true;
     while(running) {
-        ZoneNamedC(zone0, tracy::Color::Gray12, true);
+        // ZoneNamedC(zone0, tracy::Color::Gray12, true);
         
         MUTEX_LOCK(tasks_lock);
         
@@ -97,7 +129,9 @@ void Compiler::processTasks() {
             auto& task = tasks[i];   
 
             if(task.imp && task.imp->deps_count != task.imp->deps_now) {
-                printf("Not ready %d/%d: %s\n", task.imp->deps_now, task.imp->deps_count, task.name.c_str());
+                // TODO: Threads may continously reach this point until dependencies are complete.
+                // not good, semaphore could fix it?
+                // printf("Not ready %d/%d: %s\n", task.imp->deps_now, task.imp->deps_count, task.name.c_str());
                 continue; // not ready
             }
 
@@ -106,7 +140,7 @@ void Compiler::processTasks() {
         }
         
         if(task_index == -1) {
-            if(tasks.size() == 0) {
+            if(tasks.size() == 0 && threads_processing == 0) {
                 // finished all tasks
                 running = false;
                 MUTEX_UNLOCK(tasks_lock);
@@ -119,6 +153,7 @@ void Compiler::processTasks() {
                 MUTEX_UNLOCK(tasks_lock);
                 break;
             }
+            MUTEX_UNLOCK(tasks_lock);
             continue;
         }
         
@@ -134,6 +169,13 @@ void Compiler::processTasks() {
             case TASK_LEX_FILE: {
                 // LOGC("Lexing: %s\n", task.name.c_str());
                 TokenStream* stream = lex_file(task.name); // MEMORY LEAK, stream not destroyed
+                if(!stream) {
+                    log_color(RED);
+                    printf("File %s could not be found.\n", task.name.c_str());
+                    log_color(NO_COLOR);
+                    reporter->errors++;
+                    break;   
+                }
                 MUTEX_LOCK(tasks_lock);
                 streams.push_back(stream);
                 stream_map[task.name] = stream;
@@ -154,8 +196,9 @@ void Compiler::processTasks() {
                 MUTEX_UNLOCK(tasks_lock);
                 
                 if(imp) {
-                    LOGC("[%d]: ",thread_id);
-                    log_color(GREEN); LOGC("Lexed: %s\n", task.name.c_str()); log_color(NO_COLOR);
+                    LOGIT(
+                        LOGC("[%d]: ",thread_id); log_color(GREEN); LOGC("Lexed: %s\n", task.name.c_str()); log_color(NO_COLOR);
+                    )
                     
                     imp->deps_now = 0;
                     imp->deps_count = 0;
@@ -193,8 +236,8 @@ void Compiler::processTasks() {
                     task.imp = imp;
                     queue_task = true;
                 } else {
-                    LOGC("[%d]: ",thread_id);
-                    log_color(RED); LOGC("Lexer failed: %s\n", task.name.c_str()); log_color(NO_COLOR);
+                    LOGIT(LOGC("[%d]: ",thread_id);
+                    log_color(RED); LOGC("Lexer failed: %s\n", task.name.c_str()); log_color(NO_COLOR);)
                 }
             } break;
             case TASK_CHECK_STRUCTS: {
@@ -215,16 +258,16 @@ void Compiler::processTasks() {
                         }
                     }
                     task.no_change = !changed;
-                    LOGC("[%d]: ",thread_id);
-                    log_color(RED); LOGC("Checking structs failure: %s\n", task.name.c_str()); log_color(NO_COLOR);
+                    LOGIT(LOGC("[%d]: ",thread_id);
+                    log_color(RED); LOGC("Checking structs failure: %s\n", task.name.c_str()); log_color(NO_COLOR);)
                     if(ignore_errors) {
                         queue_task = true;
                     } else {
                         // actual failure
                     }
                 } else {
-                    LOGC("[%d]: ",thread_id);
-                    log_color(GREEN); LOGC("Checked structs: %s\n", task.name.c_str()); log_color(NO_COLOR);
+                    LOGIT(LOGC("[%d]: ",thread_id);
+                    log_color(GREEN); LOGC("Checked structs: %s\n", task.name.c_str()); log_color(NO_COLOR);)
                     task.type = TASK_CHECK_FUNCTIONS;
                     queue_task = true;
                 }
@@ -237,18 +280,18 @@ void Compiler::processTasks() {
                 if(reporter->errors == 0) {
                     task.type = TASK_GEN_FUNCTIONS;
                     queue_task = true;
-                    LOGC("[%d]: ",thread_id);
-                    log_color(GREEN); LOGC("Checked functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
+                    LOGIT(LOGC("[%d]: ",thread_id);
+                    log_color(GREEN); LOGC("Checked functions: %s\n", task.name.c_str()); log_color(NO_COLOR); )
                 } else {
-                    LOGC("[%d]: ",thread_id);
-                    log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); 
+                    LOGIT(LOGC("[%d]: ",thread_id);
+                    log_color(RED);  LOGC("Checking functions failure: %s\n", task.name.c_str()); log_color(NO_COLOR); )
                 }
                 
                 CheckGlobals(ast, task.imp, bytecode, reporter);
             } break;
             case TASK_GEN_FUNCTIONS: {
-                LOGC("[%d]: ",thread_id);
-                LOGC("Gen functions: %s\n", task.name.c_str());
+                LOGIT(LOGC("[%d]: ",thread_id);
+                LOGC("Gen functions: %s\n", task.name.c_str());)
                 
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, bytecode, reporter);
@@ -258,7 +301,7 @@ void Compiler::processTasks() {
                     // p->print(bytecode);
                 }
                 
-                log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); 
+                LOGIT(log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); )
             } break;
             default: Assert(false);
         }
@@ -271,6 +314,8 @@ void Compiler::processTasks() {
         MUTEX_UNLOCK(tasks_lock);
     }
     atomic_add(&total_threads, -1);
+    
+    // printf("End T\n");
 }
 
 void Compiler::init() {

@@ -13,24 +13,55 @@ void GenerateTin(TinConfig* config) {
     }
     SetRandomSeed(config->seed);
 
-    // printf("start gen\n");
-
-    context.genProgram();
-
-    // printf("gen done\n");
-
-    std::string path = "sample.tin";
-    std::ofstream file(path, std::ofstream::binary);
-    if(!file.is_open())
-        return;
-
-    file.write(context.output.data(), context.output.length());
-    file.close();
-}
-
-void TinContext::genProgram() {
-    pushScope();
+    struct File {
+        std::string path;
+        TinContext::Scope* scope;
+    };
+    std::vector<File> files{};
+    files.resize(config->file_count.random());
+    for(int i=0;i<files.size();i++) {
+        auto& f = files[i];
+        if(i == 0) {
+            f.path = "generated/main.tin";
+        } else {
+            f.path = "generated/file"+std::to_string(i)+".tin";
+        }
+    }
     
+    for(int i=files.size()-1;i>=0;i--) {
+        auto& f = files[i];
+        context.output.clear();
+        
+        context.pushScope();
+        
+        auto& s = context.scopes.back();
+        if(i+1 < files.size())
+            context.output += "import \"" + files[i+1].path +"\"\n";
+        for(int j=i+2;j<files.size();j++)
+            if(RandomInt(0,1) == 0) {
+                s->shared_scopes.push_back(files[j].scope);
+                context.output += "import \"" + files[j].path +"\"\n";
+            }
+        
+        context.genProgram(true);
+        
+        f.scope = context.popScope(true);
+        
+        std::ofstream file(f.path, std::ofstream::binary);
+        if(!file.is_open())
+            return;
+
+        file.write(context.output.data(), context.output.length());
+        file.close();
+    }
+    
+    for(auto& f : files) { delete f.scope; f.scope = nullptr; }
+}
+void TinContext::genProgram(bool inherit_scope) {
+    if(!inherit_scope)
+        pushScope();
+    
+    // There must be a scope to add the types in
     {
         type_int = createType("int");
         addType(type_int);
@@ -127,7 +158,8 @@ void TinContext::genProgram() {
         indent_level--;
         output += "}\n";
     }
-    popScope();
+    if(!inherit_scope)
+        popScope();
 
 }
 void TinContext::genStatements(bool inherit_scope) {
@@ -386,9 +418,9 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
             kind = value_kinds_int[kind_index];
         } else if(expected_type.type == type_bool) {
             kind_index = RandomInt(0, 2);
-            if(kind_index == 0) ASTExpression::IDENTIFIER;
-            else if(kind_index == 1) ASTExpression::LITERAL_TRUE;
-            else if(kind_index == 2) ASTExpression::LITERAL_FALSE;
+            if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+            else if(kind_index == 1) kind = ASTExpression::LITERAL_TRUE;
+            else if(kind_index == 2) kind = ASTExpression::LITERAL_FALSE;
         } else if(expected_type.type == type_char) {
             kind_index = RandomInt(0, 1);
             if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
@@ -406,6 +438,9 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
         case ASTExpression::IDENTIFIER: {
             auto id = requestVariable(expected_type);
             if(id) {
+                // if(id->name == "arg1" && current_function->name == "Func20") {
+                //     id = id;
+                // }
                 output += id->name;
             } else {
                 if(expected_type.pointer_level) {
@@ -447,9 +482,25 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
         case ASTExpression::GREATER:
         case ASTExpression::LESS_EQUAL:
         case ASTExpression::GREATER_EQUAL: {
-            // output += "(";
-            ComplexType t = {type_int};
-            if(RandomInt(0,1) == 0) t = {type_float};
+            output += "(";
+            ComplexType t = expected_type;
+            if(kind == ASTExpression::AND || kind == ASTExpression::OR) {
+                t.type = type_bool;   
+            } else if(kind == ASTExpression::EQUAL || kind == ASTExpression::NOT_EQUAL || kind == ASTExpression::LESS || kind == ASTExpression::GREATER || kind == ASTExpression::LESS_EQUAL || kind == ASTExpression::GREATER_EQUAL) {
+                int n = RandomInt(0,1);
+                if(n==0)
+                    t.type = type_float;
+                else
+                    t.type = type_int;
+            } else {
+                if(expected_type.valid()) {
+                    t = expected_type;
+                } else {
+                    t = {type_int};
+                    if(RandomInt(0,1) == 0)
+                        t = {type_float};
+                }
+            }
             genExpression(t, expr_depth);
             switch(kind) {
                 case ASTExpression::ADD:            output += " + "; break;
@@ -467,7 +518,7 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
                 default: Assert(false);
             }
             genExpression(t, expr_depth);
-            // output += ")";
+            output += ")";
         } break;
         case ASTExpression::INDEX: {
             auto id = requestVariable(expected_type);
@@ -502,8 +553,11 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
             genExpression({expected_type.type,expected_type.pointer_level + 1}, expr_depth);
         } break;
         case ASTExpression::ASSIGN: {
-            auto id = requestVariable(expected_type);
+            auto id = requestVariable(expected_type, false);
             if(id) {
+                if(id->name == "g_var5825") {
+                    id = id;   
+                }
                 output += id->name + " = ";
                 genExpression(id->type, expr_depth);
             } else {

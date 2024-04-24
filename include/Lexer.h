@@ -54,6 +54,9 @@ struct TokenStream {
 
     std::string path;
     
+    int total_lines = 0;
+    int non_blank_lines = 0;
+    
     std::vector<Token> tokens;
     std::vector<std::string> strings;
     std::vector<int> integers;

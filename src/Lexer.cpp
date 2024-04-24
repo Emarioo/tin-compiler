@@ -44,6 +44,7 @@ TokenStream* lex_file(const std::string& path) {
     int data_start = 0;
 
     std::string string_content{};
+    bool only_whitespace = true;
 
     int index=0;
     while(index<filesize) {
@@ -67,6 +68,14 @@ TokenStream* lex_file(const std::string& path) {
 
         bool ending = index == filesize;
         bool delim = chr == ' ' || chr == '\n' || chr == '\r' || chr == '\t';
+        
+        if(!delim && only_whitespace) {
+            only_whitespace = false;
+            stream->non_blank_lines++;
+        }
+        if(chr == '\n') {
+            only_whitespace = true;
+        }
 
         if(stream->tokens.size() > 0) {
             if(chr == '\n') {
@@ -82,8 +91,9 @@ TokenStream* lex_file(const std::string& path) {
 
 
         if(is_comment) {
-            if(chr == '\n')
+            if(chr == '\n') {
                 is_comment = false;
+            }
             continue;
         }
         if(is_multicomment) {
@@ -265,6 +275,8 @@ TokenStream* lex_file(const std::string& path) {
         start_ln = ln;
         stream->add((TokenKind)chr, start_ln, start_col);
     }
+    
+    stream->total_lines = line;
 
     return stream;
 }

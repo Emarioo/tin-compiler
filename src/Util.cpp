@@ -6,6 +6,8 @@
 #include "Windows.h"
 #include <intrin.h>
 
+#define USE_RDTSC
+
 #ifdef PL_PRINT_ERRORS
 #define PL_PRINTF printf
 #else
@@ -15,36 +17,145 @@
 #define TO_INTERNAL(X) ((u64)X+1)
 #define TO_HANDLE(X) (HANDLE)((u64)X-1)
 
+// #define ENABLE_ALLOCATION_TRACKER
 
 struct Allocation {
     int size;
 };
 std::unordered_map<void*, Allocation> allocations;
 
+
 void* Alloc(int size) {
     auto ptr = malloc(size);
+    #ifdef ENABLE_ALLOCATION_TRACKER
     allocations[ptr] = { size };
+    #endif
     return ptr;
 }
 void* Realloc(void* ptr, int old_size, int new_size) {
+    #ifdef ENABLE_ALLOCATION_TRACKER
     auto pair = allocations.find(ptr);
     if(pair == allocations.end()) {
         Assert(false);
     }
     allocations.erase(ptr);
+    #endif
     auto np = realloc(ptr, new_size);
+    #ifdef ENABLE_ALLOCATION_TRACKER
     allocations[ptr] = { new_size };
+    #endif
     return np;
 }
 void Free(void* ptr) {
+    #ifdef ENABLE_ALLOCATION_TRACKER
     auto pair = allocations.find(ptr);
     if(pair == allocations.end()) {
         Assert(false);
     }
     allocations.erase(ptr);
+    #endif
     free(ptr);
 }
-
+TimePoint StartMeasure(){
+    #ifdef USE_RDTSC
+    return (u64)__rdtsc();
+    #else
+    u64 tp;
+    BOOL success = QueryPerformanceCounter((LARGE_INTEGER*)&tp);
+    // if(!success){
+    // 	PL_PRINTF("time failed\n");	
+    // }
+    // TODO: handle err
+    return tp;
+    #endif
+}
+static bool once = false;
+static u64 frequency;
+double StopMeasure(TimePoint startPoint){
+    if(!once){
+        once=true;
+        #ifdef USE_RDTSC
+        // TODO: Does this work on all Windows versions?
+        //  Could it fail? In any case, something needs to be handled.
+        DWORD mhz = 0;
+        DWORD size = sizeof(DWORD);
+        LONG err = RegGetValueA(
+            HKEY_LOCAL_MACHINE,
+            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+            "~MHz",
+            RRF_RT_DWORD,
+            NULL,
+            &mhz,
+            &size
+        );
+        frequency = (u64)mhz * (u64)1000000;
+        #else
+        BOOL success = QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
+        // if(!success){
+        // 	PL_PRINTF("time failed\n");	
+        // }
+        // TODO: handle err
+        #endif
+    }
+    TimePoint endPoint;
+    #ifdef USE_RDTSC
+    endPoint = (u64)__rdtsc();
+    #else
+    BOOL success = QueryPerformanceCounter((LARGE_INTEGER*)&endPoint);
+    // if(!success){
+    // 	PL_PRINTF("time failed\n");	
+    // }
+    #endif
+    return (double)(endPoint-startPoint)/(double)frequency;
+}
+double DiffMeasure(TimePoint endSubStart) {
+    if(!once){
+        once=true;
+        #ifdef USE_RDTSC
+        // TODO: Does this work on all Windows versions?
+        //  Could it fail? In any case, something needs to be handled.
+        DWORD mhz = 0;
+        DWORD size = sizeof(DWORD);
+        LONG err = RegGetValueA(
+            HKEY_LOCAL_MACHINE,
+            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+            "~MHz",
+            RRF_RT_DWORD,
+            NULL,
+            &mhz,
+            &size
+        );
+        frequency = (u64)mhz * (u64)1000000;
+        #else
+        BOOL success = QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
+        // if(!success){
+        // 	PL_PRINTF("time failed\n");	
+        // }
+        // TODO: handle err
+        #endif
+    }
+    return (double)(endSubStart)/(double)frequency;
+}
+u64 GetClockSpeed(){
+    static u64 clockSpeed = 0; // frequency
+    if(clockSpeed==0){
+        // TODO: Does this work on all Windows versions?
+        //  Could it fail? In any case, something needs to be handled.
+        DWORD mhz = 0;
+        DWORD size = sizeof(DWORD);
+        LONG err = RegGetValueA(
+            HKEY_LOCAL_MACHINE,
+            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+            "~MHz",
+            RRF_RT_DWORD,
+            NULL,
+            &mhz,
+            &size
+        );
+        clockSpeed = (u64)mhz * (u64)1000000;
+    }
+    return clockSpeed;
+}
 void SleepMS(int ms) {
     Sleep(ms);
 }
@@ -145,6 +256,7 @@ void Mutex::cleanup() {
 }
 void Mutex::lock() {
     // MEASURE
+    ZoneScopedC(tracy::Color::Bisque4);
     if (m_internalHandle == 0) {
         HANDLE handle = CreateMutex(NULL, false, NULL);
         if (handle == INVALID_HANDLE_VALUE) {

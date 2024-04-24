@@ -140,6 +140,14 @@ private:
     u64 m_internalHandle = 0;
 };
 
+typedef u64 TimePoint;
+TimePoint StartMeasure();
+// returns time in seconds
+double StopMeasure(TimePoint startPoint);
+// example: DiffMeasure(StartMeasure() - StartMeasure())
+double DiffMeasure(TimePoint endSubStart);
+// Returns value in Hz
+u64 GetClockSpeed();
 void SleepMS(int ms);
 
 int RandomInt(int min, int max);

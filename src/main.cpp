@@ -74,19 +74,26 @@ int main(int argc, const char** argv) {
         
     } else if(dev_mode) {
         TinConfig config{};
+        // IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // This settings were used when measuring for the first time (pessimistic results)
+        // DO NOT CHANGE THIS SO THAT WE CAN TEST WITH THE SAME SOURCE FILES WITH AN IMPROVED COMPILER
         config.struct_frequency = { 1, 1 };
         config.member_frequency = { 1, 1 };
         config.function_frequency = { 1, 1 };
         config.argument_frequency = { 1, 3 };
-        config.statement_frequency = { 2, 10 };
-        // config.seed = 1713919031;
+        config.statement_frequency = { 10, 20 };
+        config.file_count = { 15, 50 };
+        config.seed = 1713988173;
+        
         GenerateTin(&config);
 
         // if(argc == 2 && !strcmp(argv[1], "-enable-logging")) {
 
         // }
 
-        CompileFile("sample.tin", false);
+        // CompileFile("main.tin", false);
+        CompileFile("generated/main.tin", false);
+        // CompileFile("sample.tin", false);
         // CompileFile("test.tin", true);
         // CompileFile("tests/file.tin", true);
         // CompileFile("tests/expr.tin", true);

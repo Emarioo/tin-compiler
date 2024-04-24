@@ -328,13 +328,14 @@ int Bytecode::appendData(int size, void* data) {
     }
     int off = global_data_size;
     global_data_size += size;
+    MUTEX_UNLOCK(general_lock);
     
+    // we have reserved this section of memory, no other thread will read/write to it
     if(data) {
         memcpy(global_data + off, data, size);
     } else {
         memset(global_data + off, '_', size);
     }
-    MUTEX_UNLOCK(general_lock);
     return off;
 }
 int Bytecode::appendString(const std::string& str) {

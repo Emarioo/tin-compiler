@@ -521,6 +521,11 @@ ASTStatement* ParseContext::parseDeclaration(bool is_global, bool is_constant) {
         return nullptr;
     }
     advance();
+    
+    if(is_global) {
+        REPORT(token, "You cannot declare global variables with an expression. You have to manually set it at the start of main.");
+        return nullptr;
+    }
 
     ASTExpression* expr = parseExpression();
     if(!expr) {
@@ -836,6 +841,9 @@ ASTStructure* ParseContext::parseStruct() {
 
 AST::Import* ParseTokenStream(TokenStream* stream, AST::Import* imp, AST* ast, Reporter* reporter) {
     ZoneScopedC(tracy::Color::Red2);
+    Assert(stream);
+    Assert(ast);
+    Assert(reporter);
     ParseContext context{};
     context.reporter = reporter;
     context.stream = stream;

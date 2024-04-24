@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Config.h"
+#include "Util.h"
 
 struct TinConfig {
     struct Range {
         int min, max;
+        int random() const { if(min == max) return min; return RandomInt(min, max); }
     };
     Range struct_frequency;
     Range member_frequency;
@@ -12,6 +14,8 @@ struct TinConfig {
     Range function_frequency;
     Range argument_frequency;
     Range statement_frequency;
+    
+    Range file_count;
 
     int seed = 0;
 };
@@ -89,39 +93,45 @@ struct TinContext {
         std::vector<Type*> types;
         std::vector<Function*> functions;
         std::vector<Identifier*> variables;
+        
+        std::vector<Scope*> shared_scopes;
     };
     std::vector<Scope*> scopes;
 
     void pushScope() {
         scopes.push_back(new Scope());
     }
-    void popScope() {
+    Scope* popScope(bool keep_scope = false) {
         auto scope = scopes.back();
         scopes.erase(scopes.begin() + scopes.size()-1);
+        
+        if(!keep_scope) {
+            for(auto& s : scope->types) {
+                // auto pair = types.find(s->name);
+                // if(pair != types.end())
+                // types.erase(pair);
 
-        for(auto& s : scope->types) {
-            // auto pair = types.find(s->name);
-            // if(pair != types.end())
-            // types.erase(pair);
+                delete s;
+            }
+            for(auto& s : scope->functions) {
+                // auto pair = functions.find(s->name);
+                // if(pair != functions.end())
+                // functions.erase(pair);
 
-            delete s;
+                delete s;
+            }
+            for(auto& s : scope->variables) {
+                // auto pair = variables.find(s->name);
+                // if(pair != variables.end())
+                //     variables.erase(pair);
+                    
+                delete s;
+            }
+            delete scope;
+            return nullptr;
+        } else {
+            return scope;
         }
-        for(auto& s : scope->functions) {
-            // auto pair = functions.find(s->name);
-            // if(pair != functions.end())
-            // functions.erase(pair);
-
-            delete s;
-        }
-        for(auto& s : scope->variables) {
-            // auto pair = variables.find(s->name);
-            // if(pair != variables.end())
-            //     variables.erase(pair);
-                
-            delete s;
-        }
-
-        delete scope;
     }
 
     Type* createType(const std::string& name) {
@@ -144,8 +154,9 @@ struct TinContext {
         scopes.back()->variables.push_back(id);
         return id;
     }
-    Identifier* requestVariable(ComplexType expected_type) {
+    Identifier* requestVariable(ComplexType expected_type, bool can_be_const = true) {
         if(scopes.size() == 0) return nullptr;
+        
         for(int i=scopes.size()-1;i>=0;i--) {
             auto s = scopes[i];
             if(s->variables.size() == 0)
@@ -154,7 +165,25 @@ struct TinContext {
             int j = start;
             while(true) {
                 auto& v = s->variables[j];
-                if(!expected_type.valid() || v->type == expected_type)
+                if((can_be_const || v->kind != Identifier::CONSTANT) && ( !expected_type.valid() || v->type == expected_type))
+                    return v;
+                
+                j = (j + 1) % s->variables.size();
+                if(j == start) {
+                    break;
+                }
+            }
+        }
+        auto& shared_scopes = scopes.back()->shared_scopes;
+        for(int i=0;i<shared_scopes.size();i++) {
+            auto s = shared_scopes[i];
+            if(s->variables.size() == 0)
+                continue;
+            int start = RandomInt(0,s->variables.size()-1);
+            int j = start;
+            while(true) {
+                auto& v = s->variables[j];
+                if((can_be_const || v->kind == Identifier::CONSTANT) && (!expected_type.valid() || v->type == expected_type))
                     return v;
                 
                 j = (j + 1) % s->variables.size();
@@ -184,6 +213,24 @@ struct TinContext {
                 }
             }
         }
+        auto& shared_scopes = scopes.back()->shared_scopes;
+        for(int i=0;i<shared_scopes.size();i++) {
+            auto s = shared_scopes[i];
+            if(s->functions.size() == 0)
+                continue;
+            int start = RandomInt(0,s->functions.size()-1);
+            int j = start;
+            while(true) {
+                auto& v = s->functions[j];
+                if(!expected_type.valid() || v->return_type == expected_type)
+                    return v;
+                
+                j = (j + 1) % s->functions.size();
+                if(j == start) {
+                    break;
+                }
+            }
+        }
         return nullptr;
     }
     ComplexType requestType() {
@@ -193,6 +240,15 @@ struct TinContext {
             if(s->types.size() == 0)
                 continue;
             int j = RandomInt(0,s->types.size()-1);
+            return { s->types[j] };
+        }
+        auto& shared_scopes = scopes.back()->shared_scopes;
+        for(int i=0;i<shared_scopes.size();i++) {
+            auto s = shared_scopes[i];
+            if(s->variables.size() == 0)
+                continue;
+            int start = RandomInt(0,s->variables.size()-1);
+            int j = start;
             return { s->types[j] };
         }
         return {};
@@ -209,8 +265,8 @@ struct TinContext {
     Type* type_char     = nullptr;
     Type* type_bool     = nullptr;
 
-    void genProgram();
-    void genStatements(bool inherit_scopes = false);
+    void genProgram(bool inherit_scope = false);
+    void genStatements(bool inherit_scope = false);
     void genExpression(ComplexType expected_type, int expr_depth);
 
     void indent() {
