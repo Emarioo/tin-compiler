@@ -19,6 +19,31 @@ void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
         }
     }
 }
+bool GeneratorContext::performCast(TypeId ltype, TypeId rtype) {
+    // out_type = ltype;
+    if(ltype == rtype) return true;
+    
+    if(ltype.pointer_level() > 0 && rtype.pointer_level() > 0) {
+        // out_type = rtype;
+        return true;
+    } else if((ltype == TYPE_INT || ltype == TYPE_CHAR) && (rtype == TYPE_INT && rtype == TYPE_CHAR)) {
+        // out_type = rtype;
+        return true;
+    } else if(ltype == TYPE_INT && rtype == TYPE_FLOAT) {
+        // out_type = TYPE_FLOAT;
+        piece->emit_pop(REG_A);
+        piece->emit_cast(REG_A, CAST_INT_FLOAT);
+        piece->emit_push(REG_A);
+        return true;
+    } else if(ltype == TYPE_FLOAT && rtype == TYPE_INT) {
+        // out_type = TYPE_INT;
+        piece->emit_pop(REG_A);
+        piece->emit_cast(REG_A, CAST_FLOAT_INT);
+        piece->emit_push(REG_A);
+        return true;
+    }
+    return false;
+}
 void GeneratorContext::generatePush(Register reg, int offset, TypeId type) {
     int size = ast->sizeOfType(type);
     TypeInfo* info = nullptr;
@@ -220,6 +245,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             type.set_pointer_level(1);
             return type;
         } break;
+        case ASTExpression::LITERAL_CHAR: {
+            Assert(expr->literal_string.size() > 0);
+            piece->emit_li(REG_A, expr->literal_string[0]);
+            piece->emit_push(REG_A);
+            return TYPE_CHAR;
+        } break;
         case ASTExpression::IDENTIFIER: {
             auto variable = ast->findVariable(expr->name, current_scopeId);
             if(!variable) {
@@ -249,8 +280,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                     return variable->type;
                 } break;
                 case Identifier::CONST_ID: {
-                    Assert(variable->statement && variable->statement->expression);
+                    Assert(variable->statement);
                     auto e = variable->statement->expression;
+                    if(!e) {
+                        REPORT(e->location, "Constant does not have an expression. This is not allowed since specifying one is the only way to set constants.");
+                        return TYPE_VOID;
+                    }
                     if(!e->isConst()) {
                         REPORT(e->location, "Constant is not a valid const expression. Only literals are allowed in constants (no operations at all)");
                         return TYPE_VOID;
@@ -261,7 +296,6 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 default: Assert(false);
             }
             return TYPE_VOID;
-       
         } break;
         case ASTExpression::FUNCTION_CALL: {
             auto fun = ast->findFunction(expr->name, current_scopeId);
@@ -347,12 +381,20 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             TypeId ltype = generateExpression(expr->left);
             TypeId rtype = generateExpression(expr->right);
             
+            TypeId out_type = ltype;
+            bool is_float = false;
             if(ltype == rtype) {
-            
-            } else if((ltype == TYPE_INT || ltype == TYPE_CHAR || ltype.pointer_level()>0) && (rtype == TYPE_INT || rtype == TYPE_CHAR || rtype.pointer_level()>0)) {
-
-            } else if((ltype == TYPE_INT || ltype == TYPE_FLOAT) && (rtype == TYPE_INT || rtype == TYPE_FLOAT)) {
                 
+            } else if((ltype == TYPE_INT && rtype.pointer_level()>0) || (rtype == TYPE_INT && ltype.pointer_level()>0)) {
+                if(rtype.pointer_level())
+                    out_type = rtype;
+                else
+                    out_type = ltype;
+            } else if((ltype == TYPE_INT || ltype == TYPE_CHAR) && (rtype == TYPE_INT || rtype == TYPE_CHAR)) {
+                out_type = TYPE_INT;
+            } else if((ltype == TYPE_INT || ltype == TYPE_FLOAT) && (rtype == TYPE_INT || rtype == TYPE_FLOAT)) {
+                out_type = TYPE_FLOAT;
+                is_float = true;
             } else {
                 if(reporter->errors == 0 || (ltype != TYPE_VOID && rtype != TYPE_VOID)) {
                     REPORT(expr->location, "Cannot perform operation on the types '"+ast->nameOfType(ltype)+"', '"+ast->nameOfType(rtype)+"'.");
@@ -360,13 +402,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 return TYPE_VOID;   
             }
             
-            bool is_float = false;
-            if(ltype == TYPE_FLOAT || rtype == TYPE_FLOAT) {
-                is_float = true;
-            }
-
             piece->emit_pop(REG_D);
+            if(is_float && rtype == TYPE_INT)
+                piece->emit_cast(REG_D, CAST_INT_FLOAT);
             piece->emit_pop(REG_A);
+            if(is_float && ltype == TYPE_INT)
+                piece->emit_cast(REG_A, CAST_INT_FLOAT);
             
             switch(expr->kind()) {
                 case ASTExpression::ADD: piece->emit_add(REG_A, REG_D, is_float); break;
@@ -386,8 +427,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             
             piece->emit_push(REG_A);
             return ltype;
-            break;
-        }
+        } break;
         case ASTExpression::NOT: {
             auto type = generateExpression(expr->left);
             
@@ -491,7 +531,9 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
         case ASTExpression::SIZEOF: {
             TypeId type = ast->convertFullType(expr->name, current_scopeId);
             if(!type.valid()) {
-                Assert(false); // find variable name instead of type?
+                REPORT(expr->location, "'"+expr->name+"' is not a type.");
+                return TYPE_INT;
+                // Assert(false); // find variable name instead of type?
             }
             int size = ast->sizeOfType(type);
             piece->emit_li(REG_A, size);
@@ -784,7 +826,8 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                     return false;
                 }
                 auto type = generateExpression(stmt->expression);
-                if(type != function->return_type) {
+                
+                if(!performCast(type, function->return_type)) {
                     REPORT(stmt->location, "Type '"+ast->nameOfType(type)+"' in return statement does not match return type '"+ast->nameOfType(function->return_type)+"' of the function.");
                     return false;
                 }

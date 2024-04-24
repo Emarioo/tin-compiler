@@ -116,51 +116,14 @@ struct ASTExpression : public ASTNode {
         LITERAL_INT,
         LITERAL_FLOAT,
         LITERAL_STR,
+        LITERAL_CHAR,
         LITERAL_NULL,
         LITERAL_TRUE,
         LITERAL_FALSE,
         KIND_END
     };
     ASTExpression(Kind kind) : _kind(kind) {
-        // switch(_kind){
-        //     case FUNCTION_CALL:
-        //         new(&arguments)std::vector<ASTExpression*>();
-        //     case IDENTIFIER:
-        //     case SIZEOF:
-        //     case MEMBER:
-        //     case CAST:
-        //         new(&name)std::string();
-        //         break;
-        //     case LITERAL_STR:
-        //         new(&literal_string)std::string();
-        //         break;
-        //     default:
-        //         left = nullptr;
-        //         right = nullptr;
-        //         break;
-        // }
     }
-    // ~ASTExpression() {
-    //     switch(_kind){
-    //         case FUNCTION_CALL:
-    //             arguments.~vector<ASTExpression*>();
-    //         case IDENTIFIER:
-    //         case SIZEOF:
-    //         case MEMBER:
-    //         case CAST:
-    //             name.~basic_string();
-    //             break;
-    //         case LITERAL_STR:
-    //             literal_string.~basic_string();
-    //             break;
-    //         default: break;
-    //     }
-    // }
-
-    // ASTExpression(const ASTExpression&) = delete;
-    // ASTExpression(ASTExpression&) = delete;
-    // ASTExpression& operator=(const ASTExpression&) = delete;
-    // ASTExpression& operator=(ASTExpression&) = delete;
 
     Kind kind() const {
         return _kind;
@@ -169,12 +132,6 @@ struct ASTExpression : public ASTNode {
         return _kind >= ASTExpression::CONST_EXPR;
     }
 
-    // union {
-    //     // struct {
-    //     // };
-    //     struct {
-    //     };
-    // };
     std::string literal_string;
     int literal_integer;
     float literal_float;

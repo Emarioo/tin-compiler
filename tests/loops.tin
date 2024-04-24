@@ -4,4 +4,17 @@ fun main() {
         printi(i);
         i++;
     }
+    i: int = -1;
+    while i < 5 {
+        i++;
+        if i - (i / 2) * 2 == 0 {
+            prints("Even\n");
+            continue;
+        }
+        if i == 3 {
+            break;
+        }
+                
+        prints("Okay\n");
+    }
 }

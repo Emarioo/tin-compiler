@@ -232,6 +232,7 @@ const char* expr_type_table[] {
     "lit_int", // LITERAL_INT
     "lit_float", // LITERAL_FLOAT
     "lit_str", // LITERAL_STR
+    "lit_char", // LITERAL_CHAR
     "null",
     "true",
     "false",
@@ -258,6 +259,9 @@ void AST::print(ASTExpression* expr, int depth) {
         } break;
         case ASTExpression::LITERAL_STR: {
             printf("\"%s\"\n",expr->literal_string.c_str());
+        } break;
+        case ASTExpression::LITERAL_CHAR: {
+            printf("'%s'\n",expr->literal_string.c_str());
         } break;
         case ASTExpression::SIZEOF: {
             printf("sizeof %s\n",expr->name.c_str());

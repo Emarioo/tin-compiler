@@ -10,6 +10,7 @@ enum TokenKind {
     TOKEN_LITERAL_INTEGER,
     TOKEN_LITERAL_DECIMAL,
     TOKEN_LITERAL_STRING,
+    TOKEN_LITERAL_CHAR,
     TOKEN_STRUCT,
     TOKEN_FUNCTION,
     TOKEN_WHILE,
@@ -36,8 +37,8 @@ enum TokenFlags {
 
 struct Token {
     TokenKind type; // don't rearrange, token initializer assumes {type, data_index}
-    int flags = 0;
     int data_index;
+    int flags = 0;
 
     int line;
     int column;
@@ -63,7 +64,7 @@ struct TokenStream {
         if(tokens.size() <= index)
             return &eof;
 
-        if(str && (tokens[index].type == TOKEN_ID || tokens[index].type == TOKEN_LITERAL_STRING))
+        if(str && (tokens[index].type == TOKEN_ID || tokens[index].type == TOKEN_LITERAL_STRING || tokens[index].type == TOKEN_LITERAL_CHAR))
             *str = strings[tokens[index].data_index];
         else if(num && tokens[index].type == TOKEN_LITERAL_INTEGER) 
             *num = integers[tokens[index].data_index];
@@ -120,6 +121,16 @@ struct TokenStream {
         int index = strings.size();
         strings.push_back(str);
         tokens.push_back({TOKEN_LITERAL_STRING, index});
+
+        auto& tok = tokens.back();
+        tok.line = line;
+        tok.column = column;
+        tok.file = &path;
+    }
+    void add_char(char chr, int line, int column) {
+        int index = strings.size();
+        strings.push_back(std::string(&chr,1));
+        tokens.push_back({TOKEN_LITERAL_CHAR, index});
 
         auto& tok = tokens.back();
         tok.line = line;

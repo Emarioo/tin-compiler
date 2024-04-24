@@ -53,7 +53,7 @@ static std::mt19937 s_random_gen = std::mt19937(time(0));
 void SetRandomSeed(int seed) {
     s_random_gen = std::mt19937(seed);
 }
-// max is generally exclusive 0.0-1.0 may generate 9.999 but rarely 10, same here
+// possible values include the value of max. Distribution = [min, max + 1]
 int RandomInt(int min, int max) {
     std::uniform_int_distribution<int> dist(min, max);
     return dist(s_random_gen);

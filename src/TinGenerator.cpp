@@ -30,6 +30,23 @@ void GenerateTin(TinConfig* config) {
 
 void TinContext::genProgram() {
     pushScope();
+    
+    {
+        type_int = createType("int");
+        addType(type_int);
+    }
+    {
+        type_float = createType("float");
+        addType(type_float);
+    }
+    {
+        type_char = createType("char");
+        addType(type_char);
+    }
+    {
+        type_bool = createType("bool");
+        addType(type_bool);
+    }
 
     int struct_count = RandomInt(config->struct_frequency.min, config->struct_frequency.max);
     for(int i=0;i<struct_count;i++) {
@@ -38,19 +55,23 @@ void TinContext::genProgram() {
         output += name;
         output += " {\n";
         
-        auto id = addType(name);
+        auto id = createType(name);
 
         indent_level++;
         int member_count = RandomInt(config->member_frequency.min, config->member_frequency.max);
         for(int j=0;j<member_count;j++) {
+            if(j!=0) output +=", ";
             std::string name = "mem"+std::to_string(j);
-            std::string type = "int";
+            auto type = requestType();
+            // std::string type = "int";
             indent();
             output += name;
             output += ": ";
-            output += type;
-            output += ",\n";
+            output += type.to_string();
+            output += "\n";
+            id->members.push_back({name, type});
         }
+        addType(id);
         indent_level--;
 
         output += "}\n";
@@ -62,7 +83,7 @@ void TinContext::genProgram() {
         output += name;
         output += "(";
 
-        auto id = addFunc(name);
+        auto func = addFunc(name);
 
         pushScope();
 
@@ -72,30 +93,36 @@ void TinContext::genProgram() {
                 output += ", ";
 
             std::string name = "arg"+std::to_string(j);
-            std::string type = "int";
+            auto t = requestType();
             output += name;
             output += ": ";
-            output += type;
+            output += t.to_string();
 
             auto id = addVar(name, Identifier::LOCAL);
-            id->typeString = type;
+            id->type = t;
+            
+            func->args.push_back({name, t});
         }
 
         output += ")";
 
         output += ": ";
-        std::string rettype = "int";
-        output += rettype;
+        auto ret_type = requestPrimitive();
+        func->return_type = ret_type;
+        output += ret_type.to_string();
 
         output += " {\n";
         indent_level++;
 
-        genStatements(false);
+        current_function = func;
+        genStatements(true);
 
         popScope();
 
         indent();
-        output += "return 0;\n";
+        output += "return ";
+        genExpression(func->return_type, 0);
+        output += ";\n";
 
         indent_level--;
         output += "}\n";
@@ -119,41 +146,42 @@ void TinContext::genStatements(bool inherit_scope) {
         switch(kind) {
             case ASTStatement::VAR_DECLARATION: {
                 indent();
-                std::string type = "int";
+                auto type = requestType();
                 std::string name = "var"+std::to_string(var_counter++);
-                output += name +": "+type+";\n";
+                output += name +": "+type.to_string()+";\n";
                 
                 auto id = addVar(name, Identifier::LOCAL);
-                id->typeString = type;
+                id->type = type;
             } break;
             case ASTStatement::GLOBAL_DECLARATION: {
                 indent();
-                std::string type = "int";
+                auto type = requestType();
                 std::string name = "g_var"+std::to_string(var_counter++);
-                output += "global "+ name + ": " + type + ";\n";
+                output += "global "+ name + ": " + type.to_string() + ";\n";
                 
                 auto id = addVar(name, Identifier::GLOBAL);
-                id->typeString = type;
+                id->type = type;
             } break;
             case ASTStatement::CONST_DECLARATION: {
                 indent();
                 
-                std::string type = "int";
+                auto type = type_int;
                 std::string name = "CONST"+std::to_string(var_counter++);
-                output += "const "+ name + ": "+type+";\n";
+                int num = RandomInt(-1000,1000);
+                output += "const "+ name + ": "+type->name+" = "+ std::to_string(num)+";\n";
                 
                 auto id = addVar(name, Identifier::CONSTANT);
-                id->typeString = type;
+                id->type = {type};
             } break;
             case ASTStatement::EXPRESSION: {
                 indent();
-                genExpression(0);
+                genExpression({}, 0);
                 output += ";\n";
             } break;
             case ASTStatement::IF: {
                 indent();
                 output += "if ";
-                genExpression(0);
+                genExpression({type_bool},0);
 
                 output += " {\n";
                 indent_level++;
@@ -178,7 +206,7 @@ void TinContext::genStatements(bool inherit_scope) {
             case ASTStatement::WHILE: {
                 indent();
                 output += "while ";
-                genExpression(0);
+                genExpression({type_bool}, 0);
 
                 output += " {\n";
                 indent_level++;
@@ -207,7 +235,7 @@ void TinContext::genStatements(bool inherit_scope) {
             case ASTStatement::RETURN: {
                 indent();
                 output += "return ";
-                genExpression(0);
+                genExpression(current_function->return_type, 0);
                 output += ";\n";
 
                 i = stmt_count; // quit
@@ -220,7 +248,7 @@ void TinContext::genStatements(bool inherit_scope) {
 }
 #define ARR_LEN(A) (sizeof(A)/sizeof(*A))
 static const ASTExpression::Kind binary_kinds[]{
-    ASTExpression::FUNCTION_CALL,
+    // ASTExpression::FUNCTION_CALL,
     ASTExpression::ADD,
     ASTExpression::SUB,
     ASTExpression::DIV,
@@ -233,20 +261,42 @@ static const ASTExpression::Kind binary_kinds[]{
     ASTExpression::GREATER,
     ASTExpression::LESS_EQUAL,
     ASTExpression::GREATER_EQUAL,
-    ASTExpression::INDEX,
-};
-static const ASTExpression::Kind unary_kinds[]{
+    // ASTExpression::INDEX,
+    ASTExpression::ASSIGN,
     ASTExpression::NOT,
-    ASTExpression::REFER, // take reference
-    ASTExpression::DEREF, // dereference
-    ASTExpression::MEMBER,
-    ASTExpression::CAST,
+    // ASTExpression::REFER, // take reference
+    // ASTExpression::DEREF, // dereference
+    // ASTExpression::MEMBER,
+    // ASTExpression::CAST,
+};
+static const ASTExpression::Kind binary_kinds_int[]{
+    // ASTExpression::FUNCTION_CALL,
+    ASTExpression::ADD,
+    ASTExpression::SUB,
+    ASTExpression::DIV,
+    ASTExpression::MUL,
+    // ASTExpression::INDEX,
+    // ASTExpression::ASSIGN,
+    // ASTExpression::DEREF, // dereference
+    // ASTExpression::MEMBER,
+};
+static const ASTExpression::Kind binary_kinds_bool[]{
+    ASTExpression::AND,
+    ASTExpression::OR,
+    ASTExpression::NOT,
+    ASTExpression::EQUAL,
+    ASTExpression::NOT_EQUAL,
+    ASTExpression::LESS,
+    ASTExpression::GREATER,
+    ASTExpression::LESS_EQUAL,
+    ASTExpression::GREATER_EQUAL,
 };
 static const ASTExpression::Kind value_kinds[]{
-    ASTExpression::PRE_INCREMENT,  // we generate thesee such that they refer to one identifier, in real code is just has to be a referable expression but that's annoying to generate
-    ASTExpression::POST_INCREMENT,
-    ASTExpression::PRE_DECREMENT,
-    ASTExpression::POST_DECREMENT,
+    ASTExpression::IDENTIFIER,
+    // ASTExpression::PRE_INCREMENT,
+    // ASTExpression::POST_INCREMENT,
+    // ASTExpression::PRE_DECREMENT,
+    // ASTExpression::POST_DECREMENT,
 
     ASTExpression::SIZEOF,
     ASTExpression::LITERAL_INT,
@@ -256,7 +306,28 @@ static const ASTExpression::Kind value_kinds[]{
     ASTExpression::LITERAL_TRUE,
     ASTExpression::LITERAL_FALSE,
 };
-void TinContext::genExpression(int expr_depth) {
+static const ASTExpression::Kind value_kinds_int[]{
+    ASTExpression::IDENTIFIER,
+    // ASTExpression::PRE_INCREMENT,
+    // ASTExpression::POST_INCREMENT,
+    // ASTExpression::PRE_DECREMENT,
+    // ASTExpression::POST_DECREMENT,
+
+    ASTExpression::SIZEOF,
+    ASTExpression::LITERAL_INT,
+};
+static const ASTExpression::Kind value_kinds_bool[]{
+    ASTExpression::IDENTIFIER,
+    ASTExpression::LITERAL_TRUE,
+    ASTExpression::LITERAL_FALSE,
+};
+void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
+    // auto id = requestVariable();
+    // if(id) {
+    //     output += id->name;
+    // } else 
+    //     output += "0";
+    // return;
     expr_depth++;
     if(expr_depth == 0)
         expr_count++;
@@ -266,29 +337,100 @@ void TinContext::genExpression(int expr_depth) {
     ASTExpression::Kind kind = ASTExpression::INVALID;
     int kind_index = 0;
     if(exponential_chance > 0) {
-        // expression with multiple values
-        // we must be carefule to not cause infinite recursion
-        kind_index = RandomInt(0, ARR_LEN(binary_kinds) - 1 + ARR_LEN(unary_kinds) - 1);
-        if(kind_index<ARR_LEN(binary_kinds)) {
+        if(!expected_type.valid()) {
+            kind_index = RandomInt(0, ARR_LEN(binary_kinds) - 1);
             kind = binary_kinds[kind_index];
+        // } else if(expected_type.type == type_char && expected_type.pointer_level > 0) {
+        //     kind_index = RandomInt(0, 1);
+        //     if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+        //     else kind = ASTExpression::LITERAL_STR;
+        // } else if(expected_type.pointer_level > 0) {
+        //     kind_index = RandomInt(0, 1);
+        //     if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+        //     else kind = ASTExpression::LITERAL_NULL;
+        } else if(expected_type.type == type_int) {
+            kind_index = RandomInt(0, ARR_LEN(binary_kinds_int) - 1);
+            kind = binary_kinds_int[kind_index];
+        } else if(expected_type.type == type_float) {
+            kind_index = RandomInt(0, ARR_LEN(binary_kinds_int) - 1);
+            kind = binary_kinds_int[kind_index];
+        } else if(expected_type.type == type_bool) {
+            kind_index = RandomInt(0, ARR_LEN(binary_kinds_bool) - 1);
+            kind = binary_kinds_bool[kind_index];
+        // } else if(expected_type.type == type_char) {
+        //     kind_index = RandomInt(0, 1);
+        //     if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+        //     else kind = ASTExpression::LITERAL_CHAR;
+        // } else if(expected_type.type == type_float) {
+        //     kind_index = RandomInt(0, 1);
+        //     if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+        //     else kind = ASTExpression::LITERAL_FLOAT;
         } else {
-            kind = unary_kinds[kind_index - ARR_LEN(binary_kinds)];
+            kind = ASTExpression::IDENTIFIER;
         }
-    } else {
-        kind_index = RandomInt(0, ARR_LEN(value_kinds) - 1);
-        kind = value_kinds[kind_index];
+    }
+    if(kind == ASTExpression::INVALID) {
+        if(!expected_type.valid()) {
+            kind_index = RandomInt(0, ARR_LEN(value_kinds) - 1);
+            kind = value_kinds[kind_index];
+        } else if(expected_type.type == type_char && expected_type.pointer_level > 0) {
+            kind_index = RandomInt(0, 1);
+            if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+            else kind = ASTExpression::LITERAL_STR;
+        } else if(expected_type.pointer_level > 0) {
+            kind_index = RandomInt(0, 1);
+            if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+            else kind = ASTExpression::LITERAL_NULL;
+        } else if(expected_type.type == type_int) {
+            kind_index = RandomInt(0, ARR_LEN(value_kinds_int) - 1);
+            kind = value_kinds_int[kind_index];
+        } else if(expected_type.type == type_bool) {
+            kind_index = RandomInt(0, 2);
+            if(kind_index == 0) ASTExpression::IDENTIFIER;
+            else if(kind_index == 1) ASTExpression::LITERAL_TRUE;
+            else if(kind_index == 2) ASTExpression::LITERAL_FALSE;
+        } else if(expected_type.type == type_char) {
+            kind_index = RandomInt(0, 1);
+            if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+            else kind = ASTExpression::LITERAL_CHAR;
+        } else if(expected_type.type == type_float) {
+            kind_index = RandomInt(0, 1);
+            if(kind_index == 0) kind = ASTExpression::IDENTIFIER;
+            else kind = ASTExpression::LITERAL_FLOAT;
+        } else {
+            kind = ASTExpression::IDENTIFIER;
+        }
     }
     
     switch(kind) {
+        case ASTExpression::IDENTIFIER: {
+            auto id = requestVariable(expected_type);
+            if(id) {
+                output += id->name;
+            } else {
+                if(expected_type.pointer_level) {
+                    output += "null";
+                } else if(expected_type.type == type_bool) {
+                    output += "true";
+                } else if(expected_type.type == type_int) {
+                    output += "5";
+                } else if(expected_type.type == type_char) {
+                    output += "'j'";
+                } else if(expected_type.type == type_float) {
+                    output += "0.2";
+                } else {
+                    output += "null";
+                }
+            }
+        } break;
         case ASTExpression::FUNCTION_CALL: {
-            auto id = requestFunction();
+            auto id = requestFunction(expected_type);
             if(id) {
                 output += id->name;
                 output += "(";
-                int args = RandomInt(0,5);
-                for(int i=0;i<args;i++){
+                for(int i=0;i<id->args.size();i++){
                     if(i!=0) output+=", ";
-                    genExpression(expr_depth);
+                    genExpression(id->args[i].type, expr_depth);
                 }
                 output += ")";
             } else output += "null";
@@ -305,8 +447,10 @@ void TinContext::genExpression(int expr_depth) {
         case ASTExpression::GREATER:
         case ASTExpression::LESS_EQUAL:
         case ASTExpression::GREATER_EQUAL: {
-            output += "(";
-            genExpression(expr_depth);
+            // output += "(";
+            ComplexType t = {type_int};
+            if(RandomInt(0,1) == 0) t = {type_float};
+            genExpression(t, expr_depth);
             switch(kind) {
                 case ASTExpression::ADD:            output += " + "; break;
                 case ASTExpression::SUB:            output += " - "; break;
@@ -322,11 +466,11 @@ void TinContext::genExpression(int expr_depth) {
                 case ASTExpression::GREATER_EQUAL:  output += " >= "; break;
                 default: Assert(false);
             }
-            genExpression(expr_depth);
-            output += ")";
+            genExpression(t, expr_depth);
+            // output += ")";
         } break;
         case ASTExpression::INDEX: {
-            auto id = requestVariable();
+            auto id = requestVariable(expected_type);
             if(id) {
                 output += id->name;
                 output += "[";
@@ -337,16 +481,16 @@ void TinContext::genExpression(int expr_depth) {
             }
         } break;
         case ASTExpression::NOT: {
-            auto id = requestVariable();
+            auto id = requestVariable(expected_type);
             if(id) {
                 output += "!";
-                genExpression(expr_depth);
+                genExpression({type_bool}, expr_depth);
             } else {
-                output += "null";
+                output += "false";
             }
         } break;
         case ASTExpression::REFER: {
-            auto id = requestVariable();
+            auto id = requestVariable(expected_type);
             if(id) {
                 output += "&"+id->name;
             } else {
@@ -355,10 +499,19 @@ void TinContext::genExpression(int expr_depth) {
         } break;
         case ASTExpression::DEREF: {
             output += "*";
-            genExpression(expr_depth);
+            genExpression({expected_type.type,expected_type.pointer_level + 1}, expr_depth);
+        } break;
+        case ASTExpression::ASSIGN: {
+            auto id = requestVariable(expected_type);
+            if(id) {
+                output += id->name + " = ";
+                genExpression(id->type, expr_depth);
+            } else {
+                output += "null";
+            }
         } break;
         case ASTExpression::MEMBER: {
-            auto id = requestVariable();
+            auto id = requestVariable(expected_type);
             if(id) {
                 output += id->name;
                 output += ".member0";
@@ -368,46 +521,52 @@ void TinContext::genExpression(int expr_depth) {
         } break;
         case ASTExpression::CAST: {
             output += "cast int ";
-            genExpression(expr_depth);
+            genExpression({type_float}, expr_depth);
         } break;
         case ASTExpression::PRE_INCREMENT: {
-            auto id = requestVariable();
+            auto id = requestVariable({type_int});
             if(id) {
                 output += "++";
                 output += id->name;
             } else {
-                output += "null";
+                output += "0";
             }
         } break;
         case ASTExpression::POST_INCREMENT: {
-            auto id = requestVariable();
+            auto id = requestVariable({type_int});
             if(id) {
                 output += id->name;
                 output += "++";
             } else {
-                output += "null";
+                output += "0";
             }
         } break;
         case ASTExpression::PRE_DECREMENT: {
-            auto id = requestVariable();
+            auto id = requestVariable({type_int});
             if(id) {
                 output += "--";
                 output += id->name;
             } else {
-                output += "null";
+                output += "0";
             }
         } break;
         case ASTExpression::POST_DECREMENT: {
-            auto id = requestVariable();
+            auto id = requestVariable({type_int});
             if(id) {
                 output += id->name;
                 output += "--";
             } else {
-                output += "null";
+                output += "0";
             }
         } break;
         case ASTExpression::SIZEOF: {
-            output += "sizeof T";
+            auto type = requestType();
+            if(type.valid()) {
+                output += "sizeof ";
+                output += type.to_string();
+            } else {
+                output += "1";   
+            }
         } break;
         case ASTExpression::LITERAL_INT: {
             output += std::to_string(RandomInt(-1000,1000));
@@ -417,6 +576,9 @@ void TinContext::genExpression(int expr_depth) {
         } break;
         case ASTExpression::LITERAL_STR: {
             output += "\"My string\"";
+        } break;
+        case ASTExpression::LITERAL_CHAR: {
+            output += "'c'";
         } break;
         case ASTExpression::LITERAL_NULL: {
             output += "null";

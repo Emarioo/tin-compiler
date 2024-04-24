@@ -31,6 +31,7 @@ TokenStream* lex_file(const std::string& path) {
     bool is_num = false;
     bool is_decimal = false;
     bool is_str = false;
+    bool is_char = false;
     bool is_comment = false;
     bool is_multicomment = false;
 
@@ -122,7 +123,25 @@ TokenStream* lex_file(const std::string& path) {
             is_str = false;
             continue;
         }
-        if(is_str) {
+        if(chr == '\'') {
+            if(!is_char) {
+                is_char = true;
+                data_start = index;
+                start_col = col;
+                start_ln = ln;
+                continue;
+            }
+            // This code does not handle newlines in quotes
+            // int data_end = index-1 - data_start;
+            // auto str = std::string(text + data_start, data_end);
+            // stream->add_string(str, start_ln, start_col);
+
+            stream->add_char(string_content[0], start_ln, start_col);
+            string_content.clear();
+            is_char = false;
+            continue;
+        }
+        if(is_str || is_char) {
             if(chr == '\\' && nextChr == '\\') {
                 index++;
                 string_content += '\\';
@@ -227,8 +246,20 @@ TokenStream* lex_file(const std::string& path) {
                 continue;
         }
 
-        if(delim)
+        if(delim) {
+            if(stream->tokens.size()) {
+                if(chr == '\n') {
+                    stream->tokens.back().flags |= TOKEN_FLAG_SUFFIX_NEWLINE;
+                    stream->tokens.back().flags &= ~TOKEN_FLAG_SUFFIX_SPACE;
+                }
+                if(chr == ' ') {
+                    if(0 == (stream->tokens.back().flags & TOKEN_FLAG_SUFFIX_NEWLINE)) {
+                        stream->tokens.back().flags |= TOKEN_FLAG_SUFFIX_SPACE;
+                    }
+                }
+            }
             continue;
+        }
 
         start_col = col;
         start_ln = ln;
@@ -244,6 +275,7 @@ const char* token_names[] {
     "lit_int",   // TOKEN_LITERAL_INTEGER,
     "lit_dec", // TOKEN_LITERAL_DECIMAL,
     "lit_str",   // TOKEN_LITERAL_STRING,
+    "lit_char",   // TOKEN_LITERAL_CHAR,
     "struct",    // TOKEN_STRUCT,
     "fun",       // TOKEN_FUNCTION,
     "while",     // TOKEN_WHILE,
@@ -270,6 +302,8 @@ void TokenStream::print() {
             printf("%s (id) ",strings[tok.data_index].c_str());
         } else if(tok.type == TOKEN_LITERAL_STRING){
             printf("%s (str) ",strings[tok.data_index].c_str());
+        } else if(tok.type == TOKEN_LITERAL_CHAR){
+            printf("%s (char) ",strings[tok.data_index].c_str());
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             printf("%d (int) ",integers[tok.data_index]);
         } else if(tok.type == TOKEN_LITERAL_DECIMAL) {
@@ -300,8 +334,19 @@ std::string TokenStream::feed(int start, int end) {
                     out += chr;
                 }
             }
-            // out += strings[tok.data_index];
             out += "\"";
+        } else if(tok.type == TOKEN_LITERAL_CHAR){
+            out += "'";
+            auto& s = strings[tok.data_index];
+            for(int j=0;j<s.size();j++) {
+                char chr = s[j];
+                if(chr == '\n') {
+                    out += "\\n";
+                } else {
+                    out += chr;
+                }
+            }
+            out += "'";
         } else if(tok.type == TOKEN_LITERAL_INTEGER) {
             out += std::to_string(integers[tok.data_index]);
         } else if(tok.type == TOKEN_LITERAL_DECIMAL) {

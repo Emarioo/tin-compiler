@@ -14,12 +14,13 @@ std::string ParseContext::parseType() {
         return "";
     }
     advance();
-
+    
+    int prev_flags = token->flags;
     while(true){
         token = gettok();
-        if(token->type != '*')
+        if(token->type != '*' || (prev_flags & TOKEN_FLAG_SUFFIX_ANY))
             break;
-
+        prev_flags = token->flags;
         out+="*";
         advance();
     }
@@ -304,7 +305,13 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 expr->literal_string = name;
                 expressions.push_back(expr);
-            } else if(token->type == TOKEN_SIZEOF) {
+            } else if(token->type == TOKEN_LITERAL_CHAR) {
+                ASTExpression* expr = ast->createExpression(ASTExpression::LITERAL_CHAR);
+                expr->location = getloc();
+                advance();
+                expr->literal_string = name;
+                expressions.push_back(expr);
+            }  else if(token->type == TOKEN_SIZEOF) {
                 ASTExpression* expr = ast->createExpression(ASTExpression::SIZEOF);
                 expr->location = getloc();
                 advance();

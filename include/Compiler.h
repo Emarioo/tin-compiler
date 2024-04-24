@@ -17,19 +17,17 @@ struct Compiler {
     Reporter* reporter = nullptr;
     Bytecode* bytecode = nullptr;
     
+    std::vector<TokenStream*> streams;
+    std::unordered_map<std::string, TokenStream*> stream_map;
+    
     struct Task {
         TaskType type;
         std::string name;
         AST::Import* imp = nullptr;
-
         bool no_change = false;
-
         // ASTBody* body = nullptr; // only used if there is no import (preload for example)
     };
     std::vector<Task> tasks;
-    
-    std::vector<TokenStream*> streams;
-    std::unordered_map<std::string, TokenStream*> stream_map;
     
     volatile int threads_processing = 0;
     volatile int total_threads = 0;

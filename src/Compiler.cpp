@@ -58,35 +58,8 @@ Bytecode* CompileFile(const std::string& path, bool run) {
         delete t;
     }
     threads.clear();
-
-    // TokenStream* stream = lex_file(path);
-    // ParseTokenStream(stream, ast, reporter);
-    // stream->print();
-    // ast->print();
     
-    // if(reporter->errors == 0) {
-    //     CheckStructs(ast, reporter);
-        
-    //     for(auto func : ast->functions)
-    //         CheckFunction(ast, func, reporter);
-    //     for(auto func : ast->functions)
-    //         GenerateFunction(ast, func, code, reporter);
-        
-    //     // code->print();
-    // }
-
-    // printf("hello %d\n",compiler.reporter->errors);
-    
-    // if(compiler.reporter->errors == 0) {
-    //     VirtualMachine* interpreter = new VirtualMachine();
-    //     interpreter->code = compiler.code;
-    //     interpreter->init();
-    //     interpreter->execute();
-        
-    //     delete interpreter;
-    // }
-    
-    if(compiler.reporter->errors == 0) {
+    if(compiler.reporter->errors != 0) {
         return nullptr;
     }
     
@@ -103,7 +76,6 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     Bytecode* tmp_code = compiler.bytecode;
     compiler.bytecode = nullptr;
     return tmp_code;
-    
 }
 
 void Compiler::processTasks() {
@@ -169,6 +141,7 @@ void Compiler::processTasks() {
                 auto imp = ParseTokenStream(stream, task.imp, ast, reporter);
                 task.imp = imp;
 
+                // stream->print();
                 // ast->print();
 
                 MUTEX_LOCK(tasks_lock);

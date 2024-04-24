@@ -79,14 +79,15 @@ int main(int argc, const char** argv) {
         config.function_frequency = { 1, 1 };
         config.argument_frequency = { 1, 3 };
         config.statement_frequency = { 2, 10 };
-        config.seed = 1713772214;
+        // config.seed = 1713919031;
         GenerateTin(&config);
 
         // if(argc == 2 && !strcmp(argv[1], "-enable-logging")) {
 
         // }
 
-        CompileFile("test.tin", true);
+        CompileFile("sample.tin", false);
+        // CompileFile("test.tin", true);
         // CompileFile("tests/file.tin", true);
         // CompileFile("tests/expr.tin", true);
         // CompileFile("tests/structs.tin", true);

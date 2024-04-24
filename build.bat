@@ -10,14 +10,24 @@
 @REM      NO MAKE
 @REM #################
 
+
+SET arg=%1
+if !arg!==run (
+    @REM Run compiler with compiling it
+    @REM btb -dev
+
+    goto RUN_COMPILER
+
+    @REM exit /b
+)
+
 @REM Toggle comments on the variables below to change compiler
 SET USE_MSVC=1
 @REM SET USE_GCC=1
 
-SET SRC= AST.cpp Bytecode.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
-SET SRC=!SRC: = src/!
-
-SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp
+@REM SET SRC= AST.cpp Bytecode.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
+@REM SET SRC=!SRC: = src/!
+@REM SET SRC=!SRC! libs/tracy-0.10/public/TracyClient.cpp
 
 SET UNITY_FILE=bin/all.cpp
 type nul > !UNITY_FILE!
@@ -54,6 +64,7 @@ if !USE_MSVC!==1 (
 )
 
 if !errorlevel!==0 (
-    bin\tin -dev
     @REM echo f | xcopy bin\app.exe app.exe /y /q > nul
+:RUN_COMPILER
+    bin\tin -dev
 )

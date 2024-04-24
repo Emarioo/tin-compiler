@@ -41,6 +41,9 @@ struct GeneratorContext {
     TypeId generateExpression(ASTExpression* expr);
     TypeId generateReference(ASTExpression* expr);
     bool generateBody(ASTBody* body);
+    
+    // only casts if necessary
+    bool performCast(TypeId ltype, TypeId rtype);
 
     void generatePop(Register reg, int offset, TypeId type);
     void generatePush(Register reg, int offset, TypeId type);
