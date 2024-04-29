@@ -265,11 +265,21 @@ struct AST {
     Import* createImport(const std::string& name) {
         auto i = new Import();
         i->name = name;
-        MUTEX_LOCK(scopes_lock);
+        MUTEX_LOCK(imports_lock);
         imports.push_back(i);
         import_map[name] = i;
-        MUTEX_UNLOCK(scopes_lock);
+        MUTEX_UNLOCK(imports_lock);
         return i;
+    }
+    Import* findImport(const std::string& name) {
+        MUTEX_LOCK(imports_lock);
+        auto pair = import_map.find(name);
+        if(pair != import_map.end()) {
+            MUTEX_UNLOCK(imports_lock);
+            return pair->second;
+        }
+        MUTEX_UNLOCK(imports_lock);
+        return nullptr;
     }
 
     ASTExpression* createExpression(ASTExpression::Kind kind);
@@ -285,12 +295,13 @@ struct AST {
     void print(ASTBody* body, int depth = 0);
     void print();
 
-    // Type functionality
+    MUTEX_DECL(imports_lock);
+
+    #ifndef PREALLOCATED_AST_ARRAYS
     MUTEX_DECL(types_lock);
     std::vector<TypeInfo*> typeInfos;
     MUTEX_DECL(scopes_lock);
     std::vector<ScopeInfo*> scopeInfos;
-
     ScopeInfo* getScope(ScopeId scopeId) {
         MUTEX_LOCK(scopes_lock);
         auto ptr = scopeInfos[scopeId];
@@ -307,12 +318,40 @@ struct AST {
         MUTEX_UNLOCK(scopes_lock);
         return ptr;
     }
-
     TypeInfo* getType(TypeId typeId) {
         Assert(typeId.pointer_level() == 0);
         Assert(typeId.index() < typeInfos.size());
         return typeInfos[typeId.index()];
     }
+    #else
+    int types_max = 0x10000;
+    volatile i32 types_used = 0;
+    TypeInfo* typeInfos = new TypeInfo[types_max];
+    
+    static const int scopes_max = 0x10000;
+    volatile i32 scopes_used = 0;
+    ScopeInfo* scopeInfos = new ScopeInfo[scopes_max];
+
+    ScopeInfo* getScope(ScopeId scopeId) {
+        return &scopeInfos[scopeId];
+    }
+    ScopeInfo* createScope(ScopeId parent) {
+        ScopeId id = atomic_add(&scopes_used, 1) - 1;
+        Assert(id < scopes_max);
+        auto ptr = &scopeInfos[id];
+
+        ptr->scopeId = id;
+        ptr->parent = parent;
+        
+        return ptr;
+    }
+    TypeInfo* getType(TypeId typeId) {
+        Assert(typeId.pointer_level() == 0);
+        // Assert(typeId.index() < typeInfos.size());
+        return &typeInfos[typeId.index()];
+    }
+    #endif
+
     TypeInfo* findType(const std::string& str, ScopeId scopeId);
     TypeId convertFullType(const std::string& str, ScopeId scopeId);
     TypeInfo* createType(const std::string& str, ScopeId scopeId);
@@ -332,4 +371,6 @@ struct AST {
 private:
     int next_nodeid() { return atomic_add(&_nodeid,1) - 1; }
     volatile int _nodeid = 0;
+
+    bool creating_global_types = false;
 };

@@ -1,10 +1,20 @@
 #include "AST.h"
 #include "Bytecode.h"
 
+#ifdef IGNORE_UNNECESSARY_MUTEXES
+#define OPTIONAL_LOCK(x)
+#else
+#define OPTIONAL_LOCK(X) X
+#endif
+
 AST::AST() {
     // NOTE: Mutex not needed, the main thread creates the AST and then shares it with other threads.
     // global_scope = createScope(GLOBAL_SCOPE);
     global_body = createBody(GLOBAL_SCOPE);
+    Assert(global_body->scopeId == 0);
+
+
+    creating_global_types = true;
 
     TypeInfo* type;
     #define ADD(T,S) type = createType(primitive_names[(int)T], GLOBAL_SCOPE); type->size = S;
@@ -152,6 +162,8 @@ AST::AST() {
         f->return_typeString = "bool";
         global_body->add(f);
     }
+
+    creating_global_types = false;
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
     auto ptr = new ASTExpression(kind);
@@ -370,14 +382,14 @@ TypeInfo* AST::findType(const std::string& str, ScopeId scopeId) {
     auto iterator = createScopeIterator(scopeId);
     ScopeInfo* scope=nullptr;
     while((scope = iterate(iterator))) {
-        MUTEX_LOCK(types_lock);
+        OPTIONAL_LOCK(MUTEX_LOCK(types_lock);)
         auto pair = scope->type_map.find(str);
         if(pair != scope->type_map.end()) {
             auto ptr = pair->second;
-            MUTEX_UNLOCK(types_lock);
+            OPTIONAL_LOCK(MUTEX_UNLOCK(types_lock);)
             return ptr;
         }
-        MUTEX_UNLOCK(types_lock);
+        OPTIONAL_LOCK(MUTEX_UNLOCK(types_lock);)
     }
     return nullptr;
 }
@@ -399,6 +411,26 @@ TypeId AST::convertFullType(const std::string& str, ScopeId scopeId) {
     return type;
 }
 TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
+
+    #ifdef PREALLOCATED_AST_ARRAYS
+    ScopeInfo* scope = getScope(scopeId);
+    int id = atomic_add(&types_used, 1) - 1;
+    Assert(id < types_max);
+    auto type = &typeInfos[id];
+    type->name = str;
+    
+    type->typeId = TypeId::Make(id);
+    // NOTE: You may think we'll have race conditions if the scope is global.
+    // Other threads will may access global scope, but they actually won't.
+    // We will add types to the import's scope but never the global scope.
+    // We search for types at global scope and get the children which
+    // are import scopes.
+    if(!creating_global_types) { // we do add int, float to global scope
+        Assert(scopeId != GLOBAL_SCOPE); // assert to ensure that we won't create type at global scope
+    }
+    scope->type_map[str] = type;
+    return type;
+    #else
     ScopeInfo* scope = getScope(scopeId);
     auto type = new TypeInfo();
     type->name = str;
@@ -412,6 +444,7 @@ TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
     scope->type_map[str] = type;
     MUTEX_UNLOCK(scopes_lock);
     return type;
+    #endif
 }
 int AST::sizeOfType(TypeId typeId) {
     if(typeId.pointer_level() != 0)
@@ -436,16 +469,16 @@ std::string AST::nameOfType(TypeId typeId) {
 Identifier* AST::addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset) {
     auto scope = getScope(scopeId);
     
-    MUTEX_LOCK(scopes_lock);
+    OPTIONAL_LOCK(MUTEX_LOCK(scopes_lock);)
     auto pair = scope->identifiers.find(name);
     if(pair != scope->identifiers.end()) {
-        MUTEX_UNLOCK(scopes_lock);
+        OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
         return nullptr; // variable already exists
     }
         
     auto ptr = new Identifier(var_type);
     scope->identifiers[name] = ptr;
-    MUTEX_UNLOCK(scopes_lock);
+    OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
         
     ptr->type = type;
     if(var_type == Identifier::CONST_ID) {
@@ -459,15 +492,15 @@ Identifier* AST::findVariable(const std::string& name, ScopeId scopeId) {
     auto iterator = createScopeIterator(scopeId);
     ScopeInfo* scope=nullptr;
     while((scope = iterate(iterator))) {
-        MUTEX_LOCK(scopes_lock);
+        OPTIONAL_LOCK(MUTEX_LOCK(scopes_lock);)
         auto pair = scope->identifiers.find(name);
         if(pair != scope->identifiers.end()) {
             auto ptr = pair->second;
-            MUTEX_UNLOCK(scopes_lock);
+            OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
             return ptr;
         }
             
-        MUTEX_UNLOCK(scopes_lock);
+        OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
     }
     return nullptr;
 }
@@ -500,11 +533,11 @@ ScopeInfo* AST::iterate(AST::ScopeIterator& iterator) {
         ScopeInfo* info = iterator.searchScopes[iterator.search_index];
         iterator.search_index++;
         
-        MUTEX_LOCK(scopes_lock); // TODO: Optimize
+        OPTIONAL_LOCK(MUTEX_LOCK(scopes_lock);)
         for(auto s : info->shared_scopes) {
             add(s);
         }
-        MUTEX_UNLOCK(scopes_lock);
+        OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
         
         if(info->scopeId != info->parent) {
             auto s = getScope(info->parent);

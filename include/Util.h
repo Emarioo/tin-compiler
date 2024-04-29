@@ -155,19 +155,21 @@ float RandomFloat();
 void SetRandomSeed(int seed);
 
 #ifdef ENABLE_MULTITHREADING
-    #define MUTEX_DECL(var)   Mutex var{}
-    #define MUTEX_LOCK(var)   var.lock()
-    #define MUTEX_UNLOCK(var) var.unlock()
+    #define MUTEX_DECL(var)   Mutex var{};
+    #define MUTEX_LOCK(var)   var.lock();
+    #define MUTEX_UNLOCK(var) var.unlock();
 
-    #define SEM_DECL(var)   Semaphore var{}
-    #define SEM_WAIT(var)   var.wait()
-    #define SEM_SIGNAL(var) var.signal()
+    #define SEM_DECL(var)               Semaphore var{};
+    #define SEM_INIT(var,initial,max)   var.init(initial,max);
+    #define SEM_WAIT(var)               var.wait();
+    #define SEM_SIGNAL(var)             var.signal();
 #else
     #define MUTEX_DECL(var)  
     #define MUTEX_LOCK(var)  
     #define MUTEX_UNLOCK(var)
 
     #define SEM_DECL(var)  
+    #define SEM_INIT(var,initial,max)
     #define SEM_WAIT(var)  
     #define SEM_SIGNAL(var)
 #endif

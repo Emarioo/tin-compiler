@@ -77,12 +77,21 @@ int main(int argc, const char** argv) {
         // IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // This settings were used when measuring for the first time (pessimistic results)
         // DO NOT CHANGE THIS SO THAT WE CAN TEST WITH THE SAME SOURCE FILES WITH AN IMPROVED COMPILER
-        config.struct_frequency = { 1, 1 };
-        config.member_frequency = { 1, 1 };
-        config.function_frequency = { 1, 1 };
-        config.argument_frequency = { 1, 3 };
+        // config.struct_frequency = { 1, 1 };
+        // config.member_frequency = { 1, 1 };
+        // config.function_frequency = { 1, 1 };
+        // config.argument_frequency = { 1, 3 };
+        // config.statement_frequency = { 10, 20 };
+        // config.file_count = { 15, 50 };
+        // config.seed = 1713988173;
+
+        
+        config.struct_frequency = { 2, 4 };
+        config.member_frequency = { 5, 10 };
+        config.function_frequency = { 2, 4 };
+        config.argument_frequency = { 3, 5 };
         config.statement_frequency = { 10, 20 };
-        config.file_count = { 15, 50 };
+        config.file_count = { 50, 100 };
         config.seed = 1713988173;
         
         GenerateTin(&config);

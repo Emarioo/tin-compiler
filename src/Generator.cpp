@@ -954,6 +954,7 @@ bool CheckStructs(AST* ast, AST::Import* imp, Reporter* reporter, bool* changed,
     context.ast = ast;
     context.reporter = reporter;
     context.ignore_errors = ignore_errors;
+    context.current_scopeId = imp->body->scopeId;
     
     // three cases can occur
     // we check structs and all types are valid, success

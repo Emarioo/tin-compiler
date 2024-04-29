@@ -33,7 +33,7 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     compiler.tasks.push_back(task);
     }
 
-    int threadcount = 6;
+    int threadcount = 16;
     // threadcount = 1;
 
 #ifndef ENABLE_MULTITHREADING
@@ -46,6 +46,8 @@ Bytecode* CompileFile(const std::string& path, bool run) {
 #endif
 
     auto start_time = StartMeasure();
+
+    SEM_INIT(compiler.tasks_queue_lock, 1, 1)
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -122,15 +124,15 @@ void Compiler::processTasks() {
     while(running) {
         // ZoneNamedC(zone0, tracy::Color::Gray12, true);
         
-        MUTEX_LOCK(tasks_lock);
+        SEM_WAIT(tasks_queue_lock)
+        MUTEX_LOCK(tasks_lock)
+        is_signaled = false;
         
         int task_index=-1;
         for(int i=0;i<tasks.size();i++) {
             auto& task = tasks[i];   
 
             if(task.imp && task.imp->deps_count != task.imp->deps_now) {
-                // TODO: Threads may continously reach this point until dependencies are complete.
-                // not good, semaphore could fix it?
                 // printf("Not ready %d/%d: %s\n", task.imp->deps_now, task.imp->deps_count, task.name.c_str());
                 continue; // not ready
             }
@@ -143,6 +145,12 @@ void Compiler::processTasks() {
             if(tasks.size() == 0 && threads_processing == 0) {
                 // finished all tasks
                 running = false;
+
+                if(!is_signaled) {
+                    is_signaled = true;
+                    SEM_SIGNAL(tasks_queue_lock)
+                }
+                
                 MUTEX_UNLOCK(tasks_lock);
                 break;
             }
@@ -150,6 +158,12 @@ void Compiler::processTasks() {
                 log_color(RED);
                 printf("processTasks: No thread is processing tasks and no task is ready for processing.");
                 log_color(NO_COLOR);
+
+                if(!is_signaled) {
+                    is_signaled = true;
+                    SEM_SIGNAL(tasks_queue_lock)
+                }
+
                 MUTEX_UNLOCK(tasks_lock);
                 break;
             }
@@ -161,6 +175,12 @@ void Compiler::processTasks() {
         tasks.erase(tasks.begin() + task_index);
         
         atomic_add(&threads_processing, 1);
+
+        if(tasks.size() && !is_signaled) {
+            is_signaled = true;
+            SEM_SIGNAL(tasks_queue_lock)
+        }
+
         MUTEX_UNLOCK(tasks_lock);
         
         bool queue_task = false;
@@ -203,11 +223,8 @@ void Compiler::processTasks() {
                     imp->deps_now = 0;
                     imp->deps_count = 0;
                     for (auto& n : imp->dependencies) {
-                        MUTEX_LOCK(ast->scopes_lock);
-                        auto pair = ast->import_map.find(n);
-                        if(pair == ast->import_map.end()) {
-                            MUTEX_UNLOCK(ast->scopes_lock);
-                            
+                        auto ptr = ast->findImport(n);
+                        if(!ptr) {
                             Task t{};
                             t.type = TASK_LEX_FILE;
                             t.name = n;
@@ -218,18 +235,16 @@ void Compiler::processTasks() {
                             tasks.push_back(t);
                             MUTEX_UNLOCK(tasks_lock);
                         } else {
-                            auto ptr = pair->second;
-                            MUTEX_UNLOCK(ast->scopes_lock);
+                            // import is already a task
                             MUTEX_LOCK(tasks_lock);
                             if(ptr->body) {
                                 // TODO: Is tasks_lock mutex enough for shared_scopes?
-                                ast->getScope(imp->body->scopeId)->shared_scopes.push_back(ast->getScope(pair->second->body->scopeId));
+                                ast->getScope(imp->body->scopeId)->shared_scopes.push_back(ast->getScope(ptr->body->scopeId));
                             } else {
-                                pair->second->fixups.push_back(imp);
+                                ptr->fixups.push_back(imp);
                                 imp->deps_count++;
                             }
                             MUTEX_UNLOCK(tasks_lock);
-                            // import is already a task
                         }
                     }
                     task.type = TASK_CHECK_STRUCTS;
@@ -310,6 +325,13 @@ void Compiler::processTasks() {
         atomic_add(&threads_processing, -1);
         if(queue_task) {
             tasks.push_back(task);
+            
+        }
+        // If one thread finished (even if we don't queued a task) something
+        // new might have happened where new processing is possible.
+        if(!is_signaled) {
+            is_signaled = true;
+            SEM_SIGNAL(tasks_queue_lock)
         }
         MUTEX_UNLOCK(tasks_lock);
     }

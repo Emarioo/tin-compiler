@@ -31,8 +31,10 @@ struct Compiler {
     
     volatile int threads_processing = 0;
     volatile int total_threads = 0;
-    MUTEX_DECL(tasks_lock);
-    SEM_DECL(tasks_queue_lock);
+    MUTEX_DECL(tasks_lock)
+
+    bool is_signaled = false;
+    SEM_DECL(tasks_queue_lock)
     
     void init();
     void processTasks();

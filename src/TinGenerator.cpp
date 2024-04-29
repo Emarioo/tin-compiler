@@ -13,6 +13,8 @@ void GenerateTin(TinConfig* config) {
     }
     SetRandomSeed(config->seed);
 
+    
+
     struct File {
         std::string path;
         TinContext::Scope* scope;
@@ -48,8 +50,12 @@ void GenerateTin(TinConfig* config) {
         f.scope = context.popScope(true);
         
         std::ofstream file(f.path, std::ofstream::binary);
-        if(!file.is_open())
+        if(!file.is_open()) {
+            log_color(RED);
+            printf("Could not generate %s. Does the directories exist?",f.path.c_str());
+            log_color(NO_COLOR);
             return;
+        }
 
         file.write(context.output.data(), context.output.length());
         file.close();
