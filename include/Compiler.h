@@ -12,6 +12,15 @@ enum TaskType {
     TASK_CHECK_FUNCTIONS,
     TASK_GEN_FUNCTIONS,
 };
+struct CompilerOptions {
+    std::string initial_file;
+    bool run = false;
+    #ifdef ENABLE_MULTITHREADING
+    int thread_count = 0;
+    #else
+    int thread_count = 1;
+    #endif
+};
 struct Compiler {
     AST* ast = nullptr;
     Reporter* reporter = nullptr;
@@ -25,7 +34,6 @@ struct Compiler {
         std::string name;
         AST::Import* imp = nullptr;
         bool no_change = false;
-        // ASTBody* body = nullptr; // only used if there is no import (preload for example)
     };
     std::vector<Task> tasks;
     
@@ -40,4 +48,4 @@ struct Compiler {
     void processTasks();
 };
 
-Bytecode* CompileFile(const std::string& path, bool run = false);
+Bytecode* CompileFile(CompilerOptions* options);

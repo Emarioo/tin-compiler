@@ -1,0 +1,48 @@
+/*
+    This file uses most of the features in the language
+*/
+
+struct Array {
+    ptr: Location
+}
+struct Location {
+    ln: int;
+    
+}
+
+fun strlen(str: char*): int {
+    length: int; // zero initialized
+    while str[length] {
+        length++;
+    }
+    return length;
+}
+fun find_string(str: char*, text: char*, text_size: int): int {
+    str_length := strlen(str);
+    index: int;
+    while index < text[index] {
+        length++;
+    }
+    return length;
+}
+
+fun main() {
+    text: char*;
+    size: int;
+    yes: bool = read_file("tests/feature_set.tin", &text, &size);
+    // read_file allocates memory with malloc
+
+    arr: Array* = find_string("int",text,size);
+
+    prints("int can be found here")
+    i: int;
+    while i < arr.len {
+        printi()
+
+
+
+
+    }
+
+    mfree(text)
+}

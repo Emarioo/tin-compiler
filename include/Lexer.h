@@ -56,6 +56,7 @@ struct TokenStream {
     
     int total_lines = 0;
     int non_blank_lines = 0;
+    int processed_bytes = 0;
     
     std::vector<Token> tokens;
     std::vector<std::string> strings;

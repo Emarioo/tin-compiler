@@ -1,7 +1,7 @@
 #include "Compiler.h"
 
-#define LOGC(...) printf(__VA_ARGS__)
-// #define LOGC(...)
+// #define LOGC(...) printf(__VA_ARGS__)
+#define LOGC(...)
 // #define LOGIT(X) X
 #define LOGIT(X)
 
@@ -12,7 +12,7 @@ u32 ThreadProc(void* arg) {
     return 0;
 }
 
-Bytecode* CompileFile(const std::string& path, bool run) {
+Bytecode* CompileFile(CompilerOptions* options) {
     Compiler compiler{};
     compiler.init();
 
@@ -28,13 +28,18 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     }
     {
     Compiler::Task task{};
-    task.name = path;
+    if(options->initial_file.empty()) {
+        log_color(RED);
+        printf("You did not specify a file to compiler");
+        log_color(NO_COLOR);
+        return nullptr;
+    }
+    task.name = options->initial_file;
     task.type = TASK_LEX_FILE;
     compiler.tasks.push_back(task);
     }
 
-    int threadcount = 16;
-    // threadcount = 1;
+    int threadcount = options->thread_count;
 
 #ifndef ENABLE_MULTITHREADING
     if(threadcount > 1) {
@@ -71,14 +76,16 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     
     int total_lines = 0;
     int non_blank_lines = 0;
+    u64 total_bytes = 0;
     for(int i=0;i<compiler.streams.size();i++) {
         auto& s = compiler.streams[i];
         total_lines += s->total_lines;
         non_blank_lines += s->non_blank_lines;
+        total_bytes += s->processed_bytes;
     }
     
     
-    double line_per_sec = total_lines/time;
+    u64 lines_per_sec = total_lines/time;
     printf("Compiled %d lines in ", total_lines);
     if(time >= 1.0)
         printf("%.3f sec", (float)time);
@@ -87,16 +94,34 @@ Bytecode* CompileFile(const std::string& path, bool run) {
     else
         printf("%.3f us", (float)(time*1000'000));
         
-    printf(" (%f l/s)\n", (float)line_per_sec);
+    printf(" (%llu lines/s)\n", lines_per_sec);
+
     printf(" %d non-blank lines\n", non_blank_lines);
     printf(" %d files\n", (int)compiler.streams.size());
     printf(" %d threads\n", (int)threadcount);
-    
+
+    printf(" ");
+    if(total_bytes < 1024)
+        printf("%llu bytes", total_bytes);
+    else if(total_bytes < 1024*1024)
+        printf("%.2f KB", total_bytes / 1024.f);
+    else
+        printf("%.2f MB", total_bytes / 1024.f / 1024.f);
+    printf(", ");
+    u64 bytes_per_sec = (double)total_bytes / time;
+    if(bytes_per_sec < 1024)
+        printf("%llu bytes/s", bytes_per_sec);
+    else if(bytes_per_sec < 1024*1024)
+        printf("%.2f KB/s", bytes_per_sec / 1024.f);
+    else
+        printf("%.2f MB/s", bytes_per_sec / 1024.f / 1024);
+    printf("\n");
+
     if(compiler.reporter->errors != 0) {
         return nullptr;
     }
     
-    if(run) {
+    if(options->run) {
         VirtualMachine* interpreter = new VirtualMachine();
         interpreter->bytecode = compiler.bytecode;
         interpreter->init();

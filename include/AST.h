@@ -328,7 +328,7 @@ struct AST {
     volatile i32 types_used = 0;
     TypeInfo* typeInfos = new TypeInfo[types_max];
     
-    static const int scopes_max = 0x10000;
+    static const int scopes_max = 0x100000;
     volatile i32 scopes_used = 0;
     ScopeInfo* scopeInfos = new ScopeInfo[scopes_max];
 
@@ -337,7 +337,11 @@ struct AST {
     }
     ScopeInfo* createScope(ScopeId parent) {
         ScopeId id = atomic_add(&scopes_used, 1) - 1;
-        Assert(id < scopes_max);
+        if(id >= scopes_max) {
+            printf("Scope limit reached! %d\n",scopes_max);
+            return nullptr;
+            // Assert(id < scopes_max);
+        }
         auto ptr = &scopeInfos[id];
 
         ptr->scopeId = id;

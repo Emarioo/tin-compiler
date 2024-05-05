@@ -16,3 +16,19 @@ Tested with `i7-4790K CPU, 4.00 GHz, 4/8 cores` (old computer from 2013-2014)
 ![](docs/performance_mutex_overhead.png)
 
 ![](docs/performance_single_thread.png)
+
+# How to build (Windows only)
+## Visual Studio C++ tools
+Download Visual Studio installer and make sure you have "Desktop development with C++".
+Then press the Windows button and search for "developer" and start "Developer Command Prompt VS2022" (you may have VS2019 depending on your version).
+Now you will have `cl` and `link` available.
+
+You can type `code` into the terminal if you are using Visual Studio Code.
+Otherwise, use `cd path_to_local_repo` to get to your local copy of this repository.
+
+Finally, you should be able to start `build.bat` in the terminal.
+
+## GNU (g++)
+If you have g++ (mingw-64) then you can run `make` to compile the project.
+
+Note that we have not managed to use Tracy Profiler with g++.

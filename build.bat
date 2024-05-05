@@ -23,6 +23,9 @@ if !arg!==run (
 
 @REM Toggle comments on the variables below to change compiler
 SET USE_MSVC=1
+SET USE_OPTIMIZED=1
+SET USE_TRACY=1
+SET USE_DEBUG=1
 @REM SET USE_GCC=1
 
 @REM SET SRC= AST.cpp Bytecode.cpp Compiler.cpp Generator.cpp VirtualMachine.cpp Lexer.cpp main.cpp Parser.cpp TinGenerator.cpp Util.cpp
@@ -46,21 +49,34 @@ mkdir bin 2> nul
 
 if !USE_MSVC!==1 (
     SET DEFS=/DOS_WINDOWS
-    SET DEFS=!DEFS! /DTRACY_ENABLE
 
-    if not exist bin\TracyClient.obj (
-        cl /nologo /c /Zi /std:c++14 /TP /DTRACY_ENABLE libs/tracy-0.10/public/TracyClient.cpp /EHsc /I libs/tracy-0.10/public /Fobin\
+    SET OPTIONS=/EHsc /std:c++17 /TP
+    SET OPTIONS_LINK=
+    if !USE_OPTIMIZED!==1 (
+        SET OPTIONS=!OPTIONS! /O2
     )
-    
-    cl /nologo /Zi !SRC! !DEFS! /EHsc /std:c++14 /TP /I . /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link /DEBUG bin\TracyClient.obj /OUT:bin\tin.exe
+    if !USE_DEBUG!==1 (
+        SET OPTIONS=!OPTIONS! /Zi
+        SET OPTIONS_LINK=!OPTIONS_LINK! /DEBUG
+    )
+    if !USE_TRACY!==1 (
+        SET DEFS=!DEFS! /DTRACY_ENABLE
+        if not exist bin\TracyClient.obj (
+            cl /nologo /c !OPTIONS! /DTRACY_ENABLE libs/tracy-0.10/public/TracyClient.cpp /I libs/tracy-0.10/public /Fobin\
+        )
+        SET OPTIONS_LINK=!OPTIONS_LINK! bin\TracyClient.obj
+    )
+    @REM RegGetValue in Util.cpp requires Advapi32
+    cl /nologo !SRC! !DEFS! !OPTIONS! /I . /I include /I libs/tracy-0.10/public /FI pch.h /Fobin\ /link !OPTIONS_LINK! Advapi32.lib /OUT:bin\tin.exe
     
     SET error=!errorlevel!
 
 ) else if !USE_GCC!==1 (
-    SET DEFS=-DOS_WINDOWS
+    @REM BROKEN DISABLED, USE MAKEFILE instead
+    @REM SET DEFS=-DOS_WINDOWS
 
-    g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o bin/tin.exe
-    SET error=!errorlevel!
+    @REM g++ -g !SRC! !DEFS! -Iinclude -include include/pch.h -o bin/tin.exe
+    @REM SET error=!errorlevel!
 )
 
 if !errorlevel!==0 (

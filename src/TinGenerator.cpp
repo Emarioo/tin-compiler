@@ -13,8 +13,6 @@ void GenerateTin(TinConfig* config) {
     }
     SetRandomSeed(config->seed);
 
-    
-
     struct File {
         std::string path;
         TinContext::Scope* scope;
@@ -29,6 +27,9 @@ void GenerateTin(TinConfig* config) {
             f.path = "generated/file"+std::to_string(i)+".tin";
         }
     }
+
+    bool yes = std::filesystem::create_directory("generated");
+    // !yes = dir already exists
     
     for(int i=files.size()-1;i>=0;i--) {
         auto& f = files[i];
@@ -97,7 +98,6 @@ void TinContext::genProgram(bool inherit_scope) {
         indent_level++;
         int member_count = RandomInt(config->member_frequency.min, config->member_frequency.max);
         for(int j=0;j<member_count;j++) {
-            if(j!=0) output +=", ";
             std::string name = "mem"+std::to_string(j);
             auto type = requestType();
             // std::string type = "int";
@@ -105,7 +105,7 @@ void TinContext::genProgram(bool inherit_scope) {
             output += name;
             output += ": ";
             output += type.to_string();
-            output += "\n";
+            output += ",\n";
             id->members.push_back({name, type});
         }
         addType(id);
@@ -181,12 +181,15 @@ void TinContext::genStatements(bool inherit_scope) {
                 continue;
         }
 
+        // std::string newline = " ";
+        std::string newline = "\n";
+
         switch(kind) {
             case ASTStatement::VAR_DECLARATION: {
                 indent();
                 auto type = requestType();
                 std::string name = "var"+std::to_string(var_counter++);
-                output += name +": "+type.to_string()+";\n";
+                output += name +": "+type.to_string()+";"+newline;
                 
                 auto id = addVar(name, Identifier::LOCAL);
                 id->type = type;
@@ -195,7 +198,7 @@ void TinContext::genStatements(bool inherit_scope) {
                 indent();
                 auto type = requestType();
                 std::string name = "g_var"+std::to_string(var_counter++);
-                output += "global "+ name + ": " + type.to_string() + ";\n";
+                output += "global "+ name + ": " + type.to_string() + ";"+newline;
                 
                 auto id = addVar(name, Identifier::GLOBAL);
                 id->type = type;
@@ -206,7 +209,7 @@ void TinContext::genStatements(bool inherit_scope) {
                 auto type = type_int;
                 std::string name = "CONST"+std::to_string(var_counter++);
                 int num = RandomInt(-1000,1000);
-                output += "const "+ name + ": "+type->name+" = "+ std::to_string(num)+";\n";
+                output += "const "+ name + ": "+type->name+" = "+ std::to_string(num)+";"+newline;
                 
                 auto id = addVar(name, Identifier::CONSTANT);
                 id->type = {type};
@@ -262,19 +265,19 @@ void TinContext::genStatements(bool inherit_scope) {
                 if(!in_loop)
                     break;
                 indent();
-                output += "break;\n";
+                output += "break;" + newline;
             } break;
             case ASTStatement::CONTINUE: {
                 if(!in_loop)
                     break;
                 indent();
-                output += "continue;\n";
+                output += "continue;" + newline;
             } break;
             case ASTStatement::RETURN: {
                 indent();
                 output += "return ";
                 genExpression(current_function->return_type, 0);
-                output += ";\n";
+                output += ";" + newline;
 
                 i = stmt_count; // quit
             } break;
@@ -366,11 +369,15 @@ void TinContext::genExpression(ComplexType expected_type, int expr_depth) {
     // } else 
     //     output += "0";
     // return;
-    expr_depth++;
     if(expr_depth == 0)
-        expr_count++;
+        expr_count = 0;
+    expr_depth++;
+    expr_count++;
+
+    float limit_a = 20.f;
+    float limit_b = 5.f;
     
-    float exponential_chance = (1.f-expr_count/10.f) * (1.f-expr_depth/5.f) * RandomFloat();
+    float exponential_chance = (1.f-expr_count/limit_a - expr_depth/limit_b) * RandomFloat();
 
     ASTExpression::Kind kind = ASTExpression::INVALID;
     int kind_index = 0;

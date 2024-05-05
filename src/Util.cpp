@@ -56,6 +56,21 @@ void Free(void* ptr) {
     #endif
     free(ptr);
 }
+
+bool ReadEntireFile(const std::string& path, char*& text, int& size){
+    HANDLE h = CreateFileA(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(h == INVALID_HANDLE_VALUE) return false;
+
+    u64 filesize = 0;
+    DWORD success = GetFileSizeEx(h, (LARGE_INTEGER*)&filesize);
+    if(success == 0) return false;
+
+    text = (char*)Alloc(filesize);
+    Assert(text);
+
+    success = ReadFile(h, text, filesize, (DWORD*)&size, NULL);
+    return success;
+}
 TimePoint StartMeasure(){
     #ifdef USE_RDTSC
     return (u64)__rdtsc();

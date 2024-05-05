@@ -1,871 +1,1008 @@
 struct Type0 {
-    mem0: float
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
 }
-fun Func0(arg0: Type0): int {
-    while 285 * 291 / 0.2 - -93.191399 * 4.514160 / -46.933113 * 88.491623 - 0.2 <= 857 + -319 / 0.2 / -78.019302 + 353 / 404 / 0.2 / 52.972763 {
-        const CONST0: int = -565;
-        global g_var1: float;
-        var2: char;
-        const CONST3: int = -725;
-        const CONST4: int = 648;
-        return -71.662483 + g_var1 * CONST0 + -566 / CONST4 * CONST3 / g_var1 * 42.449814 - 31.386887 * g_var1 + sizeof int * sizeof bool / 14.068077 * -38.453190 + CONST3 + CONST3;
-    }
-    var5: char;
-    if sizeof float + -506 * -55.652668 / 0.2 + 5 * sizeof bool + sizeof bool / sizeof float != 13.882027 - 0.2 * 78.948029 - 0.2 / sizeof Type0 - sizeof float * 0.2 + -26.608505 {
-        !329 / 457 * sizeof int + -115 <= 0.2 * 0.2 / 0.2 + -47.858788;
-        global g_var6: float;
-        return g_var6 / 66.002899 * -235 - 5 - sizeof bool - -655 * -98.175491 + -88.061249 - g_var6 * -29.492249 - sizeof char + 5 / -85.123436 / 69.143600 / 5 * 712;
+struct Type1 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type2 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type3 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+struct Type4 {
+    mem0: int,
+    mem1: int,
+    mem2: int,
+    mem3: int,
+    mem4: int,
+}
+fun proc0(arg0: int): int {
+    return 2;
+    var: int;
+    var: int;
+    if false1 {
+        var: int;
+        global var: int;
+        return 2;
     }
     else {
-        while 0.2 / 50.330460 - 5 - 5 / sizeof bool / 5 / 0.2 - 85.983505 != sizeof int - 625 - -350 + 5 - sizeof bool * 5 + -83.787758 + 0.2 {
-            if 5 - sizeof char - 556 / sizeof Type0 / 99.644089 + 0.2 * sizeof int - 5 && 0.2 / 66.043945 / 0.2 - 0.2 / 92.836685 / 0.2 - 583 + sizeof Type0 {
-                global g_var7: int;
-                if sizeof bool * 103 / 952 * sizeof char / sizeof bool + g_var7 * 60.947205 + 0.2 == -302 / g_var7 - -79.394035 * 0.2 - 692 / sizeof float + g_var7 - -301 {
-                    68.360489 / 77.691895 - 862 * sizeof char / 0.2 - -57.391281 - 48.731720 * -50.956642 && 0.2 - 0.2 + 0.2 / 0.2 - 0.2 - 0.2 - 35.396835 - -16.583427;
-                    continue;
-                }
-                else {
-                    while sizeof bool - -60 * 0.2 / 0.2 / 171 - 298 + 0.2 - 0.2 && 0.2 * -67.827591 / 34 / -293 / 0.2 - 15.948914 - sizeof int - g_var7 {
-                        continue;
-                        break;
-                        g_var7 - -48 + 0.2 - -57.732071 * 902 + sizeof Type0 + -275 + g_var7 <= sizeof bool * sizeof float + sizeof char / g_var7 + sizeof float * -982 * 82.668686 / 0.2;
-                        var8: float;
-                        const CONST9: int = 607;
-                        const CONST10: int = -132;
-                        var11: int;
-                    }
-                    -99.275917 / -19.775742 * sizeof char - g_var7 + 72.099930 / 63.824066 - -45.669155 + 24.074402 <= -93.454002 * -31.458481 - 0.2 / 0.2 + sizeof Type0 - -987 - g_var7 * -20;
-                    var12: char;
-                }
-                while 0.2 - 0.2 / g_var7 * 706 - g_var7 + -44 * -71.194939 / -80.921150 != -68.584053 + -97.582275 * 0.2 + 85.208786 / 0.2 - 0.2 * sizeof bool + -803 {
-                    break;
-                    g_var7 * g_var7 - sizeof Type0 - sizeof bool / -22.395012 - 0.2 + 20.513176 * 11.869171 <= 0.2 - -30.974869 - sizeof Type0 / sizeof char * g_var7 * 958 / 0.2 / 0.2;
-                    while -285 - sizeof bool - 0.2 * 16.930542 + g_var7 + g_var7 + 16.406319 - 0.2 < 0.2 / -44.225437 - g_var7 * g_var7 + 0.2 + -23.834877 + 83.312256 / 61.907166 {
-                        continue;
-                        73.684143 - 71.561584 * -769 + sizeof float / -88.347733 * 0.2 - sizeof float - -826 <= -782 - g_var7 / 894 * g_var7 + sizeof bool * -654 + 0.2 / 0.2;
-                        const CONST13: int = -369;
-                        return CONST13 + -463 / 0.2 - -14.425728 - CONST13 / sizeof float / CONST13 - sizeof Type0 / sizeof bool / CONST13 + 0.2 - 64.174194 / sizeof bool - CONST13 * 895 - sizeof float;
-                    }
-                    global g_var14: bool;
-                    continue;
-                    break;
-                    break;
-                }
-            }
-            else {
-                const CONST15: int = 19;
-                var16: float;
-                if var16 / 14.869583 - var16 - var16 - -515 * -806 + sizeof int * sizeof float <= var16 - var16 - CONST15 + CONST15 - sizeof Type0 - CONST15 * 611 * sizeof Type0 {
-                    global g_var17: float;
-                    global g_var18: char;
-                    while CONST15 - 180 * -717 + sizeof Type0 - -63.124729 + -49.564980 / CONST15 * sizeof bool == 40.899628 * g_var17 + sizeof float / sizeof int / CONST15 / sizeof int - -595 / CONST15 {
-                        break;
-                        return 97.652573 - 74.634155 / g_var17 / -80.431671 - g_var17 - g_var17 * g_var17 / g_var17 + sizeof bool - 264 / g_var17 * -29.182297 + 89.302856 / 20.569466 * CONST15 * CONST15;
-                    }
-                    while sizeof Type0 * sizeof char - 87.287323 / g_var17 - g_var17 + g_var17 / -326 / 420 != 72.129562 - g_var17 * CONST15 / CONST15 + g_var17 - -74.894722 * 511 * CONST15 {
-                        var19: float;
-                        break;
-                        break;
-                        const CONST20: int = 591;
-                        continue;
-                        break;
-                        return CONST20 + 120 - -18 * 50 - 95.124390 + 17.960861 / CONST20 + CONST20 * var19 / var19 + var19 / 79.670166 - var19 * 89.183762 * -20.414642 * 98.164688;
-                    }
-                    global g_var21: float;
-                    global g_var22: char;
-                    global g_var23: bool;
-                    while 58.503082 + g_var17 + CONST15 * 906 * 63.659546 / g_var17 + g_var17 / -89.805618 || sizeof float + sizeof char / 18.778923 / 76.294571 * CONST15 - sizeof char + sizeof Type0 - sizeof int {
-                        global g_var24: bool;
-                    }
-                    532 / -782 - -53.654690 / -80.937973 + g_var17 / -24.549812 - sizeof Type0 / sizeof int || -27 - -666 - g_var17 - 51.966187 + -538 * CONST15 * -13.338593 / 34.003860;
-                    var25: bool;
-                }
-                else {
-                    return var16 * var16 - CONST15 * CONST15 + -56.466179 + -20.512581 + var16 / var16 / CONST15 / sizeof char - -94.924828 * 36.077820 / sizeof Type0 * 320 * CONST15 - sizeof float;
-                }
-                break;
-                break;
-                if -357 * 279 / -889 + CONST15 + 142 + CONST15 * var16 - 77.669876 != sizeof float / sizeof int * CONST15 - -999 + sizeof bool - CONST15 * var16 / var16 {
-                    return CONST15 / -217 * CONST15 + CONST15 / sizeof int * -278 * sizeof bool / 165 + 707 * 854 - sizeof float - -799 + var16 + -81.908890 / 248 - CONST15;
-                }
-                else {
-                    break;
-                    var26: Type0;
-                    continue;
-                    if 57.663849 + var16 * -87.968582 + var16 / CONST15 / -947 - sizeof char - 773 <= var16 * var16 * var16 + 62.368622 + 3.805351 + var16 + sizeof Type0 * sizeof bool {
-                        const CONST27: int = 226;
-                        break;
-                        break;
-                        global g_var28: int;
-                        break;
-                    }
-                    else {
-                        continue;
-                        const CONST29: int = -207;
-                    }
-                    continue;
-                    const CONST30: int = 288;
-                    return sizeof bool + -576 * var16 - -28.333649 - 62.641251 / 45.510864 * sizeof float / sizeof char + sizeof Type0 / 570 / var16 - var16 * 86.293427 - var16 * var16 + 47.122879;
-                }
-            }
-            if -74.493576 / 0.2 + 5 * 754 + 68.373550 - 26.184418 - 5 + sizeof int != sizeof int - 5 + sizeof bool / 5 - 5 / -596 - 5 * sizeof Type0 {
-                global g_var31: Type0;
-                var32: int;
-                var33: bool;
-                while sizeof bool - sizeof char + var32 + var32 / 0.2 + 0.2 * 31.925156 * 0.2 > var32 - var32 / var32 + sizeof char + -93.876183 * 0.2 + var32 + var32 {
-                    const CONST34: int = -726;
-                    break;
-                    return 0.2 * 0.2 * 99.267334 * 0.2 - 0.2 / 0.2 - 47.191971 * -66.882797 * 0.2 / 0.2 / -16.304047 - 47.377258 / CONST34 + CONST34 / 0.2 - 0.2;
-                }
-                const CONST35: int = -873;
-                break;
-            }
-            else {
-                sizeof char / 893 - 5 * 5 / sizeof Type0 / 5 / 0.2 + 0.2 < sizeof float - sizeof char / -744 - 5 + 5 - sizeof Type0 - 0.2 + 0.2;
-                break;
-                return 5 * 5 * sizeof float * 5 + -820 - sizeof int + 0.2 * 0.2 + 5 + 5 / -798 + 601 * 0.2 / 0.2 - 82.954834 - 83.138611;
-            }
-        }
-        -985 + 90 * 5 - -673 - 0.2 + 0.2 * 5 + 836 + 5 - sizeof Type0 + 78.335266 - 72.309387 / 5 * sizeof bool * -90.210152 * 29.730591;
-        const CONST36: int = 886;
-        while sizeof bool - 338 / 67.662949 / -54.231388 + sizeof int / -989 * -702 * CONST36 <= 0.2 + -9.129326 / CONST36 * CONST36 * 0.2 / -45.745491 / 0.2 - -7.966133 {
-            CONST36 + CONST36 / sizeof float / CONST36 / CONST36 / sizeof char + -69.039452 * -0.134560 / 0.2 - 5.431808 - -40.112175 - 0.2 / 0.2 + 0.2 * 0.2 * -33.157005;
-            var37: char;
-            while 0.2 + 0.2 * sizeof char / -671 + 47.386063 / 72.153931 / sizeof Type0 - sizeof char >= 737 * -479 * sizeof Type0 / sizeof int * 4.647087 - 0.2 + -20.040817 + 0.2 {
-                var38: char;
-                continue;
-                0.2 - 0.2 - CONST36 - sizeof bool + CONST36 / 371 - 0.2 - 48.931076 < 89.922424 + 62.135345 - 46.039551 - 0.2 * 670 + CONST36 + CONST36 + -991;
-                while 130 / CONST36 / -33.071968 + 0.2 + CONST36 * -323 * -87.530106 + 0.2 != 0.2 * -32.849747 - 0.2 - 0.2 * sizeof int * -228 * -85.094818 - 35.064514 {
-                    if 0.2 + 0.2 + sizeof char + -913 * 0.2 * 0.2 - 50 / 337 <= 0.2 - 87.557434 / 0.2 - -58.904285 / 56.977005 + 17.158318 + 0.2 / 76.322540 {
-                        var39: Type0;
-                        const CONST40: int = -120;
-                        continue;
-                        sizeof char + sizeof float - 42.020691 * -34.479347 * CONST40 + sizeof bool * 0.2 * 0.2 != 2.795731 - 0.2 * -859 * sizeof char + 45.103180 / 0.2 - CONST40 / 7;
-                        var41: float;
-                        break;
-                        break;
-                        const CONST42: int = 57;
-                        continue;
-                    }
-                    else {
-                        break;
-                        CONST36 + 205 + -96.754181 + 0.2 - CONST36 * sizeof int * CONST36 * CONST36 >= 0.2 + 0.2 * -69.789124 * -76.733246 / CONST36 + 640 + sizeof float / CONST36;
-                    }
-                    if 0.2 * 50.832336 / sizeof bool / -993 - -5.515678 / 70.456665 + -10.632240 - 0.2 == CONST36 / sizeof int - 0.2 + 18.566238 - -46.063103 / 52.943726 / 61.806320 * 25.758698 {
-                        const CONST43: int = -685;
-                        379 / -652 * -79.773270 + -92.126587 / 0.2 + 0.2 - -203 * sizeof Type0 != 0.2 - 21.566246 - CONST43 * CONST43 - 0.2 / -42.699951 - CONST43 + -393;
-                        return 0.2 / 0.2 + -872 * sizeof int / 878 - sizeof Type0 - CONST43 + 45 / sizeof bool / 445 * 0.2 / 0.2 + 0.2 * 0.2 * -53.472763 - -92.694000;
-                    }
-                    else {
-                        sizeof Type0 - 535 + CONST36 + 348 - 76.397629 - 0.2 / -776 / CONST36 == sizeof int / -496 / sizeof Type0 + sizeof Type0 * CONST36 / CONST36 / sizeof int * sizeof float;
-                        continue;
-                        global g_var44: int;
-                        0.2 - 13.214516 + 442 / g_var44 + 0.2 * 0.2 - sizeof int + -114 + 96.422440 * 0.2 - 33.030945 - -85.746895 + 0.2 / 0.2 + -465 - g_var44;
-                        69.104233 - 0.2 - 0.2 * 0.2 / 0.2 * -29.184113 * 77.855286 - -29.921211 || 525 * -175 * 0.2 / 0.2 * sizeof Type0 / g_var44 * sizeof bool * g_var44;
-                        var45: int;
-                    }
-                    break;
-                    var46: int;
-                    if false {
-                        break;
-                        continue;
-                        continue;
-                    }
-                    else {
-                        var47: float;
-                        var48: int;
-                        return var47 + var47 * var48 * 596 - var47 * -14.265068 * var48 / var48 + var47 - -32.000130 - var47 - var47 + var47 + -57.526562 + 73.549988 * var47;
-                    }
-                    const CONST49: int = -989;
-                    var50: float;
-                    global g_var51: char;
-                    var52: float;
-                    continue;
-                }
-                while CONST36 * -877 + 0.2 / 0.2 * 90.250259 / 15.384003 + 0.2 - 80.483246 >= 0.2 / -41.497421 * 11.269188 - 0.2 * 48.087006 - -35.063011 + -44.914783 + 57.535080 {
-                    CONST36 + 101 - 0.2 + 0.2 * CONST36 - CONST36 - sizeof Type0 / CONST36 - sizeof int * CONST36 - CONST36 / sizeof int - -642 * CONST36 * -69.348785 + 0.698105;
-                    const CONST53: int = -536;
-                    break;
-                    while -68.851646 - 0.2 * sizeof int + sizeof bool * 0.2 / 0.2 * 483 * 712 <= 0.2 - 75.199753 * CONST53 / 904 / 0.2 * 0.2 - CONST53 - 134 {
-                        global g_var54: int;
-                        var55: Type0;
-                        continue;
-                        break;
-                        break;
-                    }
-                    break;
-                }
-                return CONST36 - CONST36 + sizeof char - CONST36 / 0.2 + -5.151054 * 0.2 - 0.2 - sizeof int + 119 * 0.2 * 5.132843 * sizeof int / -916 + sizeof char - 669;
-            }
-            const CONST56: int = 582;
-            global g_var57: int;
-            const CONST58: int = 85;
-            var59: Type0;
-            const CONST60: int = 992;
-        }
-        while -222 - CONST36 / sizeof int / CONST36 + 327 - CONST36 / -569 - 769 == -98.288612 + -99.486694 + 0.2 * -93.840836 - CONST36 / CONST36 + 29.892105 * 0.2 {
-            continue;
-            const CONST61: int = -943;
-            continue;
-            while 0.2 / 0.2 * 0.2 + 0.2 / 0.2 * -94.264130 - sizeof Type0 + CONST61 == CONST61 * CONST61 - 0.2 - 61.746796 * -74.531616 / 0.2 * -71.939453 + 0.2 {
-                global g_var62: float;
-                while -591 - 350 / CONST61 * 348 / g_var62 / g_var62 - g_var62 + g_var62 < CONST61 + 896 / sizeof bool - sizeof float / g_var62 - 11.088142 / 50.456818 * g_var62 {
-                    break;
-                    if g_var62 - 52.363892 + sizeof int * CONST61 + sizeof Type0 - CONST61 * g_var62 - g_var62 == g_var62 * 95.829010 - sizeof char * -440 / -529 + CONST61 + sizeof int * 604 {
-                        const CONST63: int = 948;
-                        338 + 757 * g_var62 / g_var62 + 22.127953 - g_var62 - CONST63 / CONST63 / sizeof Type0 / sizeof float + sizeof int * sizeof int - -97.087509 * 93.285080 + sizeof char / sizeof bool;
-                        var64: float;
-                        const CONST65: int = -703;
-                        continue;
-                        const CONST66: int = 308;
-                        return 1 * sizeof bool / sizeof float + 219 - -413 * 20 / -96.145927 * -75.688538 * 85.057129 / 19.831825 + var64 / var64 - -53.367458 + -17.341568 / sizeof int - CONST65;
-                    }
-                    else {
-                        continue;
-                        const CONST67: int = 87;
-                    }
-                    if g_var62 + g_var62 * sizeof int + sizeof Type0 * sizeof Type0 / CONST61 + 798 + sizeof float != sizeof char + sizeof float * CONST61 * 221 / CONST61 * sizeof Type0 - sizeof bool / sizeof bool {
-                        break;
-                    }
-                    else {
-                        continue;
-                        CONST61 * CONST61 - 473 * 677 + g_var62 + 94.210648 * CONST61 + sizeof bool && CONST61 / CONST61 / g_var62 / g_var62 * CONST61 * sizeof Type0 / g_var62 * 26.257530;
-                        break;
-                        continue;
-                        return g_var62 * 42.326111 * CONST61 - sizeof int / 37.460556 * g_var62 + CONST61 + CONST61 * 992 * CONST61 + sizeof char - -231 + -64.201584 * -23.726273 * g_var62 / 40.543320;
-                    }
-                    global g_var68: float;
-                    while 32 / CONST61 + g_var68 / g_var68 * 80.702560 + g_var68 / 41.406189 - g_var68 || CONST61 + sizeof int * 28.404633 * g_var68 / CONST61 * 571 * sizeof Type0 / sizeof char {
-                        const CONST69: int = -546;
-                        return sizeof Type0 - -579 * 19.388199 + -97.725807 / CONST69 * 756 - g_var68 + 87.368546 - 82.077271 * g_var68 + g_var68 - g_var68 * CONST69 - sizeof Type0 / g_var68 / -24.459198;
-                    }
-                    -3.166374 - 74.492676 * 47.032562 - 65.427277 + -60.229759 + g_var68 + 744 - -370 == g_var68 - 30.777191 - g_var68 - g_var68 - CONST61 / CONST61 - CONST61 * sizeof int;
-                    return g_var68 + g_var68 + sizeof int * -64 / g_var68 - g_var68 / g_var68 * -96.311974 - sizeof int * -556 * -695 - sizeof bool * sizeof int + sizeof char / sizeof bool / sizeof int;
-                }
-                var70: Type0;
-                var71: int;
-                return var71 - sizeof float * -560 / -53 + 70.591415 - 98.317108 * sizeof char * 254 / -268 * sizeof char - 82.565903 * g_var62 / -991 / var71 * g_var62 - 73.715027;
-            }
-            var72: float;
-            return -590 * -192 / -70 * sizeof int * 912 / CONST61 / -673 + CONST61 + 67.103287 / 46.948517 + 764 + sizeof float - CONST61 + CONST61 + -61.146732 / -26.867393;
-        }
-        while 0.2 + -55.618698 - -906 / sizeof float / 50.343155 + 92.676956 * 0.2 - -68.595985 > 0.2 * 79.426758 - 98.703568 + 0.2 + sizeof Type0 / 28 / CONST36 - 312 {
-            while 536 - CONST36 + -72.867531 * 0.2 / sizeof float / CONST36 + -38.321983 - -84.990517 <= 63.988922 / 0.2 * 93.385925 + 0.2 + CONST36 + sizeof char - sizeof float + sizeof char {
-                continue;
-                if CONST36 / sizeof Type0 - 375 - CONST36 * 5.620705 / -0.786034 + -19.937386 / 0.2 > 11.012665 + 0.2 + CONST36 + -422 - 0.2 + -18.712326 - 0.2 * 0.2 {
-                    break;
-                    var73: char;
-                    break;
-                    while 0.2 + 0.2 * -5.377007 * 0.2 * 997 - CONST36 - 0.2 / 0.2 == 0.2 - -0.115326 * 0.2 / 0.2 * 0.2 - -43.048458 - -0.319878 * 0.2 {
-                        const CONST74: int = 189;
-                        sizeof char + -800 - 0.2 * 0.2 / -263 * -279 - -20.110489 + 0.2 >= sizeof bool / sizeof char + -99.593674 + 99.351089 - 0.2 / 0.2 + CONST74 * CONST74;
-                    }
-                    global g_var75: bool;
-                    while sizeof Type0 * CONST36 / -82 * sizeof char + 0.2 * 0.2 / sizeof float + sizeof int <= 0.2 + -5.897934 + sizeof Type0 + 841 / 824 - 428 * sizeof bool / CONST36 {
-                        return CONST36 * sizeof Type0 + 13.000656 + 0.2 / -776 / -688 - -627 + 561 - 81.144150 * 94.617523 - -61.942822 + -96.089035 / -540 + -47 - sizeof char - sizeof Type0;
-                    }
-                    return CONST36 * CONST36 * 0.2 / 0.2 - sizeof Type0 * CONST36 / -437 + CONST36 / -152 * sizeof float * 0.2 - 47.650269 / CONST36 * CONST36 / 0.2 + 20.218910;
-                }
-                else {
-                    break;
-                    33.642334 - -66.735626 + -13.560768 / 0.2 * CONST36 / 843 - sizeof float * CONST36 * CONST36 * sizeof Type0 + 0.2 / 0.2 - sizeof bool + -447 * -27.473831 * 0.2;
-                    const CONST76: int = -724;
-                    var77: bool;
-                }
-                if false {
-                    continue;
-                    const CONST78: int = -389;
-                }
-                else {
-                    break;
-                    return sizeof char - -399 / 0.2 / -83.190025 + sizeof char / CONST36 - -313 + 298 * -501 / -840 / 0.2 * 51.037186 - 52 + sizeof float + sizeof bool / CONST36;
-                }
-                while sizeof int / CONST36 - CONST36 - sizeof int - 0.2 - 69.919189 / CONST36 / CONST36 > -64.649712 - 0.2 / CONST36 / -831 - 0.2 / 0.2 - sizeof Type0 - sizeof Type0 {
-                    continue;
-                    global g_var79: Type0;
-                    !-95.476036 / -54.783176 * 78.216370 - 0.2 < CONST36 + 764 / sizeof int / -740;
-                    var80: float;
-                    continue;
-                }
-                return 0.2 - -12.667183 + 0.2 * 39.096664 + 0.2 / 42.173187 / CONST36 / CONST36 + sizeof char * -684 + sizeof char + CONST36 - CONST36 * -279 / 0.2 / 0.2;
-            }
-            break;
-            const CONST81: int = 543;
-            while 0.2 / 0.2 / -609 - -589 + 132 - 457 + CONST81 / CONST81 && -767 / CONST81 / -73.021545 / 0.2 - 0.2 + -51.057510 / -603 * 263 {
-                var82: bool;
-                var83: char;
-                break;
-                var84: float;
-                const CONST85: int = -234;
-                CONST85 * -2 / sizeof bool - 817 - var84 / var84 + -4.265686 / -65.165443 >= 0.397400 + -2.837738 - var84 / -78.015472 / var84 - 52.963882 / CONST85 / -660;
-                break;
-                break;
-                while CONST85 * CONST85 + CONST85 * CONST85 + 573 - CONST85 + var84 + var84 >= 67.766006 * var84 + sizeof char + 95 + sizeof bool - -979 * sizeof char * -240 {
-                    return var84 - var84 - CONST85 * sizeof Type0 * sizeof bool - CONST85 + sizeof Type0 + sizeof bool - var84 - -96.751434 / CONST85 * -522 / var84 - var84 - CONST85 / CONST85;
-                }
-            }
-        }
-        CONST36 / 853 / 29.489838 - 0.2 / 0.2 / 0.2 / 0.2 * 46.970276 == -257 - -268 * 64.743774 - -61.355038 * sizeof bool - -516 / -48.987232 - -87.809471;
+        var: int;
+        global var: int;
     }
-    var86: Type0;
-    var87: float;
-    while 5 / sizeof bool + var87 - var87 - var87 * var87 / var87 * var87 == sizeof int + 376 * 5 * 528 + sizeof char * 318 - 5 * 62 {
-        const CONST88: int = 563;
-        if -857 / -147 + -40.892147 + -90.523743 + 587 * sizeof float * -10.619011 / var87 <= CONST88 + sizeof float - sizeof Type0 / 880 + -687 - 288 - sizeof char - CONST88 {
-            var89: Type0;
-            CONST88 - CONST88 * 113 * 670 - CONST88 * -147 - 27.802383 + 43.711456 <= CONST88 * CONST88 - var87 / 76.677734 + CONST88 * CONST88 + sizeof float + sizeof bool;
-            while false {
-                while 34.132065 / var87 - 647 - CONST88 - -4.247375 - 68.110687 * sizeof bool / -643 <= -37.988018 + -8.951668 + 34.120346 * 20.313408 + -66.810028 / var87 * var87 / var87 {
-                    return var87 / var87 * sizeof Type0 / sizeof int / 58.537537 + var87 + var87 / -96.469299 + var87 + var87 - -68.178879 * var87 / CONST88 * sizeof float + sizeof Type0 + -880;
-                }
-                if sizeof Type0 + sizeof bool / var87 + -78.857956 / sizeof bool / CONST88 * var87 / 21.190277 || 6.425415 * -86.137413 - 46.320526 * var87 + 7.606567 / var87 - 68.510193 / 8.147308 {
-                    const CONST90: int = 555;
-                    while CONST90 / CONST90 / var87 + 41.741974 * -280 * sizeof int + var87 - var87 && -940 + CONST90 * sizeof Type0 - CONST90 - CONST90 / CONST90 - 95.575302 + -74.243904 {
-                        break;
-                        global g_var91: float;
-                        continue;
-                        var92: float;
-                    }
-                    continue;
-                    if false {
-                        global g_var93: Type0;
-                        global g_var94: float;
-                        continue;
-                        global g_var95: char;
-                    }
-                    else {
-                        -636 * CONST90 + sizeof char / sizeof Type0 * CONST90 + 960 - -53.142250 + 85.507751 || -13.631584 / var87 - var87 + var87 * var87 - var87 - -928 - CONST90;
-                        global g_var96: char;
-                        continue;
-                        var87 - var87 / 76.023865 + -5.523972 + -71.872566 - var87 - -981 / CONST90 + sizeof bool - sizeof Type0 + var87 / 46.021912 / -66.226219 - var87 - 938 * CONST90;
-                        continue;
-                        global g_var97: char;
-                    }
-                    return 40.383240 + var87 * CONST90 / sizeof int / -21 / -87 * var87 * -39.540363 - CONST90 * CONST90 / CONST90 - CONST90 / -56 + CONST90 * 81.887680 * 98.959686;
-                }
-                else {
-                    27.709648 * var87 * CONST88 - sizeof Type0 - 70.247391 * 44.147659 * sizeof int * 785 - CONST88 + -330 + -37.702732 - var87 / 182 + -969 + var87 - -70.189186;
-                    !sizeof char / CONST88 - 96.282013 / var87 > var87 * var87 / CONST88 + CONST88;
-                }
-                const CONST98: int = -904;
-                break;
-                break;
-                global g_var99: int;
-                while 369 / 718 - sizeof float * 843 / var87 - var87 / var87 * var87 < -3.439346 * 76.403458 * 93.900894 + -34.573723 - sizeof Type0 + sizeof float - 79.639603 / -98.219521 {
-                    const CONST100: int = 809;
-                    CONST100 / -333 - var87 * 13.091263 + var87 - 31.265549 + var87 * var87 != CONST100 + sizeof float + -84.196152 / var87 - var87 - var87 - 184 + CONST100;
-                }
-                break;
-            }
-            return CONST88 * sizeof Type0 / var87 / var87 + -484 + 529 / var87 * 81.789780 / var87 / 37.214142 * 77.297180 - var87 - var87 / -13.519196 * CONST88 + sizeof Type0;
-        }
-        else {
-            continue;
-            continue;
-            break;
-            if CONST88 / CONST88 + var87 * -70.331627 * -708 + CONST88 / var87 - var87 > 7.683739 / 59.461746 - var87 / var87 - 88.726746 / var87 + 40.014420 - 4.971405 {
-                var101: int;
-                return sizeof float - sizeof bool - 426 / -289 - var101 + -783 * 787 + -136 - 54.223785 * var87 + -671 / 259 / -98 + sizeof bool * var87 - var87;
-            }
-            else {
-                break;
-                if 3.812637 * var87 + CONST88 - 435 - -70.837807 - 49.828537 + var87 + 87.231125 >= -469 / sizeof Type0 * var87 * var87 * -20.645157 + -98.883438 - var87 / 26.803223 {
-                    break;
-                    while -40.449780 / var87 * 59.078125 / var87 + var87 + 53.560196 - var87 / var87 > -5.533058 + var87 + var87 / 33.954987 + 287 + -271 + sizeof float / CONST88 {
-                        continue;
-                        continue;
-                        var87 + var87 / var87 * 46.575363 / -29 * 358 + var87 / var87 <= sizeof int - -583 + var87 / var87 - var87 - -6.284973 - 37.044388 / var87;
-                        break;
-                        -66.064713 * 82.672760 + -89.250130 + var87 + var87 / 69.462677 + CONST88 / CONST88 && -60.664223 + 80.036148 + var87 - -48.958988 - sizeof bool - sizeof float / var87 - -20.691093;
-                        7 * sizeof char * -723 / sizeof int / -3.751091 + 35.563049 - -22.416100 / var87 + -29.503784 + -74.993469 / CONST88 + 494 / var87 + -22.136368 + var87 / 84.627502;
-                        break;
-                    }
-                    var87 / -18.241150 / CONST88 + -894 + sizeof Type0 - sizeof int / sizeof char - sizeof float <= -521 + CONST88 * -70.256081 / var87 + var87 / var87 - sizeof char / sizeof float;
-                    break;
-                    const CONST102: int = -394;
-                    while -640 * CONST102 * var87 + var87 + CONST102 - sizeof float - var87 * -69.095284 && var87 * var87 - 767 / 518 * sizeof int / CONST102 * -468 / -264 {
-                        return 62.869980 + var87 - var87 * var87 / -51.773071 - var87 + 534 + -274 / 73.667206 * -42.705338 * sizeof float * CONST102 / -547 / 739 * sizeof bool - 524;
-                    }
-                    if 17.177330 * -75.219223 + -74 - CONST102 * -875 / sizeof float + 75.425201 - var87 && -79.476242 / 51.939148 * 267 / -719 - var87 / -21.989372 / 95.476273 * var87 {
-                        break;
-                        global g_var103: int;
-                        var87 / var87 - g_var103 + -17 - var87 * var87 + g_var103 * 408 != 30.121857 - -7.138405 + var87 / var87 - var87 + var87 - var87 + var87;
-                        sizeof bool + sizeof char / g_var103 - sizeof bool * -982 + g_var103 / g_var103 * g_var103 == -483 * -601 + var87 / 81.690170 + var87 / -0.744232 / var87 / -69.169159;
-                    }
-                    else {
-                        !var87 / var87 * -25.698013 * 94.948410 == var87 / -27.105438 * sizeof char / CONST102;
-                        const CONST104: int = -615;
-                        global g_var105: float;
-                        break;
-                        global g_var106: bool;
-                        break;
-                        sizeof int - CONST104 / g_var105 * 87.981506 - g_var105 + g_var105 - -46.798241 / g_var105 >= g_var105 + g_var105 + sizeof bool / sizeof bool + g_var105 - 58.973770 / -12.909538 * 55.654861;
-                    }
-                    while -258 + sizeof Type0 * var87 - var87 / var87 - var87 / sizeof char - -279 <= CONST102 / CONST102 - CONST102 * sizeof int * CONST102 + CONST102 / var87 + 9.390930 {
-                        CONST102 = -650 - CONST102 - var87 * -39.297398 + var87 / var87 / 34.803864 + -32.534531;
-                        var107: float;
-                    }
-                    while -568 - CONST102 + var87 / 78.330246 + -20.981560 + var87 - 29.757324 * var87 >= var87 * var87 * var87 - var87 - var87 + -39.314003 + CONST102 * -504 {
-                        return var87 / var87 * var87 + -77.543976 / 48.528564 * var87 - 13.943672 * -44.771610 - var87 + var87 / var87 * var87 + -32.500587 + -71.508453 + sizeof int + 890;
-                    }
-                }
-                else {
-                    const CONST108: int = 826;
-                    if CONST108 * CONST108 + 907 + sizeof Type0 * sizeof float - CONST108 + sizeof bool + CONST108 >= sizeof Type0 / 625 * 93.913544 * -45.442497 * -31.569427 / 79.627045 / 53.734192 - -73.393051 {
-                        var109: char;
-                        global g_var110: Type0;
-                        global g_var111: float;
-                        return 34.579819 / 21.477661 + sizeof char + sizeof char / g_var111 + 38.261276 + 38.156967 * 24.337723 / CONST108 - sizeof char / g_var111 - g_var111 - g_var111 * g_var111 - -44.396557 / g_var111;
-                    }
-                    else {
-                        global g_var112: float;
-                        global g_var113: bool;
-                        break;
-                        var114: float;
-                        global g_var115: float;
-                        break;
-                        -850 * sizeof char - g_var115 / 20.834816 + 72.506271 - var114 + CONST108 / 662 && -92.106316 + 7.404778 * var114 / g_var112 - 824 + -274 / CONST108 + -228;
-                        return sizeof int - -138 - sizeof float - CONST108 - -666 * CONST108 - CONST108 - CONST108 - g_var112 + g_var112 * sizeof bool + sizeof Type0 * 8.293655 - 95.637329 / 698 / sizeof char;
-                    }
-                    global g_var116: int;
-                }
-                while 54.380890 + var87 + -31.730652 / var87 * var87 - var87 - 53.843979 / var87 || var87 / var87 / 949 + sizeof int - 66 * -297 * sizeof char - CONST88 {
-                    return -451 / -267 * -729 * -463 / -124 - CONST88 / -85.987839 * -72.866470 / -64.308517 * 82.137421 - var87 / -25.242203 + -682 * sizeof int / 33.857224 - var87;
-                }
-                global g_var117: bool;
-                const CONST118: int = 287;
-                while 18.452477 - 92.194397 * var87 * 57.000549 + -8.107918 + var87 / 27.631699 - var87 == var87 - var87 - 26.162315 / var87 / var87 + var87 + -454 / CONST118 {
-                    const CONST119: int = -351;
-                    var120: float;
-                    const CONST121: int = -120;
-                    const CONST122: int = -314;
-                    continue;
-                    if 10 / 926 + 70.001724 + -59.794598 + -116 - 196 + -57.963791 - var120 == sizeof char + -735 + var120 - var120 + var120 - 23.231842 - var120 * 39.719360 {
-                        return sizeof int * CONST122 / 51.714737 + 84.891983 / -864 / CONST121 * -35.989937 / 76.889099 - -341 - 909 - var120 * var120 + var120 / -16.921745 * -95 * CONST121;
-                    }
-                    else {
-                        return 60.166443 + 65.251480 / -63.682442 - var120 * -719 * CONST119 * var120 - var120 + var120 / var120 - 6.735901 / var120 * CONST119 / CONST122 * 925 * CONST119;
-                    }
-                    return var120 / var120 + sizeof int / sizeof float / 911 * CONST121 - 39.366562 / var120 - 29.560181 / -70.919846 + sizeof bool / sizeof float - sizeof int - sizeof char + sizeof Type0 / 772;
-                }
-            }
-            while CONST88 * sizeof Type0 * CONST88 * CONST88 / var87 / -33.411476 - -82.437851 / var87 < 657 / -917 + 28.773651 + -10.979881 * var87 + var87 / sizeof bool + sizeof char {
-                continue;
-                if var87 - var87 + var87 - -32.353806 + sizeof int / CONST88 - var87 + -86.175591 != CONST88 * 514 - var87 - var87 / 471 - sizeof Type0 / var87 + 23.834732 {
-                    return sizeof bool + sizeof float - var87 / var87 * sizeof int * CONST88 - var87 + var87 + 86.243851 - -75.082611 / var87 * 47.126907 * sizeof char / -670 * -649 - sizeof float;
-                }
-                else {
-                    var87 / -73.817123 / CONST88 + sizeof Type0 + -84.417419 * -88.605263 + var87 * var87 - 155 - CONST88 + 10.267677 + var87 / sizeof bool + CONST88 / CONST88 + sizeof bool;
-                    global g_var123: int;
-                    global g_var124: int;
-                    return g_var124 - g_var123 * g_var123 + g_var123 + -40 * g_var124 - g_var123 + sizeof bool * -29.574600 * var87 / -46.559597 * var87 + g_var124 + sizeof char - 488 - g_var124;
-                }
-                continue;
-                while sizeof float * CONST88 * var87 * var87 - 327 + CONST88 * -880 / sizeof bool != CONST88 + CONST88 + 32.713776 - 23.497963 / -59.096710 / -19.353256 / CONST88 * 938 {
-                    !CONST88 + CONST88 - 93 + -284 || var87 * var87 - 65.593796 * -95.716515;
-                    return -587 / -258 / CONST88 * CONST88 - CONST88 * sizeof Type0 + 79.422058 - -83.991730 / sizeof bool * sizeof bool - 573 - 584 - 517 + 315 - var87 * var87;
-                }
-                const CONST125: int = 919;
-                while -47 / -750 * var87 * -72.910713 / CONST125 * -574 + -41.007278 / var87 <= var87 / -58.949593 + var87 * -59.536438 / 878 + sizeof float + 26.492645 * 60.711761 {
-                    continue;
-                    const CONST126: int = 858;
-                    if -65.314667 - var87 - -484 + 811 / sizeof Type0 * 219 / -887 * CONST126 < var87 * -83.626793 + sizeof Type0 - -635 - var87 - -1.444473 * sizeof bool + 625 {
-                        global g_var127: int;
-                        continue;
-                    }
-                    else {
-                        continue;
-                        var128: int;
-                        var129: float;
-                        const CONST130: int = 667;
-                    }
-                    return sizeof Type0 / -690 * var87 * 45.895523 * 75.067017 - -52.525215 / var87 + var87 - 568 + -680 + var87 * var87 + var87 - -43.452377 - var87 * var87;
-                }
-            }
-            break;
-        }
-        while 871 + -878 * var87 * 56.402802 + -22.555168 / var87 * CONST88 + CONST88 && sizeof Type0 - CONST88 / var87 - var87 / -212 - sizeof char / 37.827316 - -38.767685 {
-            continue;
-            7.700027 / 0.756096 * sizeof char + 360 + -48.731537 / var87 + CONST88 + sizeof char < CONST88 / sizeof float + var87 * 25.728500 - CONST88 * sizeof char * 339 - CONST88;
-            var87 * -93.821770 - CONST88 - CONST88 + -39.274345 * 39.923019 + CONST88 + CONST88 >= var87 * 24.696991 + sizeof float - CONST88 * 89.127213 / var87 + 18.868698 / var87;
-            global g_var131: Type0;
-            return var87 * 24.811279 / sizeof Type0 / 346 * var87 / var87 + var87 * var87 + 73.370438 / var87 + CONST88 * CONST88 - 51 * CONST88 / var87 / -17.738297;
-        }
-        if 44.439713 - 31.255707 + CONST88 * -674 + var87 * var87 + CONST88 * CONST88 < CONST88 + CONST88 * -770 / CONST88 + -5.430397 / 66.514374 + var87 + 37.990417 {
-            var132: char;
-            global g_var133: char;
-            continue;
-            var87 * var87 + var87 - var87 / -342 - sizeof bool / 62.957840 + var87 / 505 + sizeof char / var87 + var87 * sizeof Type0 * sizeof float * sizeof bool * -776;
-            break;
-            var134: Type0;
-            continue;
-            break;
-            global g_var135: float;
-            continue;
-        }
-        else {
-            while false {
-                var87 / -67.276947 * 49.102402 + var87 - -64.652618 * var87 / sizeof bool / CONST88 == 223 * CONST88 / -79.938904 - 84.905472 + 92 / 621 * -805 + -22;
-                continue;
-                const CONST136: int = 577;
-                continue;
-                const CONST137: int = -807;
-                global g_var138: bool;
-            }
-            break;
-        }
-        if -217 / sizeof char - -267 / sizeof float - CONST88 / CONST88 * var87 - 33.885071 != CONST88 - -707 * -80.166901 * var87 / 536 - sizeof int * CONST88 * 484 {
-            break;
-            if -25.324829 - -92.831940 + 68.791656 * 15.803955 + sizeof float + sizeof Type0 * -36.996796 / var87 == -184 - CONST88 * -172 / sizeof bool + 37.062042 + -98.266808 - var87 / 52.437912 {
-                continue;
-                break;
-            }
-            else {
-                const CONST139: int = 336;
-                continue;
-                -962 / CONST139 - -51.024197 + 26.436142 + var87 + var87 - CONST139 + CONST139 - var87 + 52.526443 - 19.021355 - var87 - CONST139 + -364 * -761 - -777;
-            }
-            continue;
-            break;
-            while 13.109589 * var87 * 981 - -440 * 358 * CONST88 + 46.752350 / var87 != -41.648952 - -17.512985 / CONST88 - CONST88 - -307 + CONST88 / CONST88 - -747 {
-                return 54.405304 / 20.854256 - var87 / var87 + 86.352173 * var87 + sizeof float / CONST88 / -96.150848 * -80.125961 / CONST88 - sizeof int * CONST88 - sizeof Type0 * -739 - 869;
-            }
-        }
-        else {
-            while var87 * 26.532486 / sizeof int / sizeof Type0 / -31.213699 / -31.605392 / sizeof float * CONST88 > CONST88 + 60 + sizeof bool - CONST88 - 8.439209 - var87 - 55.244095 / 52.753967 {
-                const CONST140: int = -851;
-                while CONST140 + CONST140 - 23.949936 / var87 - 190 - sizeof float * -729 / -311 != var87 - -3.978539 / CONST140 * 761 / -79.551178 - 16.364464 * sizeof int + CONST140 {
-                    return var87 / var87 - 89.576126 / -67.841370 + -52.317543 + 63.154083 * sizeof bool / sizeof int - CONST140 - sizeof Type0 - -393 - CONST140 - CONST140 / -89 / CONST140 * sizeof float;
-                }
-                return var87 / var87 / -45.096649 * var87 - -55.891464 + -65.681946 - -15.972916 + -92.572800 - CONST140 + -351 / sizeof int - sizeof float + 695 / CONST140 * CONST140 - sizeof bool;
-            }
-            return CONST88 + -596 * 575 * CONST88 * CONST88 + -310 / sizeof int * sizeof float + var87 / -81.970329 - var87 * -32.341576 * 15.434906 - var87 + -278 - 482;
-        }
-        74.057037 + var87 / CONST88 + 924 - sizeof int - CONST88 * 932 / sizeof float && sizeof char / sizeof Type0 / var87 * var87 * sizeof char - 172 + var87 - var87;
-        var141: char;
+    return 0;
+}
+fun proc1(arg0: int, arg1: int, arg2: int): int {
+    while falsefunc(23,5) {
+        return 2;
+        const var: int;
+        global var: int;
+        return 2;
         continue;
-        if 83.309631 - 47.717819 + CONST88 - 427 + -122 / CONST88 + var87 / 4.429749 == var87 * var87 + -16.796425 + var87 * var87 / var87 + var87 / var87 {
-            var142: int;
-            break;
+        continue;
+        if falsefunc(23,5) {
+            const var: int;
+            var: int;
+            while falsefunc(23,5) {
+                return 2;
+            }
         }
         else {
-            CONST88 = CONST88 - -99 / var87 / -47.124146 - CONST88 * sizeof Type0 * -947 - 928;
-            continue;
-            var143: float;
+            global var: int;
+            if false1 {
+                const var: int;
+                break;
+                var: int;
+                while falsefunc(23,5) {
+                    var: int;
+                    global var: int;
+                    continue;
+                }
+                return 2;
+            }
+            else {
+                while falsefunc(23,5) {
+                    if false1 {
+                        global var: int;
+                        global var: int;
+                        var: int;
+                        global var: int;
+                        global var: int;
+                    }
+                    else {
+                        global var: int;
+                        const var: int;
+                        break;
+                    }
+                    var: int;
+                    break;
+                    const var: int;
+                    while falsefunc(23,5) {
+                        continue;
+                        break;
+                        var: int;
+                    }
+                }
+                break;
+                while falsefunc(23,5) {
+                    break;
+                    global var: int;
+                    if falsefunc(23,5) {
+                        const var: int;
+                        const var: int;
+                        var: int;
+                        continue;
+                    }
+                    else {
+                        global var: int;
+                        const var: int;
+                        continue;
+                    }
+                    while false1 {
+                        continue;
+                        var: int;
+                        return 2;
+                    }
+                    continue;
+                }
+                break;
+                global var: int;
+                global var: int;
+            }
+            while false1 {
+                break;
+                continue;
+            }
+            var: int;
+            const var: int;
+            if falsefunc(23,5) {
+                break;
+                continue;
+                break;
+            }
+            else {
+                var: int;
+                continue;
+            }
+            global var: int;
+            return 2;
+            while false1 {
+                return 2;
+                var: int;
+                return 2;
+                while falsefunc(23,5) {
+                    continue;
+                    continue;
+                    break;
+                    while falsefunc(23,5) {
+                        const var: int;
+                    }
+                    global var: int;
+                    while falsefunc(23,5) {
+                        var: int;
+                    }
+                    break;
+                    return 2;
+                }
+                while falsefunc(23,5) {
+                    global var: int;
+                    const var: int;
+                    global var: int;
+                    var: int;
+                    return 2;
+                }
+                global var: int;
+                return 2;
+            }
         }
-        global g_var144: bool;
     }
-    while 22.552643 + 40.046051 - var87 + -16.882401 * var87 - var87 / sizeof float * 5 || -367 / -520 / -15.644958 - var87 + -27.430122 * var87 - sizeof float - sizeof bool {
+    while falsefunc(23,5) {
+        global var: int;
+        global var: int;
+        const var: int;
         break;
-        const CONST145: int = -738;
-        if sizeof float * CONST145 + -98.565086 * -99.784752 + var87 + 52.098099 / var87 - var87 || var87 * 1.164589 + 61.477509 * var87 + var87 - var87 + sizeof Type0 - sizeof bool {
-            global g_var146: Type0;
-            continue;
-            return 519 - sizeof Type0 - -96.879158 - -35.571617 / sizeof int * CONST145 * var87 - 91.747253 + -341 + CONST145 - var87 + -62.268372 + sizeof float * CONST145 + CONST145 / -886;
-        }
-        else {
-            return var87 - var87 + 101 + sizeof float - 10.224823 + -81.761017 / sizeof bool + sizeof int - sizeof float / 516 - sizeof int / 412 - CONST145 / -265 * sizeof Type0 + sizeof Type0;
-        }
-        if var87 * -90.930138 * -84.780670 / 73.586517 / var87 + 77.638885 + CONST145 * -969 <= sizeof bool - -888 + sizeof bool + CONST145 - var87 - var87 - var87 + var87 {
-            if var87 - var87 + -648 + 700 + var87 + var87 / var87 / 38.234558 < var87 / 64.341629 / 32.304596 + var87 * var87 - var87 + sizeof bool / CONST145 {
-                continue;
-                global g_var147: int;
-                global g_var148: bool;
-                global g_var149: Type0;
-                var150: int;
-                return var150 - var150 + 188 + sizeof Type0 / sizeof int * sizeof Type0 - var87 - 7.463646 + sizeof Type0 + sizeof Type0 - var150 + var150 + -885 * -566 + sizeof char * var150;
-            }
-            else {
-                var151: char;
-                global g_var152: char;
-                while -878 - sizeof char + var87 * var87 - sizeof bool + -823 * -72.045914 * var87 || CONST145 / -692 / var87 + var87 + sizeof bool - CONST145 * var87 * var87 {
-                    while false {
-                        return sizeof char - sizeof bool / CONST145 - CONST145 - sizeof bool * CONST145 * 169 + -251 - sizeof Type0 * -326 - 16 / 379 / var87 / var87 / var87 + 27.638054;
-                    }
-                    18.316254 * var87 - -49.298615 * -42.209667 - var87 / 32.870773 + CONST145 * -785 > sizeof bool * -42 / 78.878464 + var87 * CONST145 / CONST145 / var87 / -32.459717;
-                    global g_var153: bool;
-                    g_var153 = var87 * var87 * CONST145 * CONST145 && 88.470703 + var87 * CONST145 * 846;
-                    if 51.567734 - -46.078735 + sizeof char / -675 + sizeof char / CONST145 + var87 - 34.931763 == CONST145 / 626 * var87 - var87 * 239 / CONST145 / var87 + -41.415726 {
-                        global g_var154: float;
-                        global g_var155: char;
-                    }
-                    else {
-                        continue;
-                        return var87 * var87 * CONST145 * sizeof bool * -449 * -258 / -38.402676 + var87 * -44.945484 + var87 - var87 + -34.822998 + 76.705856 - var87 - sizeof bool * CONST145;
-                    }
-                }
-                var156: float;
-                var157: Type0;
-                var158: char;
-                global g_var159: float;
-                global g_var160: char;
-                const CONST161: int = 371;
-                const CONST162: int = 620;
-            }
-            const CONST163: int = 773;
-            while var87 * -54.584225 + var87 - -48.604370 * 90.806519 / var87 + -33.519241 - 77.920685 && CONST163 + sizeof Type0 * 28.172043 + 2.833572 - -89.084465 - 23.790550 * var87 * 27.529335 {
-                global g_var164: Type0;
-                var165: char;
-                if -306 - CONST163 * 760 + 659 + sizeof float / 168 / var87 + 58.476013 || var87 - var87 * -2.182343 / var87 * 612 - CONST163 / var87 / var87 {
-                    global g_var166: bool;
-                    global g_var167: int;
-                    while 30.175568 * var87 - sizeof int * 3 / -49.629463 / var87 + g_var167 / sizeof Type0 == var87 / var87 / sizeof float + sizeof bool * sizeof float - g_var167 * g_var167 - sizeof char {
-                        continue;
-                        var87 - 30.773239 - 28.414917 * 86.177597 + sizeof float / sizeof float - 387 + g_var167 < var87 + -58.790020 - sizeof int * -669 + g_var167 + g_var167 / var87 / var87;
-                        global g_var168: char;
-                        break;
-                        return sizeof char - sizeof bool / var87 * var87 / 13.518372 + var87 / sizeof bool + sizeof Type0 - -12.919907 + var87 / sizeof int * g_var167 - 23.019135 * -78.766022 * 890 + g_var167;
-                    }
-                    g_var167 = sizeof char + sizeof int / g_var167 / sizeof bool + var87 - -67.889877 * var87 + var87;
-                    var169: bool;
-                    if !g_var167 * g_var167 * var87 + 63.557617 >= g_var167 * -214 - -396 / g_var167 {
-                        continue;
-                        23.614929 * var87 + g_var167 - sizeof bool / var87 / var87 / -287 + sizeof bool - var87 - var87 * -83.151993 / 85.704391 / -15.356216 * var87 * g_var167 / 300;
-                    }
-                    else {
-                        return sizeof char * g_var167 / -201 * -525 + 64.434875 / var87 - var87 / var87 / -9.796127 - var87 - var87 * var87 - 78.995972 - var87 / -82.190918 - var87;
-                    }
-                    continue;
-                }
-                else {
-                    global g_var170: char;
-                    var171: int;
-                    var171 * -182 - var87 - var87 - 31.018677 * var87 / 43.500870 + var87 || var171 * var171 / var87 + var87 + 87.332184 + 85.703064 - 70.673523 - var87;
-                    global g_var172: Type0;
-                    const CONST173: int = -413;
-                    sizeof Type0 + var171 * var87 - var87 + -71.742477 / -55.166431 * sizeof int + 919 <= -67.588554 * var87 + sizeof int / sizeof float + -935 / -26 / -462 * CONST173;
-                    break;
-                }
-                continue;
-                if false {
-                    if false {
-                        const CONST174: int = -776;
-                        var87 * 12.596771 / var87 + 39.681335 - CONST174 + -747 / -58.137505 * -66.003738 || CONST174 - CONST174 * 61.921295 + 17.532600 - 966 / -40 * var87 + -40.846859;
-                        const CONST175: int = 967;
-                        var176: bool;
-                    }
-                    else {
-                        var177: Type0;
-                        const CONST178: int = -716;
-                        global g_var179: bool;
-                        return CONST178 - -374 + -70.815132 - 31.433701 + var87 * var87 * 860 * 161 / 434 / 16 - sizeof int + -376 - var87 - -67.024719 * sizeof bool - sizeof bool;
-                    }
-                    break;
-                }
-                else {
-                    return var87 * -32.922066 / -48.343056 / var87 + CONST163 + sizeof float - var87 * 63.555069 - sizeof Type0 / sizeof float + -591 - CONST163 * var87 - -32.600800 / -541 + -724;
-                }
-                global g_var180: Type0;
-                global g_var181: int;
-            }
-            10.134743 + 68.326675 * sizeof Type0 / CONST163 * -140 + sizeof Type0 + var87 * -76.837524 && sizeof int / CONST163 * CONST163 * -425 - -6 - sizeof Type0 + CONST163 - 593;
-            if sizeof char / sizeof char + -96.057274 / -30.513367 + var87 * var87 - -114 / 623 >= -38.178722 * var87 / 495 + -275 / -961 * -825 * sizeof Type0 / 245 {
-                continue;
-                if sizeof int * 347 * sizeof bool - sizeof float / var87 / var87 / -49.876225 * 46.633698 <= 80.755005 * var87 * CONST163 + CONST163 - -25.768776 - 64.049606 / var87 + var87 {
-                    break;
-                    var182: Type0;
-                    if sizeof float / CONST163 * -74.230927 - -8.967163 + 46.864471 / var87 / var87 / var87 <= 271 * CONST163 / sizeof char + -782 - var87 * var87 / var87 + var87 {
-                        return CONST163 * CONST163 / CONST163 / 678 / -67.157867 + -76.142303 / var87 - var87 / 17.309784 * 83.178879 / CONST163 * sizeof bool - -366 + sizeof float + 570 + sizeof bool;
-                    }
-                    else {
-                        const CONST183: int = 619;
-                        const CONST184: int = -173;
-                        var185: int;
-                    }
-                    sizeof Type0 + sizeof bool / 22.519722 + 68.771408 - CONST163 * sizeof bool / 8.531654 * -3.272758 / sizeof char * CONST163 * -2.066322 + -53.386307 * CONST163 + -854 + var87 * var87;
-                    if 243 + CONST163 / var87 - -48.781044 - var87 - -88.935539 + -498 / -978 <= var87 - var87 - sizeof float + sizeof float - -683 * CONST163 + var87 + 88.219635 {
-                        return sizeof int * CONST163 - var87 + var87 * var87 * 59.896729 / var87 - -21.563492 + -679 * CONST163 - -40.755474 / 31.899887 + var87 - var87 / var87 / var87;
-                    }
-                    else {
-                        var87 / -87.959969 * var87 + var87 + var87 / var87 * -48.254704 - var87 && 96.755005 * 31.481018 / sizeof float + CONST163 / 88.880402 + var87 - -32.639069 * -10.408150;
-                        CONST163 * sizeof Type0 * var87 / 97.081329 / sizeof bool + -171 - 60.666306 / -82.329239 && -109 - sizeof bool / var87 / 25.781235 + 585 - 887 + -481 + sizeof float;
-                        return 64 - 872 / 68.946152 + var87 - sizeof char / 130 * sizeof float * 527 / var87 / var87 / -90.353767 - var87 + var87 / -86.152702 * var87 / 94.744385;
-                    }
-                    while false {
-                        var186: char;
-                        return 144 + -194 / 107 + -66 + -12.414223 - 99.396774 - sizeof bool + sizeof Type0 + CONST163 + sizeof bool + 658 - CONST163 * var87 / var87 / sizeof bool * -755;
-                    }
-                    while -658 - CONST163 * 697 * sizeof char / CONST163 - CONST163 / 26.192383 - var87 < 99.015152 * 22.566246 / -68.115608 * var87 + -76.494263 / 5.321625 / sizeof char / CONST163 {
-                        return CONST163 / CONST163 - var87 * 33.846252 * 38 / sizeof int / 259 / sizeof float - var87 * -17.650490 - CONST163 * 346 / var87 * -23.997704 - sizeof float * sizeof bool;
-                    }
-                    var187: float;
-                    break;
-                }
-                else {
-                    const CONST188: int = -855;
-                    var189: char;
-                    if 91.736252 * 28.684631 * 17.990158 - var87 + -77.191498 + var87 * 592 + -595 || 8.025185 / var87 / -2.432861 + 58.101410 + CONST188 / sizeof char / var87 / -70.564545 {
-                        break;
-                        continue;
-                        global g_var190: bool;
-                        continue;
-                    }
-                    else {
-                        return var87 + var87 * -56.359314 * 91.241180 * 39.337311 - var87 * sizeof char + CONST188 * var87 * -53.578838 / 97.298019 - var87 * var87 * var87 - CONST188 * 109;
-                    }
-                    continue;
-                    global g_var191: float;
-                    const CONST192: int = 318;
-                    const CONST193: int = 399;
-                }
-                const CONST194: int = -226;
-            }
-            else {
-                break;
-                var195: float;
-                break;
-                var196: int;
-            }
-            continue;
-            if -24 / sizeof Type0 / var87 - var87 + -907 / CONST163 + 86.097672 - var87 > sizeof int / 339 * var87 * var87 / -53.845562 + 8.993019 + sizeof bool + -626 {
-                var197: Type0;
-                while sizeof int / 148 + CONST163 - sizeof Type0 + CONST163 / 75 / CONST163 / sizeof int >= var87 - -79.791641 + -984 - CONST163 / var87 - -7.614098 - 323 + -411 {
-                    break;
-                    if var87 * -58.183376 * 85.244080 / var87 + var87 + 42.481262 + 673 - CONST163 > var87 * -73.060562 * -74.790276 - -26.801773 + var87 + -12.886131 - -48.180908 + var87 {
-                        return -37.874336 + var87 / var87 / var87 - CONST163 / -190 * var87 * 23.872795 * CONST163 - sizeof Type0 / sizeof Type0 / sizeof Type0 * CONST163 - CONST163 - 40.528458 * 93.009369;
-                    }
-                    else {
-                        global g_var198: int;
-                        var199: bool;
-                        return var87 - var87 / var87 / 1.804100 * var87 - var87 / -598 / g_var198 - var87 + var87 - 148 / sizeof Type0 / g_var198 + sizeof Type0 + var87 * 93.805466;
-                    }
-                    var200: int;
-                    var201: float;
-                    sizeof bool - -640 - var201 + 68.690521 / var201 * -77.252884 - var201 + var201 != 64.439316 / var201 / 9.355988 * var201 / var201 + var201 - 231 + sizeof char;
-                    var201 + 13.004517 - sizeof int * var200 * var201 / -87.147491 * 240 * 630 >= 2.522934 - var201 * sizeof bool + -972 + var200 + 521 - -205 * sizeof char;
-                    return 13.380966 + 18.302704 + -33.201836 * var201 - -53.106777 - 31.548080 * var201 + -9.501320 - var201 / -96.763657 - 80.918213 / var201 * -9.674988 + var201 + var201 - -83.116211;
-                }
-                while var87 / 61.050186 / sizeof float + CONST163 / var87 / 58.299286 / 383 / -822 >= 39.896561 + var87 - CONST163 - 232 + 32.427536 / var87 / CONST163 + CONST163 {
-                    var202: float;
-                    CONST163 + 485 + var202 - var202 - var202 / -52.856247 - var202 + 16.069366 < 5.908714 / var202 * var202 * 81.005997 / sizeof bool + CONST163 + var202 - -90.429878;
-                    while false {
-                        var203: Type0;
-                        continue;
-                        global g_var204: float;
-                        continue;
-                        const CONST205: int = 663;
-                        const CONST206: int = 468;
-                        continue;
-                    }
-                    global g_var207: char;
-                    return var202 - 76.575653 - -12.472847 / var202 / sizeof int / CONST163 - var202 + var202 + var202 * var202 * -60.391205 - var202 / CONST163 / sizeof int / -25.203812 / 54.026932;
-                }
-                break;
-                return CONST163 + sizeof char + var87 - -87.279938 + -19.895378 / 45.911942 / CONST163 + 807 / 93.409973 - 93.778564 / var87 * var87 + 404 * 855 * -101 + CONST163;
-            }
-            else {
-                sizeof int - -661 - -90 + sizeof bool / CONST163 * -820 / sizeof int * CONST163 / var87 * -1.156845 * 13.955978 + -76.938911 - var87 - 71.074631 + CONST163 + CONST163;
-                return -934 - -877 / var87 - 94.984894 / CONST163 + sizeof Type0 + CONST163 * sizeof float * -15.190750 - var87 * CONST163 - 128 - -874 * sizeof int - sizeof bool - -642;
-            }
-            global g_var208: float;
-        }
-        else {
-            while false {
-                return 34.241379 / 56.657272 / CONST145 * sizeof char - 5.578926 / 37.741241 / -87.167381 - var87 - -58.141754 + -87.408798 + 18 + sizeof float * var87 * var87 * 953 - 261;
-            }
-            global g_var209: float;
-            break;
-            continue;
-            498 / -334 / CONST145 / sizeof bool * CONST145 / 646 - sizeof int - sizeof float - g_var209 / -77.938919 - -86.693405 + g_var209 * -24.063713 * g_var209 / 3.288040 + g_var209;
-            if -89.248138 * -66.856491 * CONST145 - CONST145 / -72.736450 + -66.775558 + CONST145 / -694 >= CONST145 - 906 + -43.859398 - g_var209 * 54.972351 / 15.538574 - 569 - CONST145 {
-                break;
-                continue;
-                break;
-                global g_var210: int;
-                while false {
-                    global g_var211: int;
-                    if -93.654434 * g_var209 / -446 + sizeof float + -89.479210 / g_var209 + g_var211 - g_var211 <= 63 * g_var211 * -253 - -89 / g_var209 - g_var209 * 1.205589 * -4.615730 {
-                        const CONST212: int = 943;
-                        var213: bool;
-                        break;
-                        global g_var214: bool;
-                        return 966 * 628 + CONST212 - sizeof bool - sizeof char + -371 / 90.741562 / 74.100662 * -66 / 639 / -866 + sizeof float / 459 / CONST212 * g_var209 + 85.273956;
-                    }
-                    else {
-                        continue;
-                        g_var211 / g_var211 + sizeof Type0 * -628 / -65.191315 - -28.195618 / -51.728756 * 10.666862 + sizeof char * 493 - g_var209 * 45.957596 - -976 + sizeof float + 894 + 945;
-                        const CONST215: int = -138;
-                        var216: Type0;
-                        const CONST217: int = -491;
-                    }
-                    if 911 - -227 - g_var211 - sizeof float + -36.098446 / g_var209 / -97.158356 + g_var209 && g_var211 * g_var211 / -769 / g_var211 + sizeof float / 821 * g_var209 / 66.668381 {
-                        global g_var218: float;
-                        continue;
-                        const CONST219: int = 328;
-                    }
-                    else {
-                        break;
-                        var220: char;
-                    }
-                    var221: Type0;
-                    while 57.536438 + g_var209 - -51.643181 - 6.571785 / g_var209 - g_var209 + g_var209 - 70.595459 != 28.172638 / 21.862640 / -53.469330 - g_var209 - g_var209 * g_var209 * g_var209 - -47.764790 {
-                        break;
-                        var222: Type0;
-                        var223: bool;
-                        var224: float;
-                        break;
-                        const CONST225: int = 288;
-                        var226: int;
-                        -13.648422 / var224 / var224 - 79.201691 - var224 + -38.665718 - -0.490341 / var224 / var224 / 82.425766 / var224 - var224 / var224 / -23.533035 / sizeof bool - sizeof Type0;
-                    }
-                    if 35.772720 * 34.828354 + g_var209 - 68.540222 - g_var211 / g_var211 + sizeof Type0 / g_var211 && 691 - sizeof char + -56.046291 + 18.108009 * -43.841862 / g_var209 * -41 / g_var211 {
-                        !-89.301994 + g_var209 * 31.391891 / 64.426819 || g_var211 * g_var211 * 92.471710 - -40.677589;
-                        continue;
-                        global g_var227: float;
-                        continue;
-                        return 90.097015 + g_var227 + 10 / sizeof float / sizeof Type0 * sizeof float / sizeof bool * g_var211 + 88.446960 - g_var227 + -356 - 476 / g_var211 - sizeof Type0 - g_var211 - sizeof float;
-                    }
-                    else {
-                        13 * 948 / -39.253582 / -64.286621 / g_var209 / g_var209 + g_var211 + 457 + 68.535690 - -13.107185 / g_var209 + -69.442673 * g_var211 * g_var211 * -2.517944 - g_var209;
-                        return g_var209 - g_var209 * sizeof char / 662 - -20.158699 / g_var209 + g_var211 - sizeof float + 59.052383 - 97.178741 + sizeof char / sizeof int / g_var211 / -299 + 434 / 572;
-                    }
-                    continue;
-                    break;
-                    return 618 + sizeof bool * g_var209 + -25.655525 + -168 - 538 + g_var209 + -57.423103 - sizeof Type0 / sizeof float / g_var209 / -11.850357 - g_var209 / -51.778927 / g_var211 / sizeof int;
-                }
-                return g_var210 - sizeof float + g_var209 - g_var209 + 709 * 604 + 55.420792 + g_var209 - g_var209 * g_var209 * sizeof Type0 - sizeof bool + 36.169312 - g_var209 / -803 - g_var210;
-            }
-            else {
-                while 37.832321 * -89.173943 - g_var209 * -50.494549 - -82.417915 / g_var209 + g_var209 - 80.219574 || g_var209 - g_var209 * g_var209 * -88.788719 + -92.658104 / g_var209 + CONST145 / sizeof int {
-                    if false {
-                        global g_var228: int;
-                        return 68.765228 - -11.696861 / g_var228 - 661 + g_var228 - -381 / -16 - g_var228 - 98.205612 * -35.177322 + sizeof float + sizeof char - g_var209 * g_var209 + g_var228 - -166;
-                    }
-                    else {
-                        global g_var229: char;
-                        7.275322 - g_var209 + 12.756493 * -18.132629 + sizeof bool / sizeof bool / CONST145 - sizeof char != 57.751907 + 47.235687 / 765 - sizeof Type0 / g_var209 - g_var209 * 75.606079 / g_var209;
-                        global g_var230: bool;
-                        global g_var231: int;
-                        continue;
-                    }
-                    !sizeof Type0 * 720 - -4.736977 * 23.913940 && -46.482044 - -58.930717 - g_var209 + g_var209;
-                    break;
-                    break;
-                }
-                global g_var232: char;
-                while sizeof float * CONST145 - -674 - 68 - 68.344955 + g_var209 - -301 + sizeof bool > g_var209 / g_var209 * -49.260044 / g_var209 / -25.725899 + -40.409817 / 830 + sizeof char {
-                    if sizeof bool * sizeof int - CONST145 - 678 / 117 / sizeof float / 99.918625 / g_var209 || g_var209 - -89.748428 * -37.238590 - 24.431740 * sizeof bool - CONST145 / CONST145 + sizeof float {
-                        break;
-                        g_var209 - -17.416389 + g_var209 / g_var209 - 17.608467 + 59.904678 / CONST145 - CONST145 * g_var209 - g_var209 / -503 - CONST145 - CONST145 + sizeof float / g_var209 + 22.763893;
-                    }
-                    else {
-                        68.669800 * g_var209 - -79 * -624 + g_var209 / g_var209 / -924 * CONST145 >= -55.179138 + 58.639008 * g_var209 - g_var209 + sizeof int / sizeof Type0 + sizeof Type0 / CONST145;
-                        continue;
-                        var233: Type0;
-                        const CONST234: int = -19;
-                    }
-                    return -45.518440 - -91.092628 - 873 * sizeof char + g_var209 + -51.430813 + -67.288025 * -35.282227 - CONST145 * CONST145 - g_var209 * g_var209 + g_var209 * -70.871033 + g_var209 * -22.412979;
-                }
-                while 27.492760 * g_var209 / g_var209 + g_var209 - g_var209 + 31.676270 + -71.592369 - -0.688057 >= -52.560287 - g_var209 - 591 * sizeof Type0 + g_var209 * 6.174660 / 699 / CONST145 {
-                    return 3.980469 + g_var209 / CONST145 * 730 + -12.039528 * g_var209 / g_var209 * g_var209 + g_var209 - 20.280327 + sizeof char * -211 * -60.933254 / 96.901901 / g_var209 - -86.899033;
-                }
-                var235: float;
-                global g_var236: int;
-            }
-            const CONST237: int = -305;
-            global g_var238: char;
-        }
-        return sizeof char + CONST145 + CONST145 / 517 - var87 * var87 / 53.776321 + 44.789368 - 29.388138 - var87 + -389 / sizeof int + -37.506176 + var87 * CONST145 - CONST145;
+        continue;
+        break;
     }
-    return sizeof float * 5 * 24.235985 + -36.894905 - -64.458267 + 17.125496 - -349 + sizeof Type0 + 23 + -948 / 999 - sizeof int * 0.2 / 58.567917 * 5 / 806;
+    return 0;
+}
+fun proc2(arg0: int, arg1: int, arg2: int): int {
+    var: int;
+    var: int;
+    const var: int;
+    return 2;
+    if false1 {
+        while falsefunc(23,5) {
+            var: int;
+            global var: int;
+            break;
+            var: int;
+            while false1 {
+                if falsefunc(23,5) {
+                    while false1 {
+                        return 2;
+                        continue;
+                        break;
+                    }
+                    continue;
+                    break;
+                    const var: int;
+                    break;
+                }
+                else {
+                    while falsefunc(23,5) {
+                        return 2;
+                        global var: int;
+                        var: int;
+                    }
+                    while false1 {
+                        var: int;
+                    }
+                    const var: int;
+                    return 2;
+                    if falsefunc(23,5) {
+                        var: int;
+                        global var: int;
+                        break;
+                        continue;
+                        return 2;
+                        break;
+                        return 2;
+                    }
+                    else {
+                        return 2;
+                        const var: int;
+                        const var: int;
+                        break;
+                    }
+                    break;
+                }
+                const var: int;
+                continue;
+                while false1 {
+                    break;
+                    break;
+                }
+                const var: int;
+                if false1 {
+                    const var: int;
+                    if false1 {
+                        const var: int;
+                        global var: int;
+                    }
+                    else {
+                        global var: int;
+                        global var: int;
+                        return 2;
+                        global var: int;
+                        break;
+                    }
+                }
+                else {
+                    break;
+                    continue;
+                    global var: int;
+                    break;
+                    if false1 {
+                        continue;
+                        var: int;
+                        global var: int;
+                        return 2;
+                        break;
+                        global var: int;
+                        return 2;
+                        var: int;
+                    }
+                    else {
+                        var: int;
+                        break;
+                        global var: int;
+                        continue;
+                    }
+                    while falsefunc(23,5) {
+                        var: int;
+                    }
+                }
+            }
+            break;
+            while falsefunc(23,5) {
+                global var: int;
+                var: int;
+                continue;
+                if false1 {
+                    global var: int;
+                    while falsefunc(23,5) {
+                        return 2;
+                        break;
+                        break;
+                        var: int;
+                    }
+                }
+                else {
+                    break;
+                    break;
+                    return 2;
+                    var: int;
+                    return 2;
+                    return 2;
+                }
+                const var: int;
+                break;
+                if false1 {
+                    while falsefunc(23,5) {
+                        return 2;
+                        continue;
+                        const var: int;
+                        return 2;
+                    }
+                    const var: int;
+                }
+                else {
+                    global var: int;
+                    break;
+                    while falsefunc(23,5) {
+                        continue;
+                        var: int;
+                        return 2;
+                        global var: int;
+                    }
+                    const var: int;
+                    const var: int;
+                    const var: int;
+                    global var: int;
+                    var: int;
+                    return 2;
+                }
+            }
+            if false1 {
+                if false1 {
+                    var: int;
+                    const var: int;
+                    break;
+                    var: int;
+                    if falsefunc(23,5) {
+                        break;
+                        return 2;
+                        break;
+                        const var: int;
+                    }
+                    else {
+                        global var: int;
+                        continue;
+                        continue;
+                    }
+                    return 2;
+                    break;
+                    if falsefunc(23,5) {
+                        var: int;
+                        break;
+                    }
+                    else {
+                        global var: int;
+                    }
+                }
+                else {
+                    return 2;
+                    var: int;
+                    continue;
+                    while falsefunc(23,5) {
+                        break;
+                        global var: int;
+                        break;
+                        return 2;
+                    }
+                    break;
+                    continue;
+                    break;
+                    const var: int;
+                    var: int;
+                    if false1 {
+                        break;
+                        global var: int;
+                        const var: int;
+                        break;
+                        break;
+                    }
+                    else {
+                        var: int;
+                        break;
+                        var: int;
+                    }
+                }
+                const var: int;
+            }
+            else {
+                const var: int;
+                while falsefunc(23,5) {
+                    if false1 {
+                        return 2;
+                        global var: int;
+                        return 2;
+                        continue;
+                        return 2;
+                        var: int;
+                        global var: int;
+                    }
+                    else {
+                        continue;
+                    }
+                    global var: int;
+                    break;
+                }
+                while falsefunc(23,5) {
+                    if false1 {
+                        var: int;
+                        global var: int;
+                        break;
+                        return 2;
+                        global var: int;
+                        continue;
+                        var: int;
+                    }
+                    else {
+                        break;
+                        global var: int;
+                        return 2;
+                    }
+                    while falsefunc(23,5) {
+                        const var: int;
+                        return 2;
+                    }
+                    global var: int;
+                    if false1 {
+                        continue;
+                        const var: int;
+                    }
+                    else {
+                        var: int;
+                        continue;
+                        global var: int;
+                        continue;
+                    }
+                    const var: int;
+                    global var: int;
+                    const var: int;
+                    while falsefunc(23,5) {
+                        return 2;
+                        return 2;
+                    }
+                    if false1 {
+                        const var: int;
+                        return 2;
+                        break;
+                        continue;
+                        var: int;
+                        continue;
+                    }
+                    else {
+                        var: int;
+                        break;
+                        global var: int;
+                        return 2;
+                        continue;
+                    }
+                }
+                var: int;
+                var: int;
+            }
+        }
+        global var: int;
+        return 2;
+        const var: int;
+        const var: int;
+        if falsefunc(23,5) {
+            if false1 {
+                global var: int;
+                var: int;
+                return 2;
+                return 2;
+                const var: int;
+                global var: int;
+                if false1 {
+                    return 2;
+                    global var: int;
+                    while falsefunc(23,5) {
+                    }
+                    const var: int;
+                    const var: int;
+                    var: int;
+                    var: int;
+                }
+                else {
+                    global var: int;
+                    return 2;
+                    if falsefunc(23,5) {
+                        global var: int;
+                        const var: int;
+                    }
+                    else {
+                        const var: int;
+                        return 2;
+                        const var: int;
+                        const var: int;
+                    }
+                    if false1 {
+                        return 2;
+                        const var: int;
+                        const var: int;
+                        global var: int;
+                    }
+                    else {
+                        var: int;
+                        const var: int;
+                        var: int;
+                        var: int;
+                        return 2;
+                    }
+                }
+            }
+            else {
+                if falsefunc(23,5) {
+                    return 2;
+                    while false1 {
+                        return 2;
+                    }
+                    var: int;
+                }
+                else {
+                    const var: int;
+                    if falsefunc(23,5) {
+                        return 2;
+                        return 2;
+                        const var: int;
+                        return 2;
+                    }
+                    else {
+                        global var: int;
+                    }
+                }
+                global var: int;
+                const var: int;
+            }
+            while falsefunc(23,5) {
+                while falsefunc(23,5) {
+                    if falsefunc(23,5) {
+                        break;
+                        global var: int;
+                    }
+                    else {
+                        var: int;
+                        var: int;
+                        const var: int;
+                        global var: int;
+                        global var: int;
+                        var: int;
+                        global var: int;
+                        continue;
+                    }
+                    break;
+                    if false1 {
+                        break;
+                        const var: int;
+                    }
+                    else {
+                        const var: int;
+                        return 2;
+                    }
+                }
+                return 2;
+                global var: int;
+                continue;
+            }
+        }
+        else {
+            while falsefunc(23,5) {
+                var: int;
+                while falsefunc(23,5) {
+                    continue;
+                    var: int;
+                    continue;
+                    return 2;
+                    var: int;
+                    if falsefunc(23,5) {
+                        global var: int;
+                        break;
+                        var: int;
+                        const var: int;
+                        continue;
+                    }
+                    else {
+                        break;
+                        continue;
+                        continue;
+                        continue;
+                        var: int;
+                    }
+                    continue;
+                }
+                if false1 {
+                    if falsefunc(23,5) {
+                        const var: int;
+                        break;
+                        global var: int;
+                    }
+                    else {
+                        const var: int;
+                    }
+                    continue;
+                    if falsefunc(23,5) {
+                        continue;
+                        global var: int;
+                        global var: int;
+                        break;
+                        global var: int;
+                    }
+                    else {
+                        var: int;
+                        continue;
+                        const var: int;
+                        var: int;
+                        return 2;
+                    }
+                    if falsefunc(23,5) {
+                        break;
+                        var: int;
+                        global var: int;
+                        const var: int;
+                    }
+                    else {
+                        const var: int;
+                        const var: int;
+                        return 2;
+                        const var: int;
+                        var: int;
+                        continue;
+                    }
+                    const var: int;
+                }
+                else {
+                    const var: int;
+                    while falsefunc(23,5) {
+                        var: int;
+                        return 2;
+                        var: int;
+                        continue;
+                        global var: int;
+                        const var: int;
+                    }
+                    continue;
+                    global var: int;
+                    return 2;
+                    global var: int;
+                    if false1 {
+                        return 2;
+                        var: int;
+                        continue;
+                    }
+                    else {
+                        break;
+                        const var: int;
+                        return 2;
+                        break;
+                    }
+                    continue;
+                    return 2;
+                }
+                while false1 {
+                    const var: int;
+                    global var: int;
+                    const var: int;
+                    const var: int;
+                }
+                if falsefunc(23,5) {
+                    var: int;
+                    return 2;
+                    continue;
+                }
+                else {
+                    return 2;
+                    return 2;
+                    continue;
+                    global var: int;
+                    return 2;
+                    if falsefunc(23,5) {
+                        var: int;
+                        const var: int;
+                        continue;
+                        const var: int;
+                        return 2;
+                        global var: int;
+                    }
+                    else {
+                        continue;
+                    }
+                    if falsefunc(23,5) {
+                        const var: int;
+                    }
+                    else {
+                        break;
+                        continue;
+                    }
+                }
+            }
+            return 2;
+            return 2;
+            return 2;
+        }
+    }
+    else {
+        while false1 {
+            break;
+        }
+        var: int;
+        global var: int;
+        const var: int;
+    }
+    return 0;
+}
+fun proc3(arg0: int, arg1: int, arg2: int): int {
+    var: int;
+    var: int;
+    var: int;
+    if falsefunc(23,5) {
+        return 2;
+        while false1 {
+            continue;
+            global var: int;
+        }
+        while false1 {
+            global var: int;
+            if falsefunc(23,5) {
+                var: int;
+                var: int;
+                const var: int;
+                continue;
+            }
+            else {
+                while false1 {
+                    const var: int;
+                    while falsefunc(23,5) {
+                        global var: int;
+                        return 2;
+                        const var: int;
+                        continue;
+                        break;
+                        const var: int;
+                        var: int;
+                    }
+                    return 2;
+                    global var: int;
+                    var: int;
+                    return 2;
+                    global var: int;
+                    global var: int;
+                }
+                if falsefunc(23,5) {
+                    return 2;
+                    const var: int;
+                    var: int;
+                }
+                else {
+                    continue;
+                    const var: int;
+                    continue;
+                    return 2;
+                    break;
+                    if false1 {
+                        break;
+                    }
+                    else {
+                        const var: int;
+                        return 2;
+                        global var: int;
+                        var: int;
+                        return 2;
+                    }
+                    break;
+                }
+                var: int;
+            }
+            if falsefunc(23,5) {
+                while false1 {
+                    continue;
+                    var: int;
+                    const var: int;
+                    break;
+                }
+                return 2;
+                const var: int;
+                if false1 {
+                    global var: int;
+                    global var: int;
+                    continue;
+                }
+                else {
+                    if false1 {
+                        global var: int;
+                        return 2;
+                    }
+                    else {
+                        break;
+                        return 2;
+                        continue;
+                        break;
+                    }
+                }
+                while false1 {
+                    break;
+                    return 2;
+                    var: int;
+                    while falsefunc(23,5) {
+                        continue;
+                    }
+                    if falsefunc(23,5) {
+                        global var: int;
+                        return 2;
+                        global var: int;
+                    }
+                    else {
+                        return 2;
+                        var: int;
+                        break;
+                        continue;
+                        return 2;
+                        const var: int;
+                    }
+                }
+                while false1 {
+                    var: int;
+                    const var: int;
+                    continue;
+                    global var: int;
+                }
+                const var: int;
+            }
+            else {
+                break;
+                global var: int;
+                global var: int;
+                global var: int;
+                while falsefunc(23,5) {
+                    if falsefunc(23,5) {
+                        const var: int;
+                        break;
+                    }
+                    else {
+                        global var: int;
+                        global var: int;
+                        continue;
+                    }
+                    var: int;
+                    const var: int;
+                    return 2;
+                    return 2;
+                }
+                if falsefunc(23,5) {
+                    break;
+                    const var: int;
+                    break;
+                }
+                else {
+                    while falsefunc(23,5) {
+                        var: int;
+                        break;
+                        const var: int;
+                        var: int;
+                        return 2;
+                    }
+                    while falsefunc(23,5) {
+                        var: int;
+                        const var: int;
+                        const var: int;
+                        var: int;
+                        global var: int;
+                        break;
+                    }
+                    if falsefunc(23,5) {
+                        break;
+                        return 2;
+                        global var: int;
+                        global var: int;
+                        global var: int;
+                    }
+                    else {
+                        const var: int;
+                        continue;
+                        continue;
+                        const var: int;
+                        continue;
+                        var: int;
+                    }
+                    break;
+                    const var: int;
+                }
+                return 2;
+            }
+            continue;
+            continue;
+            while false1 {
+                return 2;
+                continue;
+                continue;
+                if falsefunc(23,5) {
+                    var: int;
+                    global var: int;
+                }
+                else {
+                    var: int;
+                    while false1 {
+                        continue;
+                        break;
+                        break;
+                        return 2;
+                        continue;
+                        continue;
+                    }
+                    continue;
+                    if false1 {
+                        global var: int;
+                        const var: int;
+                        break;
+                        const var: int;
+                    }
+                    else {
+                        break;
+                        global var: int;
+                        return 2;
+                        global var: int;
+                    }
+                    return 2;
+                    global var: int;
+                    continue;
+                    return 2;
+                }
+                while falsefunc(23,5) {
+                    while falsefunc(23,5) {
+                        continue;
+                        continue;
+                        var: int;
+                        var: int;
+                    }
+                    while false1 {
+                        continue;
+                        continue;
+                    }
+                    const var: int;
+                    if falsefunc(23,5) {
+                        break;
+                        const var: int;
+                        const var: int;
+                    }
+                    else {
+                        var: int;
+                        continue;
+                        continue;
+                    }
+                }
+                const var: int;
+                return 2;
+            }
+            while false1 {
+                while falsefunc(23,5) {
+                    const var: int;
+                    var: int;
+                    global var: int;
+                    const var: int;
+                    if falsefunc(23,5) {
+                        global var: int;
+                    }
+                    else {
+                        const var: int;
+                        var: int;
+                        global var: int;
+                        return 2;
+                    }
+                    while falsefunc(23,5) {
+                        continue;
+                        global var: int;
+                        return 2;
+                        global var: int;
+                        break;
+                        return 2;
+                    }
+                    continue;
+                }
+                const var: int;
+            }
+            continue;
+            return 2;
+        }
+        var: int;
+    }
+    else {
+        const var: int;
+        while falsefunc(23,5) {
+            return 2;
+            return 2;
+            continue;
+            return 2;
+        }
+    }
+    const var: int;
+    return 0;
+}
+fun proc4(arg0: int): int {
+    global var: int;
+    const var: int;
+    var: int;
+    return 2;
+    const var: int;
+    return 2;
+    return 0;
 }

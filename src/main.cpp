@@ -4,14 +4,13 @@
 
 #include "TinGenerator.h"
 
-// #include "Windows.h"
-
 void print_help() {
     printf("Tin compiler usage:\n");
     printf(" tin <file> : Compile a file (and its imports)\n");
     printf(" tin <file> -run : Compile and execute a file\n");
-    printf(" tin <file> -debug : Compile, execute, and debug a file\n");
-    printf(" tin <file> -log : Log the execution\n");
+    printf(" tin <file> -threads <thread_count> : Execute with one or more threads. Note that you should compile the compiler with multithreading disabled when using one thread.\n");
+    // printf(" tin <file> -debug : Compile, execute, and debug a file\n");
+    // printf(" tin <file> -log : Log the execution\n");
 }
 
 int main(int argc, const char** argv) {
@@ -19,19 +18,18 @@ int main(int argc, const char** argv) {
 
     #define streq(X,Y) !strcmp(X,Y)
 
-    bool dev_mode = false;
-    bool run_vm = false;
-    bool debug_mode = false;
-    bool logging = false;
-    
-    const char* source_file = nullptr;
+    CompilerOptions options{};
 
+    bool dev_mode = false;
+    // bool debug_mode = false;
+    // bool logging = false;
+    
     if(argc < 2) {
         print_help();
         return 0;
     }
 
-    for(int i=0;i<argc;i++) {
+    for(int i=1;i<argc;i++) { // i=1 <- skip first argument
         auto arg = argv[i];
         
         if (streq(arg, "-help") || streq(arg, "--help")) {
@@ -40,14 +38,23 @@ int main(int argc, const char** argv) {
         } else  if (streq(arg, "-dev")) {
             dev_mode = true;
         } else if(streq(arg, "-run")) {
-            run_vm = true;
-        } else if(streq(arg, "-debug")) {
-            debug_mode = true;
-        } else if(streq(arg, "-log")) {
-            logging = true;
+            options.run = true;
+        // } else if(streq(arg, "-debug")) {
+        //     debug_mode = true;
+        // } else if(streq(arg, "-log")) {
+        //     logging = true;
+        } else if(streq(arg, "-t") || streq(arg, "-threads")) {
+            i++;
+            if(i < argc) {
+                options.thread_count = atoi(argv[i]);
+                // what if not integer?
+            } else {
+                printf("Missing thread count for %s\n", arg);
+                return 0;
+            }
         } else {
-            if(!source_file) {
-                source_file = arg; 
+            if(options.initial_file.empty()) {
+                options.initial_file = arg; 
             } else  {
                 printf("Unexpected command line option '%s'\n", arg);
                 return 1;
@@ -56,13 +63,13 @@ int main(int argc, const char** argv) {
     }
     
     if(!dev_mode) {
-        if(!source_file) {
+        if(options.initial_file.empty()) {
             printf("Missing source file!\n");
             printf(" tin <path_to_source>\n");
             return 1;
         }
         
-        auto program = CompileFile(source_file);
+        auto program = CompileFile(&options);
         if(program) {
             VirtualMachine* interpreter = new VirtualMachine();
             interpreter->bytecode = program;
@@ -88,36 +95,41 @@ int main(int argc, const char** argv) {
         
         config.struct_frequency = { 2, 4 };
         config.member_frequency = { 5, 10 };
-        config.function_frequency = { 2, 4 };
+        config.function_frequency = { 6, 8 };
         config.argument_frequency = { 3, 5 };
-        config.statement_frequency = { 10, 20 };
-        config.file_count = { 50, 100 };
+        config.statement_frequency = { 15, 20 };
+        config.file_count = { 80, 90 };
         config.seed = 1713988173;
         
-        GenerateTin(&config);
+        // GenerateTin(&config);
 
-        // if(argc == 2 && !strcmp(argv[1], "-enable-logging")) {
+        // options.run = true;
+        options.initial_file = "generated/main.tin";
+        if(options.thread_count == 0)
+            options.thread_count = 8;
 
-        // }
+        // 1: 1090 ms
+        // 2: 600 ms
+        // 4: 358 ms
+        // 8: 238 ms
+        // 16: 230 ms
 
-        // CompileFile("main.tin", false);
-        CompileFile("generated/main.tin", false);
-        // CompileFile("sample.tin", false);
-        // CompileFile("test.tin", true);
-        // CompileFile("tests/file.tin", true);
-        // CompileFile("tests/expr.tin", true);
-        // CompileFile("tests/structs.tin", true);
-        // CompileFile("tests/expr.tin", true);
-        // CompileFile("tests/stmts.tin", true);
-        // CompileFile("tests/fib.tin", true);
-        // CompileFile("tests/loops.tin", true);
-        // CompileFile("tests/ptrs.tin", true);
-        // CompileFile("tests/scoping.tin", true);
+        // options.initial_file = "main.tin";
+        // options.initial_file = "sample.tin";
+        // options.initial_file = "test.tin";
+        // options.initial_file = "tests/file.tin";
+        // options.initial_file = "tests/expr.tin";
+        // options.initial_file = "tests/structs.tin";
+        // options.initial_file = "tests/expr.tin";
+        // options.initial_file = "tests/stmts.tin";
+        // options.initial_file = "tests/fib.tin";
+        // options.initial_file = "tests/loops.tin";
+        // options.initial_file = "tests/ptrs.tin";
+        // options.initial_file = "tests/scoping.tin";
 
-        printf("Finished\n");
-        
+        CompileFile(&options);
     }
+    printf("Finished\n");
     SleepMS(500); // TCP connection to tracy will close to fast unless we sleep a bit.
-        // Sleep(500); // TCP connection to tracy will close to fast unless we sleep a bit.
     return 0;
 }

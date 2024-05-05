@@ -1,8 +1,9 @@
 .SILENT:
 all: build
 
-GCC_COMPILE_OPTIONS := -std=c++14 -g
-# GCC_COMPILE_OPTIONS="-std=c++14 -O3"
+# GCC_COMPILE_OPTIONS := -std=c++17 -g
+GCC_COMPILE_OPTIONS := -std=c++17 -O3
+
 GCC_INCLUDE_DIRS := -Iinclude -include include/pch.h -Ilibs/tracy-0.10/public
 # GCC_DEFINITIONS := -DOS_WINDOWS
 GCC_DEFINITIONS := -DOS_WINDOWS -DTRACY_ENABLE
@@ -15,11 +16,13 @@ GCC_LIBS := -lAdvapi32 -lgdi32 -luser32 -lkernel32 -lshell32 -lws2_32 -ldbghelp
 CC := g++
 
 # compiler executable
-OUTPUT := bin/app.exe
+OUTPUT := bin/tin.exe
 
 SRC := $(wildcard src/*.cpp)
 OBJ := $(patsubst src/%.cpp,bin/%.o,$(SRC))
 DEP := $(patsubst bin/%.o,bin/%.d,$(OBJ))
+
+
 
 -include $(DEP)
 

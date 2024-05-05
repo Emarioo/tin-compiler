@@ -76,6 +76,8 @@
         "xlocmon": "cpp",
         "xloctime": "cpp",
         "map": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "codecvt": "cpp",
+        "filesystem": "cpp"
     }
 }

@@ -6,26 +6,36 @@ void TokenStream::Destroy(TokenStream* stream) {
 TokenStream* lex_file(const std::string& path) {
     ZoneScopedC(tracy::Color::Gold);
     
-    std::ifstream file(path, std::ifstream::binary);
-    if(!file.is_open())
-        return nullptr;
-
-    file.seekg(0, file.end);
-    int filesize = file.tellg();
-    file.seekg(0, file.beg);
-
-    char* text = (char*)Alloc(filesize);
-    Assert(text);
+    int filesize = 0;
+    char* text = nullptr;
     defer {
-        Free(text);
+        if(text) { Free(text); text = nullptr; }
     };
-    file.read(text, filesize);
-    file.close();
+    {
+        ZoneNamedNC(zone0,"lexer_io",tracy::Color::Gold3, true);
 
-    // printf("size: %d\n", filesize);
+        #ifndef AVOID_STDLIB
+        std::ifstream file(path, std::ifstream::binary);
+        if(!file.is_open())
+            return nullptr;
+
+        file.seekg(0, file.end);
+        filesize = file.tellg();
+        file.seekg(0, file.beg);
+
+        text = (char*)Alloc(filesize);
+        Assert(text);
+        file.read(text, filesize);
+        file.close();
+        #else
+        bool yes = ReadEntireFile(path,text,filesize);
+        Assert(yes);
+        #endif
+    }
 
     TokenStream* stream = new TokenStream();
     stream->path = path;
+    stream->processed_bytes = filesize; // comments are counted too, is that fine?
     
     bool is_id = false;
     bool is_num = false;

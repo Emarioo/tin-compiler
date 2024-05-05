@@ -3,8 +3,11 @@
 #include "tracy/Tracy.hpp"
 #include "Config.h"
 
+#ifndef DISABLE_ASSERTS
 #define Assert(E) ((bool)(E) || (fprintf(stderr,"[ASSERT %s:%d]: %s\n",__FILE__, __LINE__, #E), (bool)(*(int*)nullptr = 9)))
-
+#else
+#define Assert(E)
+#endif
 struct DeferFunc {
     ~DeferFunc() { f(); }
     std::function<void()> f;
@@ -153,6 +156,8 @@ void SleepMS(int ms);
 int RandomInt(int min, int max);
 float RandomFloat();
 void SetRandomSeed(int seed);
+
+bool ReadEntireFile(const std::string& path, char*& text, int& size);
 
 #ifdef ENABLE_MULTITHREADING
     #define MUTEX_DECL(var)   Mutex var{};
