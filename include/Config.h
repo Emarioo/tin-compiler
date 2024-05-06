@@ -31,8 +31,12 @@ Speeds
 ##########################*/
 
 #ifdef ENABLE_OPTIMIZATIONS
+
 // Fixed array of scopes/types (65000), no need to lock the array when adding or accessing
-#define PREALLOCATED_AST_ARRAYS
+// #define PREALLOCATED_AST_ARRAYS
+// exlusive to PREALLOCATED_AST_ARRAYS
+#define DOUBLE_AST_ARRAYS
+
 // Mutexes when adding and looking for identifiers are removed.
 // We know that no two threads (unless global scope) will access
 // local scopes from the same import at the same time.

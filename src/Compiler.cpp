@@ -130,6 +130,8 @@ Bytecode* CompileFile(CompilerOptions* options) {
         delete interpreter;
         return nullptr;
     }
+
+    printf("Scopes: %d\n", compiler.ast->scopes_used);
     
     Bytecode* tmp_code = compiler.bytecode;
     compiler.bytecode = nullptr;

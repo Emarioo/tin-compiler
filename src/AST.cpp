@@ -412,7 +412,7 @@ TypeId AST::convertFullType(const std::string& str, ScopeId scopeId) {
 }
 TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
 
-    #ifdef PREALLOCATED_AST_ARRAYS
+    #if defined(PREALLOCATED_AST_ARRAYS) || defined(DOUBLE_AST_ARRAYS)
     ScopeInfo* scope = getScope(scopeId);
     int id = atomic_add(&types_used, 1) - 1;
     if(id >= types_max) {

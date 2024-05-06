@@ -66,8 +66,8 @@ struct Identifier {
     // };
 };
 struct ScopeInfo {
-    ScopeId scopeId;
-    ScopeId parent;
+    ScopeId scopeId=0;
+    ScopeId parent=0;
     
     ASTBody* body = nullptr;
     
@@ -297,7 +297,118 @@ struct AST {
 
     MUTEX_DECL(imports_lock);
 
-    #ifndef PREALLOCATED_AST_ARRAYS
+    TypeInfo* findType(const std::string& str, ScopeId scopeId);
+    TypeId convertFullType(const std::string& str, ScopeId scopeId);
+    TypeInfo* createType(const std::string& str, ScopeId scopeId);
+    int sizeOfType(TypeId typeId);
+    std::string nameOfType(TypeId typeId);
+    
+    Identifier* addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset);
+    Identifier* findVariable(const std::string& name, ScopeId scopeId);
+
+    struct ScopeIterator {
+        std::vector<ScopeInfo*> searchScopes;
+        int search_index = 0;
+    };
+    ScopeIterator createScopeIterator(ScopeId scopeId);
+    ScopeInfo* iterate(ScopeIterator& iterator);
+
+    // BELOW is different implementations to avoid mutexes.
+
+#ifdef PREALLOCATED_AST_ARRAYS
+    int types_max = 0x10000;
+    volatile i32 types_used = 0;
+    TypeInfo* typeInfos = new TypeInfo[types_max];
+    
+    static const int scopes_max = 0x100000;
+    volatile i32 scopes_used = 0;
+    ScopeInfo* scopeInfos = new ScopeInfo[scopes_max];
+
+    ScopeInfo* getScope(ScopeId scopeId) {
+        
+        return &scopeInfos[scopeId];
+    }
+    ScopeInfo* createScope(ScopeId parent) {
+        ScopeId id = atomic_add(&scopes_used, 1) - 1;
+        if(id >= scopes_max) {
+            printf("Scope limit reached! %d\n",scopes_max);
+            return nullptr;
+            // Assert(id < scopes_max);
+        }
+        auto ptr = &scopeInfos[id];
+
+        ptr->scopeId = id;
+        ptr->parent = parent;
+        
+        return ptr;
+    }
+    TypeInfo* getType(TypeId typeId) {
+        Assert(typeId.pointer_level() == 0);
+        // Assert(typeId.index() < typeInfos.size());
+        return &typeInfos[typeId.index()];
+    }
+#elif defined(DOUBLE_AST_ARRAYS)
+    int types_max = 0x10000;
+    volatile i32 types_used = 0;
+    TypeInfo* typeInfos = new TypeInfo[types_max];
+    
+    // NOTE: 1 million lines use 124 000 scopes on average
+    // With the double array we can have 0x1000 * 0x100000 = 256 million scopes
+    // You would need a 2 billion line program to reach that limit.
+    // At that point assumming a 1 million line program compiles in 2 seconds (depending on computer). You will wait 66 minutes (2000/1 * 2).
+    // A fixed number of arrays is not your major problem in that situation.
+    // You can also build a tailored version of the compiler that preallocates more scopes.
+
+    volatile i32 scopes_used = 0;
+    // static const int scopes_max = 0x10;
+    // static const int indirect_scopes_max = 0x10;
+    static const int scopes_max2 = 0x10000;
+    static const int scopes_max1 = 0x1000;
+    ScopeInfo** scopes = new ScopeInfo*[scopes_max1](); // zero initialize
+    MUTEX_DECL(scopes_lock);
+
+    ScopeInfo* getScope(ScopeId scopeId) {
+        int index_2 = scopeId / scopes_max2;
+        int index_1 = scopeId % scopes_max2;
+
+        return &scopes[index_2][index_1];
+    }
+    ScopeInfo* createScope(ScopeId parent) {
+        ScopeId id = atomic_add(&scopes_used, 1) - 1;
+        if(id >= scopes_max2 * scopes_max1) {
+            printf("Scope limit reached! %d\n",scopes_max2*scopes_max1);
+            return nullptr;
+            // Assert(id < scopes_max);
+        }
+        int index_2 = id / scopes_max2;
+        int index_1 = id % scopes_max2;
+        auto& inner_scopes = scopes[index_2];
+
+        // First a quick check to see if the array exists.
+        // this is not thread-safe but it's okay because we are just reading.
+        // The value will only be read once and never set to nullptr again.
+        if(!inner_scopes) {
+            MUTEX_LOCK(scopes_lock)
+            // Now we lock and perform a thread-safe check on the pointer to scopes
+            if(!inner_scopes) {
+                inner_scopes = new ScopeInfo[scopes_max2];
+            }
+            MUTEX_UNLOCK(scopes_lock)
+        }
+
+        auto ptr = &inner_scopes[index_1];
+
+        ptr->scopeId = id;
+        ptr->parent = parent;
+        
+        return ptr;
+    }
+    TypeInfo* getType(TypeId typeId) {
+        Assert(typeId.pointer_level() == 0);
+        // Assert(typeId.index() < typeInfos.size());
+        return &typeInfos[typeId.index()];
+    }
+#else
     MUTEX_DECL(types_lock);
     std::vector<TypeInfo*> typeInfos;
     MUTEX_DECL(scopes_lock);
@@ -323,54 +434,7 @@ struct AST {
         Assert(typeId.index() < typeInfos.size());
         return typeInfos[typeId.index()];
     }
-    #else
-    int types_max = 0x10000;
-    volatile i32 types_used = 0;
-    TypeInfo* typeInfos = new TypeInfo[types_max];
-    
-    static const int scopes_max = 0x100000;
-    volatile i32 scopes_used = 0;
-    ScopeInfo* scopeInfos = new ScopeInfo[scopes_max];
-
-    ScopeInfo* getScope(ScopeId scopeId) {
-        return &scopeInfos[scopeId];
-    }
-    ScopeInfo* createScope(ScopeId parent) {
-        ScopeId id = atomic_add(&scopes_used, 1) - 1;
-        if(id >= scopes_max) {
-            printf("Scope limit reached! %d\n",scopes_max);
-            return nullptr;
-            // Assert(id < scopes_max);
-        }
-        auto ptr = &scopeInfos[id];
-
-        ptr->scopeId = id;
-        ptr->parent = parent;
-        
-        return ptr;
-    }
-    TypeInfo* getType(TypeId typeId) {
-        Assert(typeId.pointer_level() == 0);
-        // Assert(typeId.index() < typeInfos.size());
-        return &typeInfos[typeId.index()];
-    }
-    #endif
-
-    TypeInfo* findType(const std::string& str, ScopeId scopeId);
-    TypeId convertFullType(const std::string& str, ScopeId scopeId);
-    TypeInfo* createType(const std::string& str, ScopeId scopeId);
-    int sizeOfType(TypeId typeId);
-    std::string nameOfType(TypeId typeId);
-    
-    Identifier* addVariable(Identifier::Kind var_type, const std::string& name, ScopeId scopeId, TypeId type, int frame_offset);
-    Identifier* findVariable(const std::string& name, ScopeId scopeId);
-
-    struct ScopeIterator {
-        std::vector<ScopeInfo*> searchScopes;
-        int search_index = 0;
-    };
-    ScopeIterator createScopeIterator(ScopeId scopeId);
-    ScopeInfo* iterate(ScopeIterator& iterator);
+#endif
 
 private:
     int next_nodeid() { return atomic_add(&_nodeid,1) - 1; }
