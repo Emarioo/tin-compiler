@@ -84,8 +84,8 @@ struct ASTNode {
 struct ASTExpression : public ASTNode {
     enum Kind {
         INVALID = 0,
-        KIND_BEGIN,
-        IDENTIFIER = KIND_BEGIN,
+        IDENTIFIER,
+        KIND_BEGIN = IDENTIFIER,
         FUNCTION_CALL,
         ADD,
         SUB,
@@ -149,8 +149,8 @@ private:
 struct ASTStatement : public ASTNode {
     enum Kind {
         INVALID = 0,
-        KIND_BEGIN,
-        VAR_DECLARATION = KIND_BEGIN, // variable declaration
+        VAR_DECLARATION,
+        KIND_BEGIN = VAR_DECLARATION,
         GLOBAL_DECLARATION,
         CONST_DECLARATION,
         EXPRESSION,
@@ -245,9 +245,64 @@ struct ASTStructure : public ASTNode {
 
 struct AST {
     AST();
+    ~AST() {
+        cleanup();
+    }
+    void cleanup() {
+        for(auto& imp : imports) {
+            Assert(imp);
+            destroyBody(imp->body);
+            if(imp->body == global_body)
+                global_body = nullptr; // preload may destroy global
+
+            DELNEW(imp, Import, HERE);
+        }
+        if(global_body) {
+            destroyBody(global_body);
+            global_body = nullptr;
+        }
+
+        imports.clear();
+        import_map.clear();
+
+        #if defined(DOUBLE_AST_ARRAYS)
+        SCALAR_DELNEW(typeInfos, TypeInfo, types_max);
+        DELNEW_ARRAY(typeInfos, TypeInfo, types_max, HERE);
+        typeInfos = nullptr;
+        for(int i=0;i<scopes_max1;i++) {
+            if(!scopes[i])
+                break;
+            for(int j=0;j<scopes_max2;j++) {
+                int index = i * scopes_max1 + j;
+                if(index >= scopes_used)
+                    break;
+                auto& it = scopes[i][j];
+                for(auto pair : it.identifiers)
+                    // delete pair.second;
+                    DELNEW(pair.second, Identifier, HERE);
+            }
+            SCALAR_DELNEW(scopes[i], ScopeInfo, scopes_max2);
+            DELNEW_ARRAY(scopes[i], ScopeInfo, scopes_max2, HERE);
+        }
+        DELNEW_ARRAY((void*)scopes, ScopeInfo*, scopes_max1, HERE);
+        scopes = nullptr;
+        #else
+        for(int i=0;i<scopeInfos.size();i++) {
+            auto it = scopeInfos[i];
+            for(auto pair : it->identifiers)
+                DELNEW(pair.second, Identifier, HERE);
+            DELNEW(scopeInfos[i], ScopeInfo, HERE);
+        }
+        scopeInfos.clear();
+        for(int i=0;i<typeInfos.size();i++) {
+            DELNEW(typeInfos[i], TypeInfo, HERE);
+        }
+        typeInfos.clear();
+        #endif
+
+    }
     static const ScopeId GLOBAL_SCOPE = 0;
 
-    // ScopeInfo* global_scope = nullptr;
     ASTBody* global_body = nullptr;
 
     struct Import {
@@ -263,7 +318,7 @@ struct AST {
     std::vector<Import*> imports;
     std::unordered_map<std::string, Import*> import_map;
     Import* createImport(const std::string& name) {
-        auto i = new Import();
+        auto i = NEW(Import, HERE);
         i->name = name;
         MUTEX_LOCK(imports_lock);
         imports.push_back(i);
@@ -288,6 +343,12 @@ struct AST {
     ASTBody* createBodyWithSharedScope(ScopeId scopeToShare);
     ASTFunction* createFunction();
     ASTStructure* createStructure();
+
+    void destroyExpression(ASTExpression* n);
+    void destroyStatement(ASTStatement* n);
+    void destroyBody(ASTBody* n);
+    void destroyFunction(ASTFunction* n);
+    void destroyStructure(ASTStructure* n);
 
     ASTFunction* findFunction(const std::string& name, ScopeId scopeId);
 
@@ -315,42 +376,17 @@ struct AST {
 
     // BELOW is different implementations to avoid mutexes.
 
-#ifdef PREALLOCATED_AST_ARRAYS
+#if defined(DOUBLE_AST_ARRAYS)
+    void init_arrays() {
+        typeInfos = NEW_ARRAY(TypeInfo, types_max, HERE);
+        SCALAR_NEW(typeInfos, TypeInfo, types_max);
+        scopes = NEW_ARRAY(ScopeInfo*, scopes_max1, HERE);
+        memset((void*)scopes, 0, sizeof(*scopes) * scopes_max1);
+    }
     int types_max = 0x10000;
     volatile i32 types_used = 0;
-    TypeInfo* typeInfos = new TypeInfo[types_max];
-    
-    static const int scopes_max = 0x100000;
-    volatile i32 scopes_used = 0;
-    ScopeInfo* scopeInfos = new ScopeInfo[scopes_max];
-
-    ScopeInfo* getScope(ScopeId scopeId) {
-        
-        return &scopeInfos[scopeId];
-    }
-    ScopeInfo* createScope(ScopeId parent) {
-        ScopeId id = atomic_add(&scopes_used, 1) - 1;
-        if(id >= scopes_max) {
-            printf("Scope limit reached! %d\n",scopes_max);
-            return nullptr;
-            // Assert(id < scopes_max);
-        }
-        auto ptr = &scopeInfos[id];
-
-        ptr->scopeId = id;
-        ptr->parent = parent;
-        
-        return ptr;
-    }
-    TypeInfo* getType(TypeId typeId) {
-        Assert(typeId.pointer_level() == 0);
-        // Assert(typeId.index() < typeInfos.size());
-        return &typeInfos[typeId.index()];
-    }
-#elif defined(DOUBLE_AST_ARRAYS)
-    int types_max = 0x10000;
-    volatile i32 types_used = 0;
-    TypeInfo* typeInfos = new TypeInfo[types_max];
+    TypeInfo* typeInfos = nullptr;
+    // new TypeInfo[types_max];
     
     // NOTE: 1 million lines use 124 000 scopes on average
     // With the double array we can have 0x1000 * 0x100000 = 256 million scopes
@@ -364,14 +400,15 @@ struct AST {
     // static const int indirect_scopes_max = 0x10;
     static const int scopes_max2 = 0x10000;
     static const int scopes_max1 = 0x1000;
-    ScopeInfo** scopes = new ScopeInfo*[scopes_max1](); // zero initialize
+    ScopeInfo* volatile* scopes = nullptr; // volatile is super important, see createScope
+    // new ScopeInfo*[scopes_max1];
     MUTEX_DECL(scopes_lock);
 
     ScopeInfo* getScope(ScopeId scopeId) {
-        int index_2 = scopeId / scopes_max2;
-        int index_1 = scopeId % scopes_max2;
+        int index_1 = scopeId / scopes_max2;
+        int index_2 = scopeId % scopes_max2;
 
-        return &scopes[index_2][index_1];
+        return &scopes[index_1][index_2];
     }
     ScopeInfo* createScope(ScopeId parent) {
         ScopeId id = atomic_add(&scopes_used, 1) - 1;
@@ -380,23 +417,28 @@ struct AST {
             return nullptr;
             // Assert(id < scopes_max);
         }
-        int index_2 = id / scopes_max2;
-        int index_1 = id % scopes_max2;
-        auto& inner_scopes = scopes[index_2];
+        int index_1 = id / scopes_max2;
+        int index_2 = id % scopes_max2;
 
         // First a quick check to see if the array exists.
         // this is not thread-safe but it's okay because we are just reading.
         // The value will only be read once and never set to nullptr again.
-        if(!inner_scopes) {
+        if(!scopes[index_1]) {
             MUTEX_LOCK(scopes_lock)
-            // Now we lock and perform a thread-safe check on the pointer to scopes
-            if(!inner_scopes) {
-                inner_scopes = new ScopeInfo[scopes_max2];
+            // Now we lock and perform a thread-safe check.
+            // It's important that we read the memory again, if the compiler optimizes
+            // and reuses the value from previous check then we'll be in trouble. (this could happen, it might, it might not)
+            if(!scopes[index_1]) {
+                // create and initialize array
+                auto arr = NEW_ARRAY(ScopeInfo, scopes_max2, HERE);
+                SCALAR_NEW(arr, ScopeInfo, scopes_max2);
+                // then make the initialized array visible to other threads
+                scopes[index_1] = arr;
             }
             MUTEX_UNLOCK(scopes_lock)
         }
 
-        auto ptr = &inner_scopes[index_1];
+        auto ptr = &scopes[index_1][index_2];
 
         ptr->scopeId = id;
         ptr->parent = parent;
@@ -409,6 +451,10 @@ struct AST {
         return &typeInfos[typeId.index()];
     }
 #else
+    void init_arrays() {
+        typeInfos.reserve(0x1000);
+        scopeInfos.reserve(0x10000);
+    }
     MUTEX_DECL(types_lock);
     std::vector<TypeInfo*> typeInfos;
     MUTEX_DECL(scopes_lock);
@@ -420,7 +466,7 @@ struct AST {
         return ptr;
     }
     ScopeInfo* createScope(ScopeId parent) {
-        auto ptr = new ScopeInfo();
+        auto ptr = NEW(ScopeInfo, HERE);
         ptr->parent = parent;
         
         MUTEX_LOCK(scopes_lock);

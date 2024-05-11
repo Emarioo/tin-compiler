@@ -8,11 +8,11 @@
 #endif
 
 AST::AST() {
+    init_arrays();
+
     // NOTE: Mutex not needed, the main thread creates the AST and then shares it with other threads.
-    // global_scope = createScope(GLOBAL_SCOPE);
     global_body = createBody(GLOBAL_SCOPE);
     Assert(global_body->scopeId == 0);
-
 
     creating_global_types = true;
 
@@ -164,19 +164,19 @@ AST::AST() {
     }
 
     creating_global_types = false;
+    
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
-    auto ptr = new ASTExpression(kind);
+    auto ptr = NEW(ASTExpression,HERE,kind);
     ptr->nodeid = next_nodeid();
-    
     return ptr;
 }
 ASTStatement* AST::createStatement(ASTStatement::Kind kind) {
-    auto ptr = new ASTStatement(kind);
+    auto ptr = NEW(ASTStatement, HERE, kind);
     return ptr;
 }
 ASTBody* AST::createBody(ScopeId parent) {
-    auto ptr = new ASTBody();
+    auto ptr = NEW(ASTBody,HERE);
     ptr->nodeid = next_nodeid();
     auto scope = createScope(parent);
     ptr->scopeId = scope->scopeId;
@@ -184,18 +184,18 @@ ASTBody* AST::createBody(ScopeId parent) {
     return ptr;
 }
 ASTBody* AST::createBodyWithSharedScope(ScopeId scopeToShare) {
-    auto ptr = new ASTBody();
+    auto ptr = NEW(ASTBody,HERE);
     ptr->nodeid = next_nodeid();
     ptr->scopeId = scopeToShare;
     return ptr;
 }
 ASTFunction* AST::createFunction() {
-    auto ptr = new ASTFunction();
+    auto ptr = NEW(ASTFunction,HERE);
     ptr->nodeid = next_nodeid();
     return ptr;
 }
 ASTStructure* AST::createStructure() {
-    auto ptr = new ASTStructure();
+    auto ptr = NEW(ASTStructure,HERE);
     ptr->nodeid = next_nodeid();
     return ptr;
 }
@@ -411,8 +411,7 @@ TypeId AST::convertFullType(const std::string& str, ScopeId scopeId) {
     return type;
 }
 TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
-
-    #if defined(PREALLOCATED_AST_ARRAYS) || defined(DOUBLE_AST_ARRAYS)
+    #if defined(DOUBLE_AST_ARRAYS)
     ScopeInfo* scope = getScope(scopeId);
     int id = atomic_add(&types_used, 1) - 1;
     if(id >= types_max) {
@@ -436,7 +435,7 @@ TypeInfo* AST::createType(const std::string& str, ScopeId scopeId) {
     return type;
     #else
     ScopeInfo* scope = getScope(scopeId);
-    auto type = new TypeInfo();
+    auto type = NEW(TypeInfo, HERE);
     type->name = str;
     
     MUTEX_LOCK(types_lock);
@@ -480,7 +479,7 @@ Identifier* AST::addVariable(Identifier::Kind var_type, const std::string& name,
         return nullptr; // variable already exists
     }
         
-    auto ptr = new Identifier(var_type);
+    auto ptr = NEW(Identifier, HERE, var_type);
     scope->identifiers[name] = ptr;
     OPTIONAL_LOCK(MUTEX_UNLOCK(scopes_lock);)
         
@@ -551,4 +550,40 @@ ScopeInfo* AST::iterate(AST::ScopeIterator& iterator) {
         return info;
     }
     return nullptr;
+}
+
+void AST::destroyExpression(ASTExpression* n){
+    for(auto arg : n->arguments)
+        destroyExpression(arg);
+    if(n->left)
+        destroyExpression(n->left);
+    if(n->right)
+        destroyExpression(n->right);
+    DELNEW(n, ASTExpression, HERE);
+}
+void AST::destroyStatement(ASTStatement* n){
+    if(n->expression)
+        destroyExpression(n->expression);
+    if(n->body)
+        destroyBody(n->body);
+    if(n->elseBody)
+        destroyBody(n->elseBody);
+    DELNEW(n, ASTStatement, HERE);
+}
+void AST::destroyBody(ASTBody* n){
+    for(auto it : n->statements)
+        destroyStatement(it);
+    for(auto it : n->functions)
+        destroyFunction(it);
+    for(auto it : n->structures)
+        destroyStructure(it);
+    DELNEW(n, ASTBody, HERE);
+}
+void AST::destroyFunction(ASTFunction* n){
+    if(n->body)
+        destroyBody(n->body);
+    DELNEW(n, ASTFunction, HERE);
+}
+void AST::destroyStructure(ASTStructure* n){
+    DELNEW(n, ASTStructure, HERE);
 }

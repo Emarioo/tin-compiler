@@ -2,6 +2,11 @@
 
 #include "tracy/Tracy.hpp"
 #include "Config.h"
+#include <typeinfo>
+
+// Added pch.h here because VSCode broke and ignores
+// forced include files from Win32 configuration.
+#include "pch.h"
 
 #ifndef DISABLE_ASSERTS
 #define Assert(E) ((bool)(E) || (fprintf(stderr,"[ASSERT %s:%d]: %s\n",__FILE__, __LINE__, #E), (bool)(*(int*)nullptr = 9)))
@@ -181,6 +186,25 @@ bool ReadEntireFile(const std::string& path, char*& text, int& size);
 // returns the result
 i32 atomic_add(volatile i32* ptr, i32 value);
 
-void* Alloc(int size);
-void* Realloc(void* ptr, int old_size, int new_size);
-void Free(void* ptr);
+struct Location {
+    const char* file;
+    int line;
+};
+
+void* Alloc(int size, Location loc, const std::type_info& type, int type_size);
+void* Realloc(int new_size, void* ptr, int old_size, Location loc, const std::type_info& type, int type_size);
+void Free(void* ptr, int old_size, Location loc, const std::type_info& type);
+
+int GetAllocatedMemory();
+void PrintMemoryUsage(int expected_memory_usage);
+
+#define HERE Location{__FILE__,__LINE__}
+
+#define NEW_ARRAY(TYPE,COUNT,LOC) ((TYPE*)Alloc(sizeof(TYPE) * COUNT,LOC, typeid(TYPE),sizeof(TYPE)))
+#define RENEW_ARRAY(OLD_PTR,OLD_COUNT,TYPE,COUNT,LOC) ((TYPE*)Realloc(sizeof(TYPE) * COUNT,OLD_PTR,OLD_COUNT,LOC, typeid(TYPE),sizeof(TYPE)))
+#define DELNEW_ARRAY(PTR,TYPE,COUNT,LOC) (Free(PTR, sizeof(TYPE) * COUNT,LOC,typeid(TYPE)))
+#define SCALAR_NEW(PTR,TYPE,COUNT) for(int si=0;si<COUNT;si++) new(PTR + si)TYPE();
+#define SCALAR_DELNEW(PTR,TYPE,COUNT) for(int si=0;si<COUNT;si++) (PTR + si)->~TYPE();
+
+#define NEW(TYPE,LOC,...) (new((TYPE*)Alloc(sizeof(TYPE),LOC,typeid(TYPE), sizeof(TYPE)))TYPE(__VA_ARGS__))
+#define DELNEW(PTR,TYPE,LOC) (PTR->~TYPE(),Free(PTR, sizeof(TYPE),LOC,typeid(TYPE)))

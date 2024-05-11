@@ -17,46 +17,146 @@
 #define TO_INTERNAL(X) ((u64)X+1)
 #define TO_HANDLE(X) (HANDLE)((u64)X-1)
 
-// #define ENABLE_ALLOCATION_TRACKER
+// Won't work for large files, slow
 
 struct Allocation {
-    int size;
+    int size; // size/type_size = element count
+    Location loc;
+    int type_size = 0;
+    const char* type_name = nullptr;
+    int alloc_id;
 };
-std::unordered_map<void*, Allocation> allocations;
+std::unordered_map<void*, Allocation> allocations; // TODO: Mutex on this?
+MUTEX_DECL(lock_allocations)
 
-
-void* Alloc(int size) {
+static volatile int allocated_memory = 0;
+static volatile int allocation_id = 0;
+static int alloc_ids[]{ // TODO: Read these from a file?
+    0,
+    // 916
+};
+void* Alloc(int size, Location loc, const std::type_info& type, int type_size) {
     auto ptr = malloc(size);
-    #ifdef ENABLE_ALLOCATION_TRACKER
-    allocations[ptr] = { size };
-    #endif
+    atomic_add(&allocated_memory, size);
+#ifdef ENABLE_ALLOCATION_TRACKER
+    MUTEX_LOCK(lock_allocations)
+    auto pair = allocations.find(ptr);
+    if(pair != allocations.end()) {
+        Assert(false); // if malloc returns a pointer that exists in allocatins then
+        // we freed the pointer without removing it from allocations
+    }
+    auto& it = (allocations[ptr] = {});
+    it.loc = loc;
+    it.size = size;
+    it.type_name = type.name();
+    it.type_size = type_size;
+    it.alloc_id = atomic_add(&allocation_id, 1);
+    for(int i=0;i<sizeof(alloc_ids)/sizeof(*alloc_ids);i++) {
+        if(it.alloc_id == alloc_ids[i])
+            __debugbreak();
+    }
+    MUTEX_UNLOCK(lock_allocations)
+#endif
     return ptr;
 }
-void* Realloc(void* ptr, int old_size, int new_size) {
-    #ifdef ENABLE_ALLOCATION_TRACKER
+void* Realloc(int new_size, void* ptr, int old_size, Location loc, const std::type_info& type, int type_size) {
+    if(!ptr) {
+        return Alloc(new_size, loc, type, type_size);
+    }
+
+    auto np = realloc(ptr, new_size);
+    atomic_add(&allocated_memory, new_size - old_size);
+#ifdef ENABLE_ALLOCATION_TRACKER
+    MUTEX_LOCK(lock_allocations)
     auto pair = allocations.find(ptr);
     if(pair == allocations.end()) {
         Assert(false);
     }
-    allocations.erase(ptr);
-    #endif
-    auto np = realloc(ptr, new_size);
-    #ifdef ENABLE_ALLOCATION_TRACKER
-    allocations[ptr] = { new_size };
-    #endif
+    if(np == ptr) {
+        auto& it = pair->second;
+        it.loc = loc;
+        if(it.size != old_size) {
+            printf("%s:%d\n",loc.file,loc.line);
+        }
+        Assert(it.size ==  old_size);
+        it.size = new_size;
+        Assert(0 == strcmp(it.type_name, type.name()));
+    } else {
+        Assert(pair->second.size == old_size);
+        Assert(0 == strcmp(pair->second.type_name, type.name()));
+
+        auto& it (allocations[np] = { });
+        it.loc = loc;
+        it.size = new_size;
+        it.type_name = type.name();
+        it.type_size = pair->second.type_size;
+        it.alloc_id = atomic_add(&allocation_id, 1);
+        
+        for(int i=0;i<sizeof(alloc_ids)/sizeof(*alloc_ids);i++) {
+            if(it.alloc_id == alloc_ids[i])
+                __debugbreak();
+        }
+
+        allocations.erase(ptr);
+    }
+    MUTEX_UNLOCK(lock_allocations)
+#endif
     return np;
 }
-void Free(void* ptr) {
+void Free(void* ptr, int old_size, Location loc, const std::type_info& type) {
     #ifdef ENABLE_ALLOCATION_TRACKER
+    MUTEX_LOCK(lock_allocations)
     auto pair = allocations.find(ptr);
     if(pair == allocations.end()) {
         Assert(false);
     }
+    Assert(pair->second.size == old_size);
+    Assert(0 == strcmp(pair->second.type_name, type.name()));
     allocations.erase(ptr);
+    MUTEX_UNLOCK(lock_allocations)
     #endif
     free(ptr);
+    atomic_add(&allocated_memory, -old_size);
 }
-
+int GetAllocatedMemory() {
+    return allocated_memory;
+}
+void PrintMemoryUsage(int expected_memory_usage) {
+    int memory = allocated_memory - expected_memory_usage;
+    if(allocations.size() == 0) {
+        if(memory != 0) {
+            log_color(YELLOW);
+            printf("Memory leaks: no specific tracked pointers, but %d bytes are floating, %d bytes are expected (bug with tracking?)\n", allocated_memory, expected_memory_usage);
+            log_color(NO_COLOR);
+        } else {
+            log_color(YELLOW);
+            printf("Memory leaks: none");
+            log_color(NO_COLOR);
+        }
+        return;
+    }
+    // TODO: Format or sort the leaks
+    log_color(RED);
+    printf("Memory leaks (%d b, expected %d):\n", allocated_memory, expected_memory_usage);
+    log_color(GRAY);
+    printf("(below are current allocations, all may not be memory leaks)\n");
+    log_color(NO_COLOR);
+    for(auto& pair : allocations) {
+        auto& it = pair.second;
+        log_color(AQUA);
+        printf(" %d ",it.alloc_id);
+        log_color(GREEN);
+        printf(" %s (%d b, %d elems)",it.type_name, it.type_size, it.size / it.type_size);
+        printf(" ");
+        log_color(GRAY);
+        std::string path = it.loc.file;
+        int index = path.find("src");
+        path = path.substr(index);
+        printf("%s:%d",path.c_str(),it.loc.line);
+        printf("\n");
+        log_color(NO_COLOR);
+    }
+}
 bool ReadEntireFile(const std::string& path, char*& text, int& size){
     HANDLE h = CreateFileA(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if(h == INVALID_HANDLE_VALUE) return false;
@@ -65,10 +165,11 @@ bool ReadEntireFile(const std::string& path, char*& text, int& size){
     DWORD success = GetFileSizeEx(h, (LARGE_INTEGER*)&filesize);
     if(success == 0) return false;
 
-    text = (char*)Alloc(filesize);
+    text = (char*)NEW_ARRAY(char, filesize, HERE);
     Assert(text);
 
     success = ReadFile(h, text, filesize, (DWORD*)&size, NULL);
+    CloseHandle(h);
     return success;
 }
 TimePoint StartMeasure(){
@@ -181,6 +282,8 @@ void SetRandomSeed(int seed) {
 }
 // possible values include the value of max. Distribution = [min, max + 1]
 int RandomInt(int min, int max) {
+    if(min == max) return min;
+    Assert(min <= max);
     std::uniform_int_distribution<int> dist(min, max);
     return dist(s_random_gen);
 }
@@ -332,15 +435,11 @@ struct DataForThread {
         // Heap allocated at the moment but you could create a bucket array
         // instead. Or store 40 of these as global data and then use heap
         // allocation if it fills up.
-        auto ptr = (DataForThread*)Alloc(sizeof(DataForThread));
-        // auto ptr = (DataForThread*)Allocate(sizeof(DataForThread));
-        new(ptr)DataForThread();
+        auto ptr = NEW(DataForThread, HERE);
         return ptr;
     }
     static void Destroy(DataForThread* ptr){
-        ptr->~DataForThread();
-        Free(ptr);
-        // Free(ptr,sizeof(DataForThread));
+        DELNEW(ptr, DataForThread, HERE);
     }
 };
 DWORD WINAPI SomeThreadProc(void* ptr){

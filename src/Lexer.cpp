@@ -1,7 +1,7 @@
 #include "Lexer.h"
 
 void TokenStream::Destroy(TokenStream* stream) {
-    delete stream;
+    DELNEW(stream, TokenStream, HERE);
 }
 TokenStream* lex_file(const std::string& path) {
     ZoneScopedC(tracy::Color::Gold);
@@ -9,7 +9,7 @@ TokenStream* lex_file(const std::string& path) {
     int filesize = 0;
     char* text = nullptr;
     defer {
-        if(text) { Free(text); text = nullptr; }
+        if(text) { DELNEW_ARRAY(text, char, filesize, HERE); text = nullptr; }
     };
     {
         ZoneNamedNC(zone0,"lexer_io",tracy::Color::Gold3, true);
@@ -23,17 +23,18 @@ TokenStream* lex_file(const std::string& path) {
         filesize = file.tellg();
         file.seekg(0, file.beg);
 
-        text = (char*)Alloc(filesize);
+        text = NEW_ARRAY(char, filesize, HERE);
         Assert(text);
         file.read(text, filesize);
         file.close();
         #else
         bool yes = ReadEntireFile(path,text,filesize);
-        Assert(yes);
+        if(!yes)
+            return nullptr;
         #endif
     }
 
-    TokenStream* stream = new TokenStream();
+    TokenStream* stream = NEW(TokenStream, HERE);
     stream->path = path;
     stream->processed_bytes = filesize; // comments are counted too, is that fine?
     

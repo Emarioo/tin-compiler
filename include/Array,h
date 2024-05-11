@@ -1,0 +1,204 @@
+#pragma once
+
+#include "Util.h"
+
+// Do not pop or add elements while iterating.
+// Be careful at least.
+template<typename T>
+struct DynamicArray {
+    DynamicArray() = default;
+    ~DynamicArray() { cleanup(); }
+    void cleanup(){
+        _reserve(0);
+    }
+
+    DynamicArray(DynamicArray<T>& arr) = delete;
+    DynamicArray<T>& operator=(const DynamicArray<T>& arr) {
+        // if(arr.used>0){
+            // engone::log::out << "copy "<<arr.used<<"\n";
+        // }
+        // bool yes = _reserve(arr.max);
+        // Assert(yes);
+        bool yes = resize(arr.used);
+        Assert(yes);
+        for(u32 i=0;i<used;i++){
+            _ptr[i] = arr._ptr[i];
+        }
+        return *this;
+    }
+
+    // DynamicArray(const DynamicArray<T>& arr) = delete;
+    DynamicArray(const DynamicArray<T>& arr){
+        // if(arr.used>0){
+            // engone::log::out << "copy "<<arr.used<<"\n";
+        // }
+        // bool yes = _reserve(arr.max);
+        // Assert(yes);
+        bool yes = resize(arr.used);
+        Assert(yes);
+        for(u32 i=0;i<used;i++){
+            _ptr[i] = arr._ptr[i];
+        }
+    }
+
+    T* _ptr = nullptr;
+    u32 used = 0;
+    u32 max = 0;
+
+    bool add(const T& t){
+        if(used + 1 > max){
+            if(!_reserve(1 + max * 1.5)){
+                return false;
+            }
+        }
+        T* ptr = _ptr + used++;
+        Assert(((u64)ptr % alignof(T)) == 0); // TODO: alignment for placement new?
+        new(ptr)T(t);
+
+        return true;
+    }
+    // bool add(T t){
+    //     return add(*(const T*)&t);
+    // }
+    bool pop(){
+        if(used==0)
+            return false;
+        T* ptr = _ptr + --used;
+        ptr->~T();
+        return true;
+    }
+    // Shifts all elements to the right one step to the left
+    // It isn't recommended to use this function.
+    bool removeAt(u32 index){
+        Assert(index < used);
+        T* ptr = _ptr + index;
+        ptr->~T();
+        // PROBABLY BUG HERE
+        if(index != used - 1){ // if we didn't remove the last element
+            // this is not beautiful but required for std::string to work
+            new(ptr)T();
+            for(u32 i = index; i < used - 1; i++){
+                T* a = _ptr + i;
+                T* b = _ptr + i + 1;
+                *(a) = std::move(*(b));
+            }
+            T* lastPtr = _ptr + used - 1;
+            lastPtr->~T();
+            // doesn't work with std::string
+            // memcpy((void*)(_ptr + index), _ptr + index + 1, (used-index) * sizeof(T));
+        }
+        --used;
+        return true;
+    }
+    T* getPtr(u32 index) const {
+        if(index >= used)
+            return nullptr;
+        return (_ptr + index);
+    }
+    T& get(u32 index) const {
+        Assert(index < used);
+        return *(_ptr + index);
+    }
+    T& operator[](u32 index) const{
+        Assert(index < used);
+        return *(_ptr + index);
+    }
+    T& last() const {
+        Assert(used>0);
+        return *(_ptr + used - 1);
+    }
+    u32 size() const {
+        return used;
+    }
+    T* data() const {
+        return _ptr;
+    }
+    bool reserve(u32 newMax){
+        // MEASURE
+        if(newMax==0){
+            if(max!=0){
+                for(u32 i = 0; i < used; i++){
+                    (_ptr + i)->~T();
+                }
+                DELNEW_ARRAY(_ptr, T, max, HERE);
+            }
+            _ptr = nullptr;
+            max = 0;
+            used = 0;
+            return true;
+        }
+        if(!_ptr){
+            _ptr = NEW_ARRAY(T, newMax, HERE);
+            Assert(_ptr);
+            // initialization of elements is done when adding them
+            if(!_ptr)
+                return false;
+            max = newMax;
+            return true;
+        } else {
+            
+            // destruct if we down-scale
+            // if(newMax < max) {
+            //     for(u32 i = newMax; i < used; i++){
+            //         (_ptr + i)->~T();
+            //     }
+            //     used = newMax;
+            // }
+
+            T* newPtr = NEW_ARRAY(T, newMax, HERE);
+            Assert(newPtr);
+            
+            for(u32 i = 0; i < used; i++){
+                new(newPtr + i)T();
+                *(newPtr + i) = std::move(*(_ptr + i));
+                (_ptr + i)->~T();
+            }
+            
+            DELNEW_ARRAY(_ptr, T, max, HERE);
+
+            if(!newPtr)
+                return false;
+            _ptr = newPtr;
+            max = newMax;
+            if(used > newMax){
+                used = newMax;
+            }
+            return true;
+        }
+        return false;
+    }
+    // Will not shrink alloction to fit the new size
+    bool resize(u32 newSize){
+        if(newSize>max){
+            bool yes = reserve(newSize);
+            if(!yes)
+                return false;
+        }
+        if(newSize > used) {
+            for(u32 i = used; i<newSize;i++){
+                new(_ptr+i)T();
+            }
+        } else if(newSize < used){
+            for(u32 i = newSize; i<used;i++){
+                (_ptr + i)->~T();
+            }
+        }
+        used = newSize;
+        return true;
+    }
+    T* begin() const {
+        return _ptr;
+    }
+    T* end() const {
+        return _ptr + used;
+    }
+    void stealFrom(DynamicArray<T>& arr){
+        cleanup();
+        _ptr = arr._ptr;
+        used = arr.used;
+        max = arr.max;
+        arr._ptr = nullptr;
+        arr.used = 0;
+        arr.max = 0;
+    }
+};

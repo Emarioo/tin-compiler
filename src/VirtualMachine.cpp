@@ -11,7 +11,7 @@
 
 void VirtualMachine::init() {
     int max = 0x10000;
-    stack = (u8*)Alloc(max);
+    stack = NEW_ARRAY(u8, max, HERE);
     Assert(stack);
     stack_max = max;
 }
@@ -385,7 +385,7 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
         // int arg2 = *(int*)(registers[REG_SP] + 12);
         void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
         
-        ret = Alloc(arg0);
+        ret = Alloc(arg0, HERE, typeid(u8), 1);
         if(!ret) {
             allocations[ret] = {arg0};
         }
@@ -401,7 +401,8 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
                 printf("INTERPRETER: mfree was called with a pointer that wasn't allocated\n");
                 log_color(Color::NO_COLOR);
             } else {
-                free(arg0);
+                // TODO: Not decreasing memory usage
+                Free(arg0, 0, HERE, typeid(u8));
                 allocations.erase(arg0);
             }
         }
@@ -450,7 +451,7 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
             *out_size = filesize;
         
         if(out_data) {
-            char* text = (char*)Alloc(filesize);
+            char* text = (char*)NEW_ARRAY(u8, filesize, HERE); // we use u8 because free assumes u8, if we used char then types would be incompatible and assert would fire in the tracker when we allocate the ptr using one type and free it with another
             Assert(text);
             
             allocations[text] = {filesize};

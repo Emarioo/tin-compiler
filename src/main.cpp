@@ -9,9 +9,12 @@ void print_help() {
     printf(" tin <file> : Compile a file (and its imports)\n");
     printf(" tin <file> -run : Compile and execute a file\n");
     printf(" tin <file> -threads <thread_count> : Execute with one or more threads. Note that you should compile the compiler with multithreading disabled when using one thread.\n");
+    printf(" tin <file> -gen-code : Generates procedural code in the 'generated' directory.\n");
     // printf(" tin <file> -debug : Compile, execute, and debug a file\n");
     // printf(" tin <file> -log : Log the execution\n");
 }
+
+void Measure(CompilerOptions* options = nullptr);
 
 int main(int argc, const char** argv) {
     printf("Start\n");
@@ -21,6 +24,8 @@ int main(int argc, const char** argv) {
     CompilerOptions options{};
 
     bool dev_mode = false;
+    bool gen_code = false;
+    bool measure = false;
     // bool debug_mode = false;
     // bool logging = false;
     
@@ -39,6 +44,12 @@ int main(int argc, const char** argv) {
             dev_mode = true;
         } else if(streq(arg, "-run")) {
             options.run = true;
+        } else if(streq(arg, "-silent")) {
+            options.silent = true;
+        } else if(streq(arg, "-gen-code")) {
+            gen_code = true;
+        } else if(streq(arg, "-measure")) {
+            measure = true;
         // } else if(streq(arg, "-debug")) {
         //     debug_mode = true;
         // } else if(streq(arg, "-log")) {
@@ -62,23 +73,47 @@ int main(int argc, const char** argv) {
         }
     }
     
-    if(!dev_mode) {
+    if(measure) {
+        Measure(&options);
+    } else if(!dev_mode) {
         if(options.initial_file.empty()) {
             printf("Missing source file!\n");
             printf(" tin <path_to_source>\n");
             return 1;
         }
+        if(gen_code) {
+            TinConfig config{};
+            config.struct_frequency = { 2, 4 };
+            config.member_frequency = { 5, 10 };
+            config.function_frequency = { 6, 8 };
+            config.argument_frequency = { 3, 5 };
+            config.statement_frequency = { 15, 20 };
+            config.file_count = { 80, 90 };
+            config.seed = 1713988173;
+
+            GenerateTin(&config);
+        }
         
-        auto program = CompileFile(&options);
-        if(program) {
+        Bytecode* bytecode = nullptr;
+        int start_mem = GetAllocatedMemory();
+        bool yes = CompileFile(&options, &bytecode);
+        int end_mem = GetAllocatedMemory() - start_mem;
+        if(end_mem != 0) {
+            PrintMemoryUsage(start_mem);
+        }
+
+        if(yes && options.run) {
+            Assert(bytecode);
             VirtualMachine* interpreter = new VirtualMachine();
-            interpreter->bytecode = program;
+            interpreter->bytecode = bytecode;
             interpreter->init();
             interpreter->execute();
             
             delete interpreter;
         }
-        
+        if(bytecode) {
+            DELNEW(bytecode, Bytecode, HERE);
+        }
     } else if(dev_mode) {
         TinConfig config{};
         // IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -93,28 +128,32 @@ int main(int argc, const char** argv) {
         config.seed = 1713988173;
 
         // More files is worse.
-        // config.struct_frequency = { 2, 4 };
+        // config.struct_frequency = { 0, 0 };
         // config.member_frequency = { 5, 10 };
-        // config.function_frequency = { 3, 4 };
+        // config.function_frequency = { 38, 40 };
         // config.argument_frequency = { 3, 5 };
-        // config.statement_frequency = { 5, 5 };
-        // config.file_count = { 490, 500 };
+        // config.statement_frequency = { 7, 10 };
+        // config.file_count = { 0, 1 };
         // config.seed = 1713988173;
-        
-        GenerateTin(&config);
+        if(gen_code) {
+            // do not comment this out, we allow the user to specify
+            // whether to generate code or not
+            GenerateTin(&config);
+        } else {
+            // you can comment this code out, either you always gen code
+            // or you comment this out depending on what you need
+            // when developing.
+            GenerateTin(&config);
+        }
 
-        // options.run = true;
+        options.run = true;
         options.initial_file = "generated/main.tin";
         if(options.thread_count == 0)
-            options.thread_count = 5;
-
-        // 1: 1090 ms
-        // 2: 600 ms
-        // 4: 358 ms
-        // 8: 238 ms
-        // 16: 230 ms
+            // options.thread_count = 8;
+            options.thread_count = 1;
 
         // options.initial_file = "main.tin";
+        options.initial_file = "tests/feature_set.tin";
         // options.initial_file = "sample.tin";
         // options.initial_file = "test.tin";
         // options.initial_file = "tests/file.tin";
@@ -127,9 +166,92 @@ int main(int argc, const char** argv) {
         // options.initial_file = "tests/ptrs.tin";
         // options.initial_file = "tests/scoping.tin";
 
+        int start_mem = GetAllocatedMemory();
         CompileFile(&options);
+        int end_mem = GetAllocatedMemory() - start_mem;
+        if(end_mem != 0) {
+            PrintMemoryUsage(start_mem);
+        }
+
+        // Measure();
     }
     printf("Finished\n");
     SleepMS(500); // TCP connection to tracy will close to fast unless we sleep a bit.
     return 0;
+}
+
+void Measure(CompilerOptions* user_options) {
+    CompilerOptions options;
+    if(user_options)
+        options.silent = user_options->silent;
+    options.initial_file = "generated/main.tin";
+    struct Data {
+        int threads;
+        double time;
+        int bytes;
+    };
+    std::vector<Data> datas;
+    int thread_counts[] {
+        // 2,4,6,8,10,12,14,16
+        // 2,
+        // 4,
+        // 6,
+        // 8,
+        // 10,
+        // 12,
+        // 14,
+        16
+    };
+    int thread_count_len = sizeof(thread_counts)/sizeof(*thread_counts);
+    if(user_options) {
+        thread_counts[0] = user_options->thread_count;
+        thread_count_len = 1;
+    }
+#ifndef ENABLE_MULTITHREADING
+    thread_counts[0] = 1;
+    thread_count_len = 1;    
+#endif
+
+    for(int i=0;i<thread_count_len;i++) {
+        options.thread_count = thread_counts[i];
+        int run_count = 5;
+        std::vector<double> times;
+        for(int j=0;j<run_count;j++) {
+            int start_mem = GetAllocatedMemory();
+            // printf("%d\n",start_mem);
+            CompileFile(&options);
+            int end_mem = GetAllocatedMemory() - start_mem;
+            if(end_mem != 0) {
+                PrintMemoryUsage(start_mem);
+            }
+            times.push_back(options.compilation_time);
+        }
+        Data d{};
+        d.threads = options.thread_count;
+        for(int i=0;i<times.size();i++)
+            for(int j=0;j<times.size()-1;j++)
+                if(times[j] > times[j+1]) {
+                    double tmp = times[j];
+                    times[j] = times[j+1];
+                    times[j+1] = tmp;
+                }
+        d.time = times[times.size()/2];
+        d.bytes = options.processed_bytes;
+        datas.push_back(d);
+    }
+    log_color(GOLD);
+    printf("FINISHED, Summary:\n");
+    log_color(NO_COLOR);
+    int prev_bytes = -1;
+    for(auto& d : datas) {
+        float bytes_per_second = d.bytes/d.time;
+        printf(" %3d, %5.3f ms, %3.3f MB/s", d.threads, (float)d.time * 1000.f, bytes_per_second / 1000'000.f);
+        if(prev_bytes == -1 || prev_bytes != d.bytes) {
+            printf(", (%f MB)", d.bytes / 1000'000.f);
+            prev_bytes = d.bytes;
+        } else {
+            printf(", (...)");
+        }
+        printf("\n");
+    }
 }

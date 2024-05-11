@@ -3,11 +3,13 @@
 */
 
 struct Array {
-    ptr: Location
+    ptr: Location*,
+    size: int,
+    capacity: int
 }
 struct Location {
-    ln: int;
-    
+    start: int,
+    end: int,
 }
 
 fun strlen(str: char*): int {
@@ -17,32 +19,53 @@ fun strlen(str: char*): int {
     }
     return length;
 }
-fun find_string(str: char*, text: char*, text_size: int): int {
-    str_length := strlen(str);
+fun find_string(str: char*, text: char*, text_size: int): Array {
+    str_length: int = strlen(str);
     index: int;
-    while index < text[index] {
-        length++;
+    correct: int;
+    array: Array;
+    array.ptr = cast Location*  malloc(sizeof Location * 100);
+    array.size = 0;
+    array.capacity = 100;
+    while index < text_size {
+        if str[correct] == text[index] {
+            correct++;
+            if correct == str_length {
+                correct = 0;
+                array.ptr[array.size].end = index + 1;
+                array.size++;
+            }
+        } else {
+            array.ptr[array.size].start = index+1;
+            correct = 0;
+        }
+        index++;
     }
-    return length;
+    return array;
 }
 
 fun main() {
+
+    // printi(strlen("okay"));
+
+    // arr: Array;
+    // arr.ptr[5].start;
+
     text: char*;
     size: int;
-    yes: bool = read_file("tests/feature_set.tin", &text, &size);
-    // read_file allocates memory with malloc
+    read_file("tests/feature_set.tin", &text, &size);
 
-    arr: Array* = find_string("int",text,size);
+    arr: Array = find_string("int",text,size);
 
-    prints("int can be found here")
-    i: int;
-    while i < arr.len {
-        printi()
-
+    // printi(arr.size);
+    // i: int;
+    // while i < arr.len {
+    //     printi()
 
 
 
-    }
 
-    mfree(text)
+    // }
+
+    // mfree(text)
 }

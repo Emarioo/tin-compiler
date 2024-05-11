@@ -1,6 +1,6 @@
 Extended Backus-Naur form
 ```c
-    program> ::= { struct | function | global_var | constant | include }
+program ::= { struct | function | global_var | constant | include }
 
 global_var ::= "global" declaration
 constant ::= "const" declaration
@@ -14,11 +14,11 @@ members ::= { id ":" type "," }
 function ::= "fun" id "(" parameters ")" [ ":" type ] "{" statements "}"
 parameters ::= id ":" type { "," id ":" type }
 
-statements ::= { while | if | return | function_call | constant | declaration | assignment }
+statements ::= { while | if | return | function_call ";" | constant | global_var | declaration | assignment }
 
 declaration ::= id ":" type [ "=" expression ] ";"
 
-loop_statements ::= statements | { "break" | "continue" }
+loop_statements ::= statements | { "break;" | "continue;" }
 
 return ::= "return" [ expression ] ";"
 while ::= "while" expression "{" loop_statements "}"
@@ -38,7 +38,7 @@ index_operation ::= value { "[" expression "]" }
 value ::= "(" expression ")" | id | number | function_call | string
 
 type ::= id { "*" }
-number ::= [0-9]* | [0-9]*.[0-9]*
+number ::= digits or digits with decimals
 string ::= any characters in quotes
 id ::= [a-zA-Z][a-zA-Z0-9]*
 ```

@@ -322,20 +322,19 @@ int Bytecode::appendData(int size, void* data) {
     MUTEX_LOCK(general_lock);
     if(size + global_data_size > global_data_max) {
         int max = global_data_max * 2 + size * 2;
-        global_data = (u8*)realloc(global_data, max);
+        // printf("%d - %d\n",max,global_data_max);
+        global_data = RENEW_ARRAY(global_data, global_data_max, u8, max, HERE);
         Assert(global_data);
         global_data_max = max;
     }
     int off = global_data_size;
     global_data_size += size;
-    MUTEX_UNLOCK(general_lock);
-    
-    // we have reserved this section of memory, no other thread will read/write to it
     if(data) {
         memcpy(global_data + off, data, size);
     } else {
         memset(global_data + off, '_', size);
     }
+    MUTEX_UNLOCK(general_lock);
     return off;
 }
 int Bytecode::appendString(const std::string& str) {
@@ -354,10 +353,11 @@ int Bytecode::appendString(const std::string& str) {
     return off;
 }
 u8* Bytecode::copyGlobalData(int* size) {
+    Assert(false); // nocheckin, TODO: remove this line
     Assert(size);
     MUTEX_LOCK(general_lock);
     *size = global_data_size;
-    auto ptr = (u8*)Alloc(*size);
+    auto ptr = NEW_ARRAY(u8, *size, HERE);
     Assert(ptr);
     memcpy(ptr, global_data, *size);
     MUTEX_UNLOCK(general_lock);

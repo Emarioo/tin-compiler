@@ -1,14 +1,20 @@
 
-struct Hey {
+// struct Hey {
 
-}
-struct _ {
-    _: _
-}
-struct Na {
-    nu: ni,
-}
-struct Nice {
-    dip: ni,
-    zap: NOP,
+// }
+// struct _ {
+//     _: _
+// }
+// struct Na {
+//     nu: ni,
+// }
+// struct Nice {
+//     dip: ni,
+//     zap: NOP,
+// }
+
+fun main() {
+    struct Ok {
+        n: int
+    }
 }

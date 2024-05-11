@@ -12,9 +12,16 @@ u32 ThreadProc(void* arg) {
     return 0;
 }
 
-Bytecode* CompileFile(CompilerOptions* options) {
+bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
     Compiler compiler{};
     compiler.init();
+    #ifdef ENABLE_MULTITHREADING
+    if(options->thread_count == 1) {
+        log_color(RED);
+        printf("You are ussing one thread with multi-threading enabled. Disable multi-threading when compiling to get fair performance out of one thread.\n");
+        log_color(NO_COLOR);
+    }
+    #endif
 
     auto pre_imp = compiler.ast->createImport("preload");
     pre_imp->body = compiler.ast->global_body;
@@ -32,7 +39,7 @@ Bytecode* CompileFile(CompilerOptions* options) {
         log_color(RED);
         printf("You did not specify a file to compiler");
         log_color(NO_COLOR);
-        return nullptr;
+        return false;
     }
     task.name = options->initial_file;
     task.type = TASK_LEX_FILE;
@@ -73,6 +80,7 @@ Bytecode* CompileFile(CompilerOptions* options) {
     threads.clear();
     
     double time = StopMeasure(start_time);
+
     
     int total_lines = 0;
     int non_blank_lines = 0;
@@ -84,44 +92,51 @@ Bytecode* CompileFile(CompilerOptions* options) {
         total_bytes += s->processed_bytes;
     }
     
+    options->compilation_time = time;
+    options->processed_bytes = total_bytes;
+    options->processed_lines = total_lines;
     
     u64 lines_per_sec = total_lines/time;
-    printf("Compiled %d lines in ", total_lines);
-    if(time >= 1.0)
-        printf("%.3f sec", (float)time);
-    else if(time >= 0.001)
-        printf("%.3f ms", (float)(time*1000));
-    else
-        printf("%.3f us", (float)(time*1000'000));
-        
-    printf(" (%llu lines/s)\n", lines_per_sec);
 
-    printf(" %d non-blank lines\n", non_blank_lines);
-    printf(" %d files\n", (int)compiler.streams.size());
-    printf(" %d threads\n", (int)threadcount);
+    if(compiler.reporter->errors){
 
-    printf(" ");
-    if(total_bytes < 1024)
-        printf("%llu bytes", total_bytes);
-    else if(total_bytes < 1024*1024)
-        printf("%.2f KB", total_bytes / 1024.f);
-    else
-        printf("%.2f MB", total_bytes / 1024.f / 1024.f);
-    printf(", ");
-    u64 bytes_per_sec = (double)total_bytes / time;
-    if(bytes_per_sec < 1024)
-        printf("%llu bytes/s", bytes_per_sec);
-    else if(bytes_per_sec < 1024*1024)
-        printf("%.2f KB/s", bytes_per_sec / 1024.f);
-    else
-        printf("%.2f MB/s", bytes_per_sec / 1024.f / 1024);
-    printf("\n");
+        return false;
+    } else if(!options->silent) {
+        log_color(GOLD);
+        printf("Compiled %d lines in ", total_lines);
+        if(time >= 1.0)
+            printf("%.3f sec", (float)time);
+        else if(time >= 0.001)
+            printf("%.3f ms", (float)(time*1000));
+        else
+            printf("%.3f us", (float)(time*1000'000));
+            
+        printf(" (%llu lines/s)\n", lines_per_sec);
+        log_color(NO_COLOR);
 
-    if(compiler.reporter->errors != 0) {
-        return nullptr;
+         printf(" %d non-blank lines\n", non_blank_lines);
+        printf(" %d files\n", (int)compiler.streams.size());
+        printf(" %d threads\n", (int)threadcount);
+
+        printf(" ");
+        if(total_bytes < 1024)
+            printf("%llu bytes", total_bytes);
+        else if(total_bytes < 1024*1024)
+            printf("%.2f KB", total_bytes / 1024.f);
+        else
+            printf("%.2f MB", total_bytes / 1024.f / 1024.f);
+        printf(", ");
+        u64 bytes_per_sec = (double)total_bytes / time;
+        if(bytes_per_sec < 1024)
+            printf("%llu bytes/s", bytes_per_sec);
+        else if(bytes_per_sec < 1024*1024)
+            printf("%.2f KB/s", bytes_per_sec / 1024.f);
+        else
+            printf("%.2f MB/s", bytes_per_sec / 1024.f / 1024);
+        printf("\n");
     }
     
-    if(options->run) {
+    if(options->run && !out_bytecode) {
         VirtualMachine* interpreter = new VirtualMachine();
         interpreter->bytecode = compiler.bytecode;
         interpreter->init();
@@ -131,11 +146,14 @@ Bytecode* CompileFile(CompilerOptions* options) {
         return nullptr;
     }
 
-    printf("Scopes: %d\n", compiler.ast->scopes_used);
+    // printf("Scopes: %d\n", compiler.ast->scopes_used);
     
-    Bytecode* tmp_code = compiler.bytecode;
-    compiler.bytecode = nullptr;
-    return tmp_code;
+    if(out_bytecode) {
+        // steal bytecode
+        *out_bytecode = compiler.bytecode;
+        compiler.bytecode = nullptr;
+    }
+    return true;
 }
 
 void Compiler::processTasks() {
@@ -368,8 +386,25 @@ void Compiler::processTasks() {
 }
 
 void Compiler::init() {
-    ast = new AST();
-    reporter = new Reporter();
-    bytecode = new Bytecode();
+    ast = NEW(AST, HERE);
+    reporter = NEW(Reporter, HERE);
+    bytecode = NEW(Bytecode, HERE);
     // TODO: Memory leak
+}
+void Compiler::cleanup() {
+    if (ast) {
+        DELNEW(ast, AST, HERE);
+    }
+    if (reporter)   DELNEW(reporter, Reporter, HERE);
+    if (bytecode)   DELNEW(bytecode, Bytecode, HERE);
+
+    ast = nullptr;
+    reporter = nullptr;
+    bytecode = nullptr;
+
+    for(auto it : streams) {
+        DELNEW(it, TokenStream, HERE);
+    }
+    streams.clear();
+    stream_map.clear();
 }

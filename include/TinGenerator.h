@@ -6,7 +6,11 @@
 struct TinConfig {
     struct Range {
         int min, max;
-        int random() const { if(min == max) return min; return RandomInt(min, max); }
+        int random() const {
+            if(min == max)
+                return min;
+            return RandomInt(min, max);
+        }
     };
     Range struct_frequency;
     Range member_frequency;

@@ -177,9 +177,23 @@ private:
 };
 
 struct Bytecode {
-    
+    ~Bytecode() {
+        cleanup();
+    }
+    void cleanup() {
+        if(global_data) {
+            DELNEW_ARRAY(global_data, u8, global_data_max, HERE);
+        }
+        global_data = nullptr;
+        global_data_max = 0;
+        global_data_size = 0;
+        for(auto t : pieces) {
+            DELNEW(t, BytecodePiece, HERE);
+        }
+        pieces.clear();
+    }
     BytecodePiece* createPiece() {
-        auto ptr = new BytecodePiece();
+        auto ptr = NEW(BytecodePiece, HERE);
         MUTEX_LOCK(general_lock);
         ptr->piece_index = pieces.size();
         pieces.push_back(ptr);

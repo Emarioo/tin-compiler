@@ -131,11 +131,11 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 operations.push_back(ASTExpression::GREATER);
             } else if (token->type == '.') {
-                advance();
-                // operations.push_back(ASTExpression::MEMBER);
                 ASTExpression* expr = ast->createExpression(ASTExpression::MEMBER);
-
                 expr->location = getloc();
+
+                advance();
+
                 token = gettok(&expr->name);
                 if(token->type != TOKEN_ID) {
                     REPORT(token, "Member access operator expects and identifier after '.'.");
@@ -153,11 +153,14 @@ ASTExpression* ParseContext::parseExpression() {
                 advance();
                 operations.push_back(ASTExpression::ASSIGN);
             } else if (token->type == '[') {
-                saved_locations.push_back(getloc());
+                ASTExpression* expr = ast->createExpression(ASTExpression::INDEX);
+                expr->location = getloc();
+
                 advance();
-                operations.push_back(ASTExpression::INDEX);
                 
-                auto index_expr = parseExpression();
+                expr->left = expressions.back();
+                expressions.pop_back();
+                expr->right = parseExpression();
                 
                 token = gettok();
                 if(token->type != ']') {
@@ -165,8 +168,8 @@ ASTExpression* ParseContext::parseExpression() {
                     return nullptr;
                 }
                 advance();
-                
-                expressions.push_back(index_expr);
+
+                expressions.push_back(expr);
                 is_operator = !is_operator;
             } else {
                 ending = true; // no valid operation, end of expression
@@ -333,6 +336,7 @@ ASTExpression* ParseContext::parseExpression() {
                 }
 
                 expressions.push_back(expr);
+            
             } else {
                 REPORT(token, "Invalid token.");
                 return nullptr;
@@ -631,6 +635,14 @@ ASTBody* ParseContext::parseBody() {
                     return nullptr;
                 }
                 advance();
+            } break;
+            case TOKEN_STRUCT: {
+                REPORT(token, "Structures are not allowed inside function bodies. They can only be declared at global scope.");
+                return nullptr;
+            } break;
+            case TOKEN_FUNCTION: {
+                REPORT(token, "Functions are not allowed inside function bodies. They can only be declared at global scope.");
+                return nullptr;
             } break;
             default: {
                 auto token2 = gettok(1);

@@ -20,8 +20,18 @@ struct CompilerOptions {
     #else
     int thread_count = 1;
     #endif
+
+    double compilation_time = 0;
+    int processed_bytes = 0;
+    int processed_lines = 0;
+
+    bool silent = false; // won't silence errors
 };
 struct Compiler {
+    ~Compiler() {
+        cleanup();
+    }
+    void cleanup();
     AST* ast = nullptr;
     Reporter* reporter = nullptr;
     Bytecode* bytecode = nullptr;
@@ -48,4 +58,4 @@ struct Compiler {
     void processTasks();
 };
 
-Bytecode* CompileFile(CompilerOptions* options);
+bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode = nullptr);

@@ -8,23 +8,18 @@
     They allow you to specify macros to enable or disable
     multithreading from the command line "g++ /DDISABLE_X"
 
-Speeds
- 4.391
-
- 
- 642.085
-
 */
 
 #ifndef DISABLE_MULTITHREADING
-#define ENABLE_MULTITHREADING
+// #define ENABLE_MULTITHREADING
 #endif
-
 
 #ifndef DISABLE_OPTIMIZATIONS
 #define ENABLE_OPTIMIZATIONS
 #endif
 
+// TURN THIS OFF DURING PERFORMANCE TESTING
+// #define ENABLE_ALLOCATION_TRACKER
 
 /*###########################
     TOGGLE OPTIMIZATIONS
@@ -32,9 +27,6 @@ Speeds
 
 #ifdef ENABLE_OPTIMIZATIONS
 
-// Fixed array of scopes/types (65000), no need to lock the array when adding or accessing
-// #define PREALLOCATED_AST_ARRAYS
-// exlusive to PREALLOCATED_AST_ARRAYS
 #define DOUBLE_AST_ARRAYS
 
 // Mutexes when adding and looking for identifiers are removed.
