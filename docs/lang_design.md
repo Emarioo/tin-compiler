@@ -6,7 +6,7 @@ global_var ::= "global" declaration
 constant ::= "const" declaration
 
 import ::= "import" "\"" filepath "\""
-filepath ::= any characters except?
+filepath ::= any characters except quotes
 
 struct ::= "struct" id "{" members "}"
 members ::= { id ":" type "," }

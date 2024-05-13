@@ -23,6 +23,18 @@ struct Reporter {
         // fflush(stdout);
         // MUTEX_UNLOCK(print_lock);
     }
+    void err(const std::string& path, int line, int column, const std::string& msg) {
+        Assert(token);
+        atomic_add(&errors,1);
+        // TODO: Color
+        // MUTEX_LOCK(print_lock);
+        log_color(Color::RED);
+        printf("ERROR %s:%d:%d: ",path.c_str(), line, column);
+        log_color(Color::NO_COLOR);
+        printf("%s\n", msg.c_str());
+        // fflush(stdout);
+        // MUTEX_UNLOCK(print_lock);
+    }
     void err(TokenStream* stream, SourceLocation loc, const std::string& msg) {
         Assert(stream);
         atomic_add(&errors,1);

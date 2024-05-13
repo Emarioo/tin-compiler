@@ -1,46 +1,5 @@
-// import "tests/test_base.tin"
-struct Type {
-    a: char,
-    b: char
-}
 fun main() {
-    a: Type;
-    a.a = 'a';
-    a.b = cast char 0;
-    prints(cast char* &a);
-    
-    // arg1: int*;
-    // sizeof T * arg1;
-    
-    // a: int = 1 - -2;
-    // i: int = -1;
-    // while i < 5 {
-    //     i++;
-    //     if i - (i / 2) * 2 == 0 {
-    //         prints("Even\n");
-    //         continue;
-    //     }
-    //     if i == 3 {
-    //         break;
-    //     }
-                
-    //     prints("Okay\n");
-    // }
-    // a: char* = "yoo"
-
-    // a: float = 2.3.2;
+    231ad: int;
 
     // printf(a);
-
-    // p();
-    // p();
-    // p();
-
-    // arr: char = 'h';
-
-    // arr: char* = "Hello world";
-
-    // printc(arr[3]);
-
-    // test_array();
 }

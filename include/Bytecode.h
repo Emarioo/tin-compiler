@@ -48,6 +48,14 @@ enum Opcode : u8 {
     INST_DATAPTR,
     // don't add non-immediate instructions here (inst.opcode >= INST_IMMEDIATES)
 };
+enum ControlFlags : u8 {
+    CONTROL_NONE = 0,
+    CONTROL_1B=1,
+    CONTROL_2B=2,
+    CONTROL_4B=4,
+    CONTROL_8B=8,
+    CONTROL_FLOAT=16,
+};
 enum CastType {
     CAST_FLOAT_INT,
     CAST_INT_FLOAT,
@@ -127,12 +135,12 @@ struct BytecodePiece {
     void emit_or(Register to_from_reg, Register from_reg);
     void emit_not(Register to_reg, Register from_reg);
 
-    void emit_eq            (Register to_from_reg, Register from_reg, bool is_float = false);
-    void emit_neq           (Register to_from_reg, Register from_reg, bool is_float = false);
-    void emit_less          (Register to_from_reg, Register from_reg, bool is_float = false);
-    void emit_greater       (Register to_from_reg, Register from_reg, bool is_float = false);
-    void emit_less_equal    (Register to_from_reg, Register from_reg, bool is_float = false);
-    void emit_greater_equal (Register to_from_reg, Register from_reg, bool is_float = false);
+    void emit_eq            (Register to_from_reg, Register from_reg, int size, bool is_float = false);
+    void emit_neq           (Register to_from_reg, Register from_reg, int size, bool is_float = false);
+    void emit_less          (Register to_from_reg, Register from_reg, int size, bool is_float = false);
+    void emit_greater       (Register to_from_reg, Register from_reg, int size, bool is_float = false);
+    void emit_less_equal    (Register to_from_reg, Register from_reg, int size, bool is_float = false);
+    void emit_greater_equal (Register to_from_reg, Register from_reg, int size, bool is_float = false);
     
     void emit_jmp(int pc);
     void emit_jmp(int* out_index_of_imm);

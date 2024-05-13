@@ -208,3 +208,4 @@ void PrintMemoryUsage(int expected_memory_usage);
 
 #define NEW(TYPE,LOC,...) (new((TYPE*)Alloc(sizeof(TYPE),LOC,typeid(TYPE), sizeof(TYPE)))TYPE(__VA_ARGS__))
 #define DELNEW(PTR,TYPE,LOC) (PTR->~TYPE(),Free(PTR, sizeof(TYPE),LOC,typeid(TYPE)))
+

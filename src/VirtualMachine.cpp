@@ -130,6 +130,8 @@ void VirtualMachine::execute() {
         int prev_pc = registers[REG_PC];
         Instruction inst = piece->instructions[registers[REG_PC]];
         registers[REG_PC]++;
+
+        ControlFlags control = (ControlFlags)inst.op2;
         
         int imm = 0;
         if(inst.opcode >= INST_IMMEDIATES) {
@@ -303,7 +305,8 @@ void VirtualMachine::execute() {
             }
             break;
         }
-        #define CASEF(T,OP) case T: if ((bool)inst.op2) *(float*)&registers[inst.op0] = *(float*)&registers[inst.op0] OP *(float*)&registers[inst.op1]; else registers[inst.op0] = registers[inst.op0] OP registers[inst.op1]; break;
+        #define CASEC(T,OP) case T: if (control & CONTROL_FLOAT) registers[inst.op0] = *(float*)&registers[inst.op0] OP *(float*)&registers[inst.op1]; else if(control & CONTROL_1B) registers[inst.op0] = *(i8*)&registers[inst.op0] OP *(i8*)&registers[inst.op1]; else registers[inst.op0] = registers[inst.op0] OP registers[inst.op1]; break;
+        #define CASEF(T,OP) case T: if (control & CONTROL_FLOAT) *(float*)&registers[inst.op0] = *(float*)&registers[inst.op0] OP *(float*)&registers[inst.op1]; else registers[inst.op0] = registers[inst.op0] OP registers[inst.op1]; break;
         CASEF(INST_ADD, +)
         CASEF(INST_SUB, -)
         CASEF(INST_MUL, *)
@@ -311,12 +314,12 @@ void VirtualMachine::execute() {
         case INST_AND: registers[inst.op0] = registers[inst.op0] && registers[inst.op1]; break;
         case INST_OR:  registers[inst.op0] = registers[inst.op0] || registers[inst.op1]; break;
         case INST_NOT: registers[inst.op0] = !registers[inst.op1]; break;
-        CASEF(INST_EQUAL, ==)
-        CASEF(INST_NOT_EQUAL, !=)
-        CASEF(INST_LESS, <)
-        CASEF(INST_LESS_EQUAL, <=)
-        CASEF(INST_GREATER, >)
-        CASEF(INST_GREATER_EQUAL, >=)
+        CASEC(INST_EQUAL, ==)
+        CASEC(INST_NOT_EQUAL, !=)
+        CASEC(INST_LESS, <)
+        CASEC(INST_LESS_EQUAL, <=)
+        CASEC(INST_GREATER, >)
+        CASEC(INST_GREATER_EQUAL, >=)
         default: Assert(("Incomplete instruction",false));
         }
         

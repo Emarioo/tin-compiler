@@ -23,7 +23,7 @@ if !arg!==run (
 
 @REM Toggle comments on the variables below to change compiler
 SET USE_MSVC=1
-@REM SET USE_OPTIMIZED=1
+SET USE_OPTIMIZED=1
 SET USE_TRACY=1
 SET USE_DEBUG=1
 @REM SET USE_GCC=1

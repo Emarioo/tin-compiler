@@ -98,6 +98,12 @@ bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
     
     u64 lines_per_sec = total_lines/time;
 
+    // int insts = 0;
+    // for(auto p : compiler.bytecode->pieces_unsafe().size();i++) {
+    //     printf("%d\n",compiler.bytecode->);
+    //     compiler
+    // }
+
     if(compiler.reporter->errors){
 
         return false;
@@ -233,12 +239,13 @@ void Compiler::processTasks() {
         switch(task.type) {
             case TASK_LEX_FILE: {
                 // LOGC("Lexing: %s\n", task.name.c_str());
-                TokenStream* stream = lex_file(task.name); // MEMORY LEAK, stream not destroyed
+                TokenStream* stream = lex_file(reporter,task.name); // MEMORY LEAK, stream not destroyed
                 if(!stream) {
-                    log_color(RED);
-                    printf("File %s could not be found.\n", task.name.c_str());
-                    log_color(NO_COLOR);
-                    reporter->errors++;
+                    // lex_file Reports errors, no need to do so here.
+                    // log_color(RED);
+                    // printf("File %s could not be found.\n", task.name.c_str());
+                    // log_color(NO_COLOR);
+                    // reporter->errors++;
                     break;   
                 }
                 MUTEX_LOCK(tasks_lock);
@@ -353,13 +360,20 @@ void Compiler::processTasks() {
                 LOGIT(LOGC("[%d]: ",thread_id);
                 LOGC("Gen functions: %s\n", task.name.c_str());)
                 
+                int prev_pieces = bytecode->pieces_unsafe().size();
+
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, bytecode, reporter);
                 
-                if(bytecode->pieces_unsafe().size()) {
-                    auto p = bytecode->pieces_unsafe().back();
-                    // p->print(bytecode);
-                }
+                // if(bytecode->pieces_unsafe().size() != prev_pieces) {
+                //     for(int i=prev_pieces;i<bytecode->pieces_unsafe().size();i++) {
+                //         auto p = bytecode->pieces_unsafe()[i];
+                //         log_color(GOLD);
+                //         printf("%s",p->name.c_str());
+                //         log_color(NO_COLOR);
+                //         p->print(bytecode);
+                //     }
+                // }
                 
                 LOGIT(log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); )
             } break;

@@ -2,6 +2,8 @@
 
 #include "Util.h"
 
+struct Reporter;
+
 enum TokenKind {
     // 0-255 is reserved for ASCII
     
@@ -151,8 +153,7 @@ struct TokenStream {
 
     void print();
 };
-
-TokenStream* lex_file(const std::string& path);
+TokenStream* lex_file(Reporter* reporter, const std::string& path);
 
 #define NAME_OF_TOKEN(TOKEN_TYPE) token_names[TOKEN_TYPE-256]
 extern const char* token_names[];

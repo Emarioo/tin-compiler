@@ -1,15 +1,9 @@
-/*
-    This file uses most of the features in the language
-*/
-
 struct Array {
     ptr: Location*,
     size: int,
-    capacity: int
 }
 struct Location {
-    start: int,
-    end: int,
+    line: int,
 }
 
 fun strlen(str: char*): int {
@@ -19,53 +13,47 @@ fun strlen(str: char*): int {
     }
     return length;
 }
-fun find_string(str: char*, text: char*, text_size: int): Array {
+fun find_string(str: char*, text: char*, text_size: int) {
     str_length: int = strlen(str);
     index: int;
     correct: int;
-    array: Array;
     array.ptr = cast Location*  malloc(sizeof Location * 100);
     array.size = 0;
-    array.capacity = 100;
+    line: int = 1;
     while index < text_size {
+        if text[index] == '\n' {
+            line++;
+        }
         if str[correct] == text[index] {
             correct++;
             if correct == str_length {
                 correct = 0;
-                array.ptr[array.size].end = index + 1;
+                array.ptr[array.size].line = line;
                 array.size++;
             }
         } else {
-            array.ptr[array.size].start = index+1;
             correct = 0;
         }
         index++;
     }
-    return array;
 }
-
+global array: Array;
 fun main() {
-
-    // printi(strlen("okay"));
-
-    // arr: Array;
-    // arr.ptr[5].start;
-
     text: char*;
     size: int;
     read_file("tests/feature_set.tin", &text, &size);
 
-    arr: Array = find_string("int",text,size);
+    find_string("int",text,size);
 
-    // printi(arr.size);
-    // i: int;
-    // while i < arr.len {
-    //     printi()
-
-
-
-
-    // }
-
-    // mfree(text)
+    prints("Found ");
+    prints("int ");
+    printi(array.size);
+    prints(" times here:\n");
+    i: int;
+    while i < array.size {
+        prints(" LN ");
+        printi(array.ptr[i].line);
+        printc('\n');
+        i++;
+    }
 }

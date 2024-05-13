@@ -3,7 +3,6 @@
 #define LOCATION log_color(GRAY); printf("%s:%d\n",__FILE__,__LINE__); log_color(NO_COLOR);
 #define REPORT(L, ...) LOCATION reporter->err(current_stream, L, __VA_ARGS__)
 
-
 void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
     if(type == TYPE_VOID) return;
     int size = ast->sizeOfType(type);
@@ -20,23 +19,19 @@ void GeneratorContext::generatePop(Register reg, int offset, TypeId type) {
     }
 }
 bool GeneratorContext::performCast(TypeId ltype, TypeId rtype) {
-    // out_type = ltype;
-    if(ltype == rtype) return true;
+    if(ltype == rtype)
+        return true;
     
     if(ltype.pointer_level() > 0 && rtype.pointer_level() > 0) {
-        // out_type = rtype;
         return true;
-    } else if((ltype == TYPE_INT || ltype == TYPE_CHAR) && (rtype == TYPE_INT && rtype == TYPE_CHAR)) {
-        // out_type = rtype;
+    } else if((ltype == TYPE_INT || ltype == TYPE_CHAR || ltype == TYPE_BOOL) && (rtype == TYPE_INT || rtype == TYPE_CHAR || TYPE_BOOL)) {
         return true;
     } else if(ltype == TYPE_INT && rtype == TYPE_FLOAT) {
-        // out_type = TYPE_FLOAT;
         piece->emit_pop(REG_A);
         piece->emit_cast(REG_A, CAST_INT_FLOAT);
         piece->emit_push(REG_A);
         return true;
     } else if(ltype == TYPE_FLOAT && rtype == TYPE_INT) {
-        // out_type = TYPE_INT;
         piece->emit_pop(REG_A);
         piece->emit_cast(REG_A, CAST_FLOAT_INT);
         piece->emit_push(REG_A);
@@ -323,6 +318,7 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
             for(int i=0;i<argument_types.size();i++) {
                 auto& ltype = fun->parameters[i].typeId;
                 auto& rtype = argument_types[i];
+                // TODO: Auto casting?
                 if(ltype == rtype) {
 
                 } else if((ltype == pvoid && rtype.pointer_level() == 1) || (ltype.pointer_level() == 1 && rtype == pvoid) ) {
@@ -423,12 +419,19 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 }
             } else { Assert(false); }
             
+            TypeId operand_type = ltype;
             piece->emit_pop(REG_D);
-            if(is_float && (rtype == TYPE_INT || rtype == TYPE_CHAR))
+            if(is_float && (rtype == TYPE_INT || rtype == TYPE_CHAR)){
                 piece->emit_cast(REG_D, CAST_INT_FLOAT);
+                operand_type = TYPE_FLOAT;
+            }
             piece->emit_pop(REG_A);
-            if(is_float && (ltype == TYPE_INT || ltype == TYPE_CHAR))
+            if(is_float && (ltype == TYPE_INT || ltype == TYPE_CHAR)){
                 piece->emit_cast(REG_A, CAST_INT_FLOAT);
+                operand_type = TYPE_FLOAT;
+            }
+
+            int operand_size = ast->getType(operand_type)->size;
             
             switch(expr->kind()) {
                 case ASTExpression::ADD: piece->emit_add(REG_A, REG_D, is_float); break;
@@ -437,12 +440,12 @@ TypeId GeneratorContext::generateExpression(ASTExpression* expr) {
                 case ASTExpression::DIV: piece->emit_div(REG_A, REG_D, is_float); break;
                 case ASTExpression::AND: piece->emit_and(REG_A, REG_D); break;
                 case ASTExpression::OR:  piece->emit_or (REG_A, REG_D); break;
-                case ASTExpression::EQUAL:          piece->emit_eq(REG_A, REG_D, is_float); break;
-                case ASTExpression::NOT_EQUAL:      piece->emit_neq(REG_A, REG_D, is_float); break;
-                case ASTExpression::LESS:           piece->emit_less(REG_A, REG_D, is_float); break;
-                case ASTExpression::GREATER:        piece->emit_greater(REG_A, REG_D, is_float); break;
-                case ASTExpression::LESS_EQUAL:     piece->emit_less_equal(REG_A, REG_D, is_float); break;
-                case ASTExpression::GREATER_EQUAL:  piece->emit_greater_equal(REG_A, REG_D, is_float); break;
+                case ASTExpression::EQUAL:          piece->emit_eq(            REG_A, REG_D, operand_size, is_float); break;
+                case ASTExpression::NOT_EQUAL:      piece->emit_neq(           REG_A, REG_D, operand_size, is_float); break;
+                case ASTExpression::LESS:           piece->emit_less(          REG_A, REG_D, operand_size, is_float); break;
+                case ASTExpression::GREATER:        piece->emit_greater(       REG_A, REG_D, operand_size, is_float); break;
+                case ASTExpression::LESS_EQUAL:     piece->emit_less_equal(    REG_A, REG_D, operand_size, is_float); break;
+                case ASTExpression::GREATER_EQUAL:  piece->emit_greater_equal( REG_A, REG_D, operand_size, is_float); break;
                 default: Assert(false);
             }
             
@@ -749,18 +752,12 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                 if(!type.valid()) {
                     return false; // error should be reported already
                 }
-                auto ltype = type;
-                auto rtype = variable->type;
-                if(type == variable->type) {
-
-                } else if(ltype.pointer_level() == rtype.pointer_level()) {
-
-                } else {
-                    REPORT(stmt->location, "The expression and variable has mismatching types.");
-                    // TODO: Implicit casting
+                
+                if(!performCast(type, variable->type)) {
+                    REPORT(stmt->location, "The expression and variable has mismatching types. Implicit casting were not possible from '"+ast->nameOfType(type)+"' to '"+ast->nameOfType(variable->type)+"'.");
                     return false;
                 }
-                generatePop(REG_BP, var_offset, type);
+                generatePop(REG_BP, var_offset, variable->type);
             } else {
                 int size = ast->sizeOfType(variable->type);
                 piece->emit_li(REG_B, var_offset);
@@ -773,6 +770,12 @@ bool GeneratorContext::generateBody(ASTBody* body) {
             auto loop = pushLoop(piece->get_pc(), current_frameOffset);
             
             TypeId type = generateExpression(stmt->expression);
+
+            if(!performCast(type, TYPE_BOOL)) {
+                REPORT(stmt->expression->location, std::string() + "Condition of while-statement must evaluate to a type that can be casted to a boolean. Type was '" + ast->nameOfType(type) + "'.");
+                return TYPE_VOID;
+            }
+
             piece->emit_pop(REG_A);
             
             int reloc_while = 0;
@@ -825,7 +828,14 @@ bool GeneratorContext::generateBody(ASTBody* body) {
                 current_frameOffset = prev_frame_offset;
         } break;
         case ASTStatement::IF: {
-            generateExpression(stmt->expression);
+            TypeId type = generateExpression(stmt->expression);
+
+            if(!performCast(type, TYPE_BOOL)) {
+                REPORT(stmt->expression->location, std::string() + "Condition of if-statement must evaluate to a type that can be casted to a boolean. Type was '" + ast->nameOfType(type) + "'.");
+                return TYPE_VOID;
+            }
+
+
             piece->emit_pop(REG_A);
             
             int reloc_if = 0;

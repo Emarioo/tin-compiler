@@ -1,15 +1,21 @@
 #include "Lexer.h"
+#include "Reporter.h"
+
+#define LOCATION log_color(GRAY); printf("%s:%d\n",__FILE__,__LINE__); log_color(NO_COLOR);
+#define REPORT(L, ...) LOCATION reporter->err(path, ln, col, L, __VA_ARGS__)
 
 void TokenStream::Destroy(TokenStream* stream) {
     DELNEW(stream, TokenStream, HERE);
 }
-TokenStream* lex_file(const std::string& path) {
+TokenStream* lex_file(Reporter* reporter, const std::string& path) {
     ZoneScopedC(tracy::Color::Gold);
     
+    TokenStream* stream=nullptr;
     int filesize = 0;
     char* text = nullptr;
     defer {
         if(text) { DELNEW_ARRAY(text, char, filesize, HERE); text = nullptr; }
+        if(stream) {TokenStream::Destroy(stream); stream = nullptr; }
     };
     {
         ZoneNamedNC(zone0,"lexer_io",tracy::Color::Gold3, true);
@@ -29,16 +35,20 @@ TokenStream* lex_file(const std::string& path) {
         file.close();
         #else
         bool yes = ReadEntireFile(path,text,filesize);
-        if(!yes)
+        if(!yes) {
+            int ln = 0;
+            int col = 0;
+            REPORT("File could not be found.");
             return nullptr;
+        }
         #endif
     }
 
-    TokenStream* stream = NEW(TokenStream, HERE);
+    stream = NEW(TokenStream, HERE);
     stream->path = path;
     stream->processed_bytes = filesize; // comments are counted too, is that fine?
     
-    bool is_id = false;
+    bool is_id = false; // TODO: Enum instead of a bunch of bools
     bool is_num = false;
     bool is_decimal = false;
     bool is_str = false;
@@ -99,7 +109,6 @@ TokenStream* lex_file(const std::string& path) {
                 }
             }
         }
-
 
         if(is_comment) {
             if(chr == '\n') {
@@ -182,6 +191,10 @@ TokenStream* lex_file(const std::string& path) {
                 start_col = col;
                 start_ln = ln;
             }
+            if(is_num || is_decimal) {
+                REPORT("Digits and letters cannot be combined if the first character is a digit.");
+                return nullptr;
+            }
             if(!ending)
                 continue;
         }
@@ -208,6 +221,11 @@ TokenStream* lex_file(const std::string& path) {
                 }
                 is_decimal = true;
                 is_num = false;
+            } else {
+                if(chr == '.') {
+                    REPORT("Decimals can only have one dot to separate decimals and integers.");
+                    return nullptr;
+                }
             }
             if(!ending)
                 continue;
@@ -216,7 +234,9 @@ TokenStream* lex_file(const std::string& path) {
             int data_end = index-1 - data_start;
             if(ending)
                 data_end++;
+
             auto str = std::string(text + data_start, data_end);
+            // printf("Float %s\n",str.c_str());
             double num = atof(str.c_str());
             stream->add_float(num, start_ln, start_col);
             is_decimal = false;
@@ -289,16 +309,18 @@ TokenStream* lex_file(const std::string& path) {
     
     stream->total_lines = line;
 
-    return stream;
+    auto tmp = stream; // "steal" stream so the defer statement doesn't destroy it.
+    stream = nullptr;
+    return tmp;
 }
 
 const char* token_names[] {
-    "EOF",        // TOKEN_EOF,
+    "EOF",       // TOKEN_EOF,
     "id",        // TOKEN_ID,
     "lit_int",   // TOKEN_LITERAL_INTEGER,
-    "lit_dec", // TOKEN_LITERAL_DECIMAL,
+    "lit_dec",   // TOKEN_LITERAL_DECIMAL,
     "lit_str",   // TOKEN_LITERAL_STRING,
-    "lit_char",   // TOKEN_LITERAL_CHAR,
+    "lit_char",  // TOKEN_LITERAL_CHAR,
     "struct",    // TOKEN_STRUCT,
     "fun",       // TOKEN_FUNCTION,
     "while",     // TOKEN_WHILE,
@@ -309,12 +331,12 @@ const char* token_names[] {
     "else",      // TOKEN_ELSE,
     "global",    // TOKEN_GLOBAL,
     "const",     // TOKEN_CONST,
-    "import",   // TOKEN_IMPORT,
-    "cast",   // TOKEN_CAST,
-    "sizeof",   // TOKEN_SIZEOF,
-    "true",   // ,
-    "false",   // ,
-    "null",   // ,
+    "import",    // TOKEN_IMPORT,
+    "cast",      // TOKEN_CAST,
+    "sizeof",    // TOKEN_SIZEOF,
+    "true",      // ,
+    "false",     // ,
+    "null",      // ,
 };
 
 void TokenStream::print() {
@@ -417,3 +439,6 @@ std::string TokenStream::getline(int index) {
     
     return feed(start, end);
 }
+
+#undef LOCATION
+#undef REPORT

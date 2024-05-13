@@ -153,7 +153,7 @@ int main(int argc, const char** argv) {
             options.thread_count = 1;
 
         // options.initial_file = "main.tin";
-        options.initial_file = "tests/feature_set.tin";
+        // options.initial_file = "tests/feature_set.tin";
         // options.initial_file = "sample.tin";
         // options.initial_file = "test.tin";
         // options.initial_file = "tests/file.tin";

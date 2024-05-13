@@ -1,0 +1,6 @@
+fun main() {
+    a: float = 1.2.3;
+    23a: int;
+
+    printf(a);
+}

@@ -2,7 +2,8 @@
 #include "AST.h"
 
 #define DEF_EMIT2(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1) { emit({INST_##OP, r0, r1}); }
-#define DEF_EMIT2F(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1, bool is_float) { emit({INST_##OP, r0, r1, (Register)is_float}); }
+#define DEF_EMIT2F(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1, bool is_float) { emit({INST_##OP, r0, r1, (Register)(ControlFlags)(is_float?CONTROL_FLOAT:CONTROL_NONE)}); }
+#define DEF_EMIT2C(FN,OP) void BytecodePiece::emit_##FN(Register r0, Register r1, int size, bool is_float) { emit({INST_##OP, r0, r1, (Register)(ControlFlags)((ControlFlags)size | (is_float?CONTROL_FLOAT:CONTROL_NONE))}); }
 #define DEF_EMIT1(FN,OP) void BytecodePiece::emit_##FN(Register r0) { emit({INST_##OP, r0}); }
 #define DEF_EMIT0(FN,OP) void BytecodePiece::emit_##FN() { emit({INST_##OP}); }
 
@@ -80,12 +81,12 @@ DEF_EMIT2F(div, DIV)
 DEF_EMIT2(and, AND)
 DEF_EMIT2(or , OR)
 DEF_EMIT2(not, NOT)
-DEF_EMIT2F(eq, EQUAL)
-DEF_EMIT2F(neq, NOT_EQUAL)
-DEF_EMIT2F(less, LESS)
-DEF_EMIT2F(greater, GREATER)
-DEF_EMIT2F(less_equal, LESS_EQUAL)
-DEF_EMIT2F(greater_equal, GREATER_EQUAL)
+DEF_EMIT2C(eq, EQUAL)
+DEF_EMIT2C(neq, NOT_EQUAL)
+DEF_EMIT2C(less, LESS)
+DEF_EMIT2C(greater, GREATER)
+DEF_EMIT2C(less_equal, LESS_EQUAL)
+DEF_EMIT2C(greater_equal, GREATER_EQUAL)
 
 void BytecodePiece::emit_jmp(int pc) {
     emit({INST_JMP});
