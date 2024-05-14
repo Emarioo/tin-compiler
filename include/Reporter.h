@@ -24,7 +24,6 @@ struct Reporter {
         // MUTEX_UNLOCK(print_lock);
     }
     void err(const std::string& path, int line, int column, const std::string& msg) {
-        Assert(token);
         atomic_add(&errors,1);
         // TODO: Color
         // MUTEX_LOCK(print_lock);

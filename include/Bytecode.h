@@ -199,6 +199,11 @@ struct Bytecode {
             DELNEW(t, BytecodePiece, HERE);
         }
         pieces.clear();
+        if(owns_ast) {
+            DELNEW(ast, AST, HERE);
+            owns_ast = false;
+            ast = nullptr;
+        }
     }
     BytecodePiece* createPiece() {
         auto ptr = NEW(BytecodePiece, HERE);
@@ -238,6 +243,9 @@ struct Bytecode {
     std::vector<BytecodePiece*>& pieces_unsafe() {
         return pieces;
     }
+
+    bool owns_ast = false;
+    AST* ast=nullptr;
     
 private:
     u8* global_data = nullptr;

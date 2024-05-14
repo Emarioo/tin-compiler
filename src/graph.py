@@ -1,41 +1,36 @@
 
 import matplotlib.pyplot as plt
 
-# These measures were taken by running each thead test
-# 5 times in a new process. I/We did not run all tests
-# in one process because we seem to get worse results the longer
-# the tests run. Probably due to the operating system decreasing the priority on our process, letting it execute less often -> worse times since we're doing wall clock time.
+# Each execution was measured by starting a compiler process three times and taking the median execution time.
 
-# Times for optimized version (all see Config.h for optimized options)
-#   1, 4608.091 ms, 11.308 MB/s, (52.109550 MB)
-#   2, 2351.428 ms, 22.161 MB/s, (52.109550 MB)
-#   4, 1595.350 ms, 32.663 MB/s, (52.109550 MB)
-#   6, 1268.404 ms, 41.083 MB/s, (52.109550 MB)
-#   8, 1201.181 ms, 43.382 MB/s, (52.109550 MB)
-#  10, 1203.225 ms, 43.308 MB/s, (52.109550 MB)
-#  12, 1267.452 ms, 41.114 MB/s, (52.109550 MB)
-#  14, 1228.820 ms, 42.406 MB/s, (52.109550 MB)
-#  16, 1288.915 ms, 40.429 MB/s, (52.109550 MB)
+# 979630 lines, 88 files, 49.70 MB
 
 # Times for slow version
-#   1, 4632.633 ms, 11.248 MB/s, (52.109550 MB)
-#   takes to long
-#  16, 89.311 sec (10968 lines/s) 569.79 KB/s
+#   1 threads 5.644 sec (173558 lines/s) 8.80 MB/s
+#  16 threads 64.878 sec (15099 lines/s) 784.37 KB/s
+
+# Times for optimized version
+#  1 threads 5.459 sec (179451 lines/s) 9.10 MB/s
+#  2 threads 3.057 sec (320484 lines/s) 16.26 MB/s
+#  4 threads 1.802 sec (543490 lines/s) 27.57 MB/s
+#  6 threads 1.442 sec (679127 lines/s) 34.45 MB/s
+#  8 threads 1.260 sec (777508 lines/s) 39.44 MB/s
+# 10 threads 1.152 sec (850250 lines/s) 43.13 MB/s
+# 12 threads 1.146 sec (855116 lines/s) 43.38 MB/s 
+# 14 threads 1.101 sec (890124 lines/s) 45.16 MB/s
+# 16 threads 1.140 sec (859669 lines/s) 43.61 MB/s
 
 arr = [
-     1, 4608.091,
-     2, 2351.428,
-     4, 1595.350,
-     6, 1268.404,
-     8, 1201.181,
-    10, 1203.225,
-    12, 1267.452,
-    14, 1228.820,
-    16, 1288.915,
+     1, 5459,
+     2, 3057,
+     4, 1802,
+     6, 1442,
+     8, 1260,
+    10, 1152,
+    12, 1146,
+    14, 1101,
+    16, 1140,
 ]
-
-for i in range(0,int(len(arr)/2)):
-    print(979630 / (arr[2*i+1]/1000))
 
 # Data
 N = []
@@ -46,7 +41,7 @@ for i in range(0,int(len(arr)/2)):
 
 # Calculate speedup (S)
 T1 = T[0]  # Time taken for 1 CPU
-S = [T1 / ti for ti in T]  # Speedup = T1 / Ti
+S = [T1 / tn for tn in T]  # Speedup = T1 / Tn
 
 # Calculate efficiency (E)
 E = [s / n for s, n in zip(S, N)]  # Efficiency = Speedup / No. Of CPUs
@@ -59,7 +54,7 @@ plt.figure(figsize=(10, 6))
 plt.subplot(3, 1, 1)
 plt.plot(N, T, marker='o', color='b', label='Compile time (ms)')
 plt.title('Compile time vs Threads')
-plt.ylim(0,5500)
+plt.ylim(0,6000)
 plt.xlabel('Threads (N)')
 plt.ylabel('Compile time (ms)')
 plt.grid(True)

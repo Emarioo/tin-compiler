@@ -18,7 +18,7 @@ bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
     #ifdef ENABLE_MULTITHREADING
     if(options->thread_count == 1) {
         log_color(RED);
-        printf("You are ussing one thread with multi-threading enabled. Disable multi-threading when compiling to get fair performance out of one thread.\n");
+        printf("You are using one thread with multi-threading enabled. Disable multi-threading when compiling to get fair performance out of one thread.\n");
         log_color(NO_COLOR);
     }
     #endif
@@ -155,6 +155,10 @@ bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
     // printf("Scopes: %d\n", compiler.ast->scopes_used);
     
     if(out_bytecode) {
+        // steal ast
+        compiler.bytecode->owns_ast = true;
+        compiler.bytecode->ast = compiler.ast;
+        compiler.ast = nullptr;
         // steal bytecode
         *out_bytecode = compiler.bytecode;
         compiler.bytecode = nullptr;
@@ -173,7 +177,7 @@ void Compiler::processTasks() {
     
     bool running = true;
     while(running) {
-        // ZoneNamedC(zone0, tracy::Color::Gray12, true);
+        ZoneNamedNC(zone0, "try_task", tracy::Color::Gray15, true);
         
         SEM_WAIT(tasks_queue_lock)
         MUTEX_LOCK(tasks_lock)
@@ -365,15 +369,15 @@ void Compiler::processTasks() {
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, bytecode, reporter);
                 
-                // if(bytecode->pieces_unsafe().size() != prev_pieces) {
-                //     for(int i=prev_pieces;i<bytecode->pieces_unsafe().size();i++) {
-                //         auto p = bytecode->pieces_unsafe()[i];
-                //         log_color(GOLD);
-                //         printf("%s",p->name.c_str());
-                //         log_color(NO_COLOR);
-                //         p->print(bytecode);
-                //     }
-                // }
+                if(bytecode->pieces_unsafe().size() != prev_pieces) {
+                    for(int i=prev_pieces;i<bytecode->pieces_unsafe().size();i++) {
+                        auto p = bytecode->pieces_unsafe()[i];
+                        log_color(GOLD);
+                        printf("%s",p->name.c_str());
+                        log_color(NO_COLOR);
+                        p->print(bytecode);
+                    }
+                }
                 
                 LOGIT(log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); )
             } break;

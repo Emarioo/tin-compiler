@@ -354,7 +354,6 @@ int Bytecode::appendString(const std::string& str) {
     return off;
 }
 u8* Bytecode::copyGlobalData(int* size) {
-    Assert(false); // nocheckin, TODO: remove this line
     Assert(size);
     MUTEX_LOCK(general_lock);
     *size = global_data_size;

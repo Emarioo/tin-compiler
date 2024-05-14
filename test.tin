@@ -1,5 +1,9 @@
+fun add(x: int, y: int): int { return x + y; }
 fun main() {
-    231ad: int;
-
+    // 231ad: int;
+    // printi(add(1,2));
     // printf(a);
+    x: int = add(1, 5);
+    y: int = add(x, add(x / 2, x + 5));
+    printi(y);
 }

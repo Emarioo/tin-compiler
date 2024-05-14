@@ -1,6 +1,6 @@
 Extended Backus-Naur form
 ```c
-program ::= { struct | function | global_var | constant | include }
+program ::= { struct | function | global_var | constant | import }
 
 global_var ::= "global" declaration
 constant ::= "const" declaration

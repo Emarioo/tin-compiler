@@ -4,6 +4,16 @@
 
 
 struct VirtualMachine {
+    ~VirtualMachine() {
+        DELNEW_ARRAY(stack, u8, stack_max, HERE);
+        stack = nullptr;
+        stack_max = 0;
+        DELNEW_ARRAY(global_data, u8, global_data_max, HERE);
+        global_data = nullptr;
+        global_data_max = 0;
+        bytecode = nullptr;
+        piece = nullptr;
+    }
     Bytecode* bytecode=nullptr;
     
     u8* global_data = nullptr;

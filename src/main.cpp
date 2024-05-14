@@ -74,6 +74,13 @@ int main(int argc, const char** argv) {
     }
     
     if(measure) {
+        // config.struct_frequency = { 2, 4 };
+        // config.member_frequency = { 5, 10 };
+        // config.function_frequency = { 6, 8 };
+        // config.argument_frequency = { 3, 5 };
+        // config.statement_frequency = { 15, 20 };
+        // config.file_count = { 80, 90 };
+        // config.seed = 1713988173;
         Measure(&options);
     } else if(!dev_mode) {
         if(options.initial_file.empty()) {
@@ -97,10 +104,6 @@ int main(int argc, const char** argv) {
         Bytecode* bytecode = nullptr;
         int start_mem = GetAllocatedMemory();
         bool yes = CompileFile(&options, &bytecode);
-        int end_mem = GetAllocatedMemory() - start_mem;
-        if(end_mem != 0) {
-            PrintMemoryUsage(start_mem);
-        }
 
         if(yes && options.run) {
             Assert(bytecode);
@@ -113,6 +116,11 @@ int main(int argc, const char** argv) {
         }
         if(bytecode) {
             DELNEW(bytecode, Bytecode, HERE);
+        }
+
+        int end_mem = GetAllocatedMemory() - start_mem;
+        if(end_mem != 0) {
+            PrintMemoryUsage(start_mem);
         }
     } else if(dev_mode) {
         TinConfig config{};
@@ -146,12 +154,12 @@ int main(int argc, const char** argv) {
             GenerateTin(&config);
         }
 
-        options.run = true;
         options.initial_file = "generated/main.tin";
         if(options.thread_count == 0)
             // options.thread_count = 8;
             options.thread_count = 1;
 
+        // options.run = true;
         // options.initial_file = "main.tin";
         // options.initial_file = "tests/feature_set.tin";
         // options.initial_file = "sample.tin";
@@ -245,9 +253,9 @@ void Measure(CompilerOptions* user_options) {
     int prev_bytes = -1;
     for(auto& d : datas) {
         float bytes_per_second = d.bytes/d.time;
-        printf(" %3d, %5.3f ms, %3.3f MB/s", d.threads, (float)d.time * 1000.f, bytes_per_second / 1000'000.f);
+        printf(" %3d, %5.3f ms, %3.3f MB/s", d.threads, (float)d.time * 1000.f, bytes_per_second / 1024.f / 1024.f);
         if(prev_bytes == -1 || prev_bytes != d.bytes) {
-            printf(", (%f MB)", d.bytes / 1000'000.f);
+            printf(", (%f MB)", d.bytes / 1024.f / 1024.f);
             prev_bytes = d.bytes;
         } else {
             printf(", (...)");
