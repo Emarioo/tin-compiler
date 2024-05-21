@@ -145,6 +145,7 @@ void VirtualMachine::execute() {
         // printf("(bp: %lld, sp: %lld)\n", registers[REG_BP], registers[REG_SP]);
         // log_color(Color::NO_COLOR);
         
+        #ifndef DISABLE_DEBUG_LINES
         LOG(
             if(piece->line_of_instruction.size() > prev_pc) {
                 int line_index = piece->line_of_instruction[prev_pc];
@@ -159,6 +160,11 @@ void VirtualMachine::execute() {
             }
             piece->print(bytecode, false, prev_pc, prev_pc+1);
         )
+        #else
+        LOG(
+            piece->print(bytecode, false, prev_pc, prev_pc+1);
+        )
+        #endif
         
         switch(inst.opcode) {
         case INST_CAST: {

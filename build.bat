@@ -23,7 +23,7 @@ if !arg!==run (
 
 @REM Toggle comments on the variables below to change compiler
 SET USE_MSVC=1
-@REM SET USE_OPTIMIZED=1
+SET USE_OPTIMIZED=1
 SET USE_TRACY=1
 SET USE_DEBUG=1
 @REM SET USE_GCC=1
@@ -83,8 +83,8 @@ if !errorlevel!==0 (
     @REM echo f | xcopy bin\app.exe app.exe /y /q > nul
 :RUN_COMPILER
     @REM bin\tin -dev -t 1
-    bin\tin test.tin -t 1 -run
-    @REM bin\tin -dev -t 16
+    @REM bin\tin test.tin -t 1 -run
+    bin\tin -dev -t 16
 
     @REM SET OPTS=generated/main.tin -silent -measure -t
     @REM @REM @REM create file

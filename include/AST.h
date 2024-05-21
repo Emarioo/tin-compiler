@@ -374,8 +374,8 @@ struct AST {
     ScopeIterator createScopeIterator(ScopeId scopeId);
     ScopeInfo* iterate(ScopeIterator& iterator);
 
-    // BELOW is different implementations to avoid mutexes.
 
+    // BELOW are different implementations to avoid mutexes.
 #if defined(DOUBLE_AST_ARRAYS)
     void init_arrays() {
         typeInfos = NEW_ARRAY(TypeInfo, types_max, HERE);
@@ -386,22 +386,13 @@ struct AST {
     int types_max = 0x10000;
     volatile i32 types_used = 0;
     TypeInfo* typeInfos = nullptr;
-    // new TypeInfo[types_max];
     
-    // NOTE: 1 million lines use 124 000 scopes on average
-    // With the double array we can have 0x1000 * 0x100000 = 256 million scopes
-    // You would need a 2 billion line program to reach that limit.
-    // At that point assumming a 1 million line program compiles in 2 seconds (depending on computer). You will wait 66 minutes (2000/1 * 2).
-    // A fixed number of arrays is not your major problem in that situation.
-    // You can also build a tailored version of the compiler that preallocates more scopes.
+    // NOTE: If 1 million lines uses 124 000 scopes then a double array with 0x1000 * 0x100000 = 256 million scopes could support 2 billion lines. A 2 billion line program compiles in 66 minutes (if 1 million compiles in 2 seconds)
 
     volatile i32 scopes_used = 0;
-    // static const int scopes_max = 0x10;
-    // static const int indirect_scopes_max = 0x10;
     static const int scopes_max2 = 0x10000;
     static const int scopes_max1 = 0x1000;
     ScopeInfo* volatile* scopes = nullptr; // volatile is super important, see createScope
-    // new ScopeInfo*[scopes_max1];
     MUTEX_DECL(scopes_lock);
 
     ScopeInfo* getScope(ScopeId scopeId) {
@@ -487,4 +478,17 @@ private:
     volatile int _nodeid = 0;
 
     bool creating_global_types = false;
+
+
+    void* alloc(int size) {
+        int off = atomic_add(&ast_data_used, size) - size;
+        if(off + size > ast_data_max) {
+            printf("Pre-allocated AST data is to small (%d - %d)\n", off, ast_data_max);
+            return nullptr;
+        }
+        return ast_data + off;
+    }
+    u8* ast_data = nullptr;
+    int ast_data_max = 0x2000'0000;
+    volatile int ast_data_used = 0;
 };

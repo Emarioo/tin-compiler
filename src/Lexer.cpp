@@ -47,6 +47,8 @@ TokenStream* lex_file(Reporter* reporter, const std::string& path) {
     stream = NEW(TokenStream, HERE);
     stream->path = path;
     stream->processed_bytes = filesize; // comments are counted too, is that fine?
+
+    stream->tokens.reserve(filesize / 10);
     
     bool is_id = false; // TODO: Enum instead of a bunch of bools
     bool is_num = false;

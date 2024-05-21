@@ -682,11 +682,13 @@ bool GeneratorContext::generateBody(ASTBody* body) {
     Assert(body);
     int prev_frame_offset = current_frameOffset;
     for(auto stmt : body->statements) {
+        #ifndef DISABLE_DEBUG_LINES
         // debug line information
         std::string text = current_stream->getline(stmt->location);
         int line = current_stream->getToken(stmt->location)->line;
         if(piece)
             piece->push_line(line, text);
+        #endif
         
         bool stop = false;
         switch(stmt->kind()){
@@ -1118,7 +1120,9 @@ void GenerateFunction(AST* ast, ASTFunction* function, Bytecode* bytecode, Repor
         context.current_scopeId = function->body->scopeId;
         defer { context.current_scopeId = prev_scope; };
         
+        #ifndef DISABLE_DEBUG_LINES
         context.piece->push_line(0, "<set-globals>");
+        #endif
         
         // Find all globals in all imports and set their default value at the start of the main function
         for(auto imp : ast->imports) {

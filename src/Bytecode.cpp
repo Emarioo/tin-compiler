@@ -195,6 +195,7 @@ void BytecodePiece::print(Bytecode* bytecode, bool with_debug_info, int low_inde
         int prev_pc = i;
 
         if(with_debug_info) {
+            #ifndef DISABLE_DEBUG_LINES
             if(line_of_instruction.size() > prev_pc) {
                 int line_index = line_of_instruction[prev_pc];
                 if(line_index != -1 && (debug_last_piece != piece_index || debug_last_line != line_index)) {
@@ -206,6 +207,7 @@ void BytecodePiece::print(Bytecode* bytecode, bool with_debug_info, int low_inde
                     debug_last_line = line_index;
                 }
             }
+            #endif
         }
 
         log_color(Color::GRAY);

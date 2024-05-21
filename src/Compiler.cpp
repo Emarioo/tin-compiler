@@ -369,6 +369,7 @@ void Compiler::processTasks() {
                 for(auto func : task.imp->body->functions)
                     GenerateFunction(ast, func, bytecode, reporter);
                 
+                #ifdef DEBUG_BYTECODE
                 if(bytecode->pieces_unsafe().size() != prev_pieces) {
                     for(int i=prev_pieces;i<bytecode->pieces_unsafe().size();i++) {
                         auto p = bytecode->pieces_unsafe()[i];
@@ -378,6 +379,7 @@ void Compiler::processTasks() {
                         p->print(bytecode);
                     }
                 }
+                #endif
                 
                 LOGIT(log_color(GREEN); LOGC("generated functions: %s\n", task.name.c_str()); log_color(NO_COLOR); )
             } break;

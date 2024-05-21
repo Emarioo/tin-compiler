@@ -9,6 +9,10 @@
 
 AST::AST() {
     init_arrays();
+    #ifdef ENABLE_AST_ALLOCATOR
+    ast_data = NEW_ARRAY(u8, ast_data_max, HERE);
+    ast_data_used = 0;
+    #endif
 
     // NOTE: Mutex not needed, the main thread creates the AST and then shares it with other threads.
     global_body = createBody(GLOBAL_SCOPE);
@@ -167,12 +171,23 @@ AST::AST() {
     
 }
 ASTExpression* AST::createExpression(ASTExpression::Kind kind) {
+    ZoneScopedC(tracy::Color::RebeccaPurple);
+    #ifdef ENABLE_AST_ALLOCATOR
+    auto ptr = (ASTExpression*)alloc(sizeof(ASTExpression));
+    new(ptr)ASTExpression(kind);
+    #else
     auto ptr = NEW(ASTExpression,HERE,kind);
+    #endif
     ptr->nodeid = next_nodeid();
     return ptr;
 }
 ASTStatement* AST::createStatement(ASTStatement::Kind kind) {
+    #ifdef ENABLE_AST_ALLOCATOR
+    auto ptr = (ASTStatement*)alloc(sizeof(ASTStatement));
+    new(ptr)ASTStatement(kind);
+    #else
     auto ptr = NEW(ASTStatement, HERE, kind);
+    #endif
     return ptr;
 }
 ASTBody* AST::createBody(ScopeId parent) {

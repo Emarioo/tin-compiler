@@ -95,6 +95,7 @@ struct BytecodePiece {
     std::string name;
     std::vector<Instruction> instructions;
     
+    #ifndef DISABLE_DEBUG_LINES
     std::vector<int> line_of_instruction;
     struct Line {
         int line_number;
@@ -105,6 +106,7 @@ struct BytecodePiece {
     void push_line(int line, std::string text) {
         lines.push_back({line, text});
     }
+    #endif
     
     int virtual_sp=0;
     struct Relocation {
@@ -165,13 +167,17 @@ private:
     std::vector<int> index_of_non_immediates;
     
     void emit(Instruction inst) {
+        ZoneScopedC(tracy::Color::Aqua);
         index_of_non_immediates.push_back(instructions.size());
         instructions.push_back(inst);
         
+        #ifndef DISABLE_DEBUG_LINES
         line_of_instruction.resize(instructions.size());
         line_of_instruction[instructions.size()-1] = lines.size()-1;
+        #endif
     }
     void emit_imm(int imm){
+        ZoneScopedC(tracy::Color::Aqua);
         instructions.push_back(*(Instruction*)&imm);
     }
     void pop_last_inst() {
@@ -210,6 +216,7 @@ struct Bytecode {
         MUTEX_LOCK(general_lock);
         ptr->piece_index = pieces.size();
         pieces.push_back(ptr);
+        // ptr->instructions.reserve(0x10000);
         MUTEX_UNLOCK(general_lock);
         return ptr;
     }
