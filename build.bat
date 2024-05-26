@@ -85,6 +85,8 @@ if !errorlevel!==0 (
     @REM bin\tin -dev -t 1
     @REM bin\tin test.tin -t 1 -run
     bin\tin -dev -t 16
+    @REM bin\tin -dev -t 8
+    @REM bin\tin tests/feature_set.tin -r
 
     @REM SET OPTS=generated/main.tin -silent -measure -t
     @REM @REM @REM create file

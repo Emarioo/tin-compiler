@@ -16,7 +16,7 @@ struct CompilerOptions {
     std::string initial_file;
     bool run = false;
     #ifdef ENABLE_MULTITHREADING
-    int thread_count = 0;
+    int thread_count = 16;
     #else
     int thread_count = 1;
     #endif
