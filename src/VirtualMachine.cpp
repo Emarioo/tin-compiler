@@ -44,13 +44,13 @@ void VirtualMachine::execute() {
     }
     if(!found_main) {
         log_color(RED);
-        printf("VirtualMachine: main was not found.\n");
+        printf("VM: main was not found.\n");
         log_color(NO_COLOR);
         return;
     }
     if(piece->instructions.size() == 0) {
         log_color(YELLOW);
-        printf("VirtualMachine: '%s' has no instructions.\n", piece->name.c_str());
+        printf("VM: '%s' has no instructions.\n", piece->name.c_str());
         log_color(NO_COLOR);
         return;
     }
@@ -59,10 +59,36 @@ void VirtualMachine::execute() {
     #define CHECK_STACK if(registers[REG_SP] > (i64)stack + stack_max || registers[REG_SP] < (i64)stack) {\
         printf("\n");\
         log_color(Color::RED);\
-        printf("VirtualMachine: Stack overflow (d_sp: %lld, max: %d)\n", (i64)registers[REG_SP] - (i64)stack, (int)stack_max);\
+        printf("VM: Stack overflow (d_sp: %lld, max: %d)\n", (i64)registers[REG_SP] - (i64)stack, (int)stack_max);\
         log_color(Color::NO_COLOR);\
         return;\
     }
+    
+    bool memory_check = false;
+    auto can_access_memory=[this](void* ptr, int size) {
+        u64 diff = (u64)ptr - (u64)stack;
+        if((diff >= 0 && diff + size <= stack_max)) {
+            goto valid_access;
+        }
+        diff = (u64)ptr - (u64)global_data;
+        if((diff >= 0 && diff + size <= global_data_max)) {
+            goto valid_access;
+        }
+        
+        for(auto pair : allocations) {
+            u64 diff = (u64)ptr - (u64)pair.first;
+            if((diff >= 0 && diff + size <= pair.second.size)) {
+                goto valid_access;
+            }
+        }
+        
+        log_color(RED);
+        printf("VM: Access violation at 0x%p + %d\n", ptr, size);
+        log_color(NO_COLOR);
+        return false;
+    valid_access:
+        return true;
+    };
     
     registers[REG_BP] = registers[REG_SP];
     
@@ -76,8 +102,8 @@ void VirtualMachine::execute() {
         }
     };
     
-    log_color(GOLD);
-    printf("VirtualMachine:\n");
+    log_color(GREEN);
+    printf("VM: Started in '%s'\n", piece->name.c_str());
     log_color(NO_COLOR);
     
     int debug_last_piece = -1;
@@ -180,23 +206,31 @@ void VirtualMachine::execute() {
             registers[inst.op0] = registers[inst.op1];
             break;
         }
-        case INST_MOV_MR: {
-            mov(inst.op2, (void*)registers[inst.op0], &registers[inst.op1]);
-            break;
-        }
-        case INST_MOV_RM: {
-            mov(inst.op2, &registers[inst.op0], (void*)registers[inst.op1]);
-            break;
-        }
+        case INST_MOV_MR:
         case INST_MOV_MR_DISP: {
-            mov(inst.op2, (void*)(registers[inst.op0] + imm), &registers[inst.op1]);
-            break;
-        }
+            void* ptr = (void*)(registers[inst.op0] + imm);
+            int size = inst.op2;
+            if(!can_access_memory(ptr, size)) {
+                piece->print(bytecode, true, prev_pc, prev_pc+1);
+                printf("\n");
+                running = false;
+            } else {
+                mov(size, ptr, &registers[inst.op1]);
+            }
+        } break;
+        case INST_MOV_RM:
         case INST_MOV_RM_DISP: {
+            void* ptr = (void*)(registers[inst.op1] + imm);
+            int size = inst.op2;
             registers[inst.op0] = 0; // reset register
-            mov(inst.op2, &registers[inst.op0], (void*)(registers[inst.op1] + imm));
-            break;
-        }
+            if(!can_access_memory(ptr, size)) {
+                piece->print(bytecode, true, prev_pc, prev_pc+1);
+                printf("\n");
+                running = false;
+            } else {
+                mov(size, &registers[inst.op0], ptr);
+            }
+        } break;
         case INST_LI: {
             registers[inst.op0] = imm;
             break;
@@ -298,7 +332,15 @@ void VirtualMachine::execute() {
             break;
         }
         case INST_MEMZERO: {
-            memset((void*)registers[inst.op0],0, registers[inst.op1]);
+            void* ptr = (void*)(registers[inst.op0]);
+            int size = registers[inst.op1];
+            if(!can_access_memory(ptr, size)) {
+                piece->print(bytecode, true, prev_pc, prev_pc+1);
+                printf("\n");
+                running = false;
+            } else {
+                memset((void*)registers[inst.op0],0, registers[inst.op1]);
+            }
             break;
         }
         case INST_JMP: {
@@ -352,7 +394,20 @@ void VirtualMachine::execute() {
         if(!printed_newline)
             LOG(printf("\n");)
     }
-    print_registers();
+    if(allocations.size() > 0) {
+        log_color(RED);
+        printf("VM: Finished with %d unfreed allocations.\n", (int)allocations.size());
+        log_color(NO_COLOR);
+        for(auto& pair : allocations) {
+            Free(pair.first, pair.second.size, HERE, typeid(u8));
+        }
+        allocations.clear();
+    } else {
+        log_color(GREEN);
+        printf("VM: Finished\n");
+        log_color(NO_COLOR);
+    }
+    // print_registers();
 }
 void VirtualMachine::run_native_call(NativeCalls callType) {
     // auto inst_pop = [&](Register reg) {
@@ -395,7 +450,7 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
         void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
         
         ret = Alloc(arg0, HERE, typeid(u8), 1);
-        if(!ret) {
+        if(ret) {
             allocations[ret] = {arg0};
         }
     } break;
@@ -403,7 +458,7 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
         void* arg0 = *(void**)(registers[REG_SP] + 0);
         // void*& ret = *(void**)(registers[REG_SP] - 16 - 8);
         
-        if(!arg0) {
+        if(arg0) {
             auto pair = allocations.find(arg0);
             if(pair == allocations.end()) {
                 log_color(Color::RED);
@@ -411,7 +466,7 @@ void VirtualMachine::run_native_call(NativeCalls callType) {
                 log_color(Color::NO_COLOR);
             } else {
                 // TODO: Not decreasing memory usage
-                Free(arg0, 0, HERE, typeid(u8));
+                Free(arg0, pair->second.size, HERE, typeid(u8));
                 allocations.erase(arg0);
             }
         }

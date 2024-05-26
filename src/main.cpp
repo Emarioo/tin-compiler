@@ -36,17 +36,17 @@ int main(int argc, const char** argv) {
 
     for(int i=1;i<argc;i++) { // i=1 <- skip first argument
         auto arg = argv[i];
-        
+        // printf("%s\n",arg);
         if (streq(arg, "-help") || streq(arg, "--help")) {
             print_help();
             return 0;
         } else  if (streq(arg, "-dev")) {
             dev_mode = true;
-        } else if(streq(arg, "-run")) {
+        } else if(streq(arg, "-run") || streq(arg, "-r")) {
             options.run = true;
         } else if(streq(arg, "-silent")) {
             options.silent = true;
-        } else if(streq(arg, "-gen-code")) {
+        } else if(streq(arg, "-gen-code") || streq(arg, "-gc")) {
             gen_code = true;
         } else if(streq(arg, "-measure")) {
             measure = true;

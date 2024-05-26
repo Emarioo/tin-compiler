@@ -1,24 +1,13 @@
-struct Array {
-    ptr: Location*,
-    size: int,
-}
-struct Location {
-    line: int,
-}
+/*
+    An example of the Tin language
+*/
 
-fun strlen(str: char*): int {
-    length: int; // zero initialized
-    while str[length] {
-        length++;
-    }
-    return length;
-}
 fun find_string(str: char*, text: char*, text_size: int) {
     str_length: int = strlen(str);
     index: int;
     correct: int;
-    array.ptr = cast Location*  malloc(sizeof Location * 100);
-    array.size = 0;
+    global_array.ptr = cast Location*  malloc(sizeof Location * 100);
+    global_array.size = 0;
     line: int = 1;
     while index < text_size {
         if text[index] == '\n' {
@@ -28,8 +17,8 @@ fun find_string(str: char*, text: char*, text_size: int) {
             correct++;
             if correct == str_length {
                 correct = 0;
-                array.ptr[array.size].line = line;
-                array.size++;
+                global_array.ptr[global_array.size].line = line;
+                global_array.size++;
             }
         } else {
             correct = 0;
@@ -37,7 +26,14 @@ fun find_string(str: char*, text: char*, text_size: int) {
         index++;
     }
 }
-global array: Array;
+/*
+intintintintintintintintintintintintintintintintintintintintintint
+intintintintintintintintintintintintintintintintintintintintintint
+intintintintintintintintintintintintintintintintintintintintintintintint
+intintintintintintintintintintintintintintintintintintintintintint
+intintintintintintintintintintintintintintintintint
+*/
+global global_array: Array;
 fun main() {
     text: char*;
     size: int;
@@ -47,13 +43,32 @@ fun main() {
 
     prints("Found ");
     prints("int ");
-    printi(array.size);
+    printi(global_array.size);
     prints(" times here:\n");
     i: int;
-    while i < array.size {
+    while i < global_array.size {
         prints(" LN ");
-        printi(array.ptr[i].line);
+        printi(global_array.ptr[i].line);
         printc('\n');
         i++;
     }
+    
+    mfree(global_array.ptr);
+    mfree(text);
+}
+
+fun strlen(str: char*): int {
+    length: int; // zero initialized
+    while str[length] {
+        length++;
+    }
+    return length;
+}
+
+struct Array {
+    ptr: Location*,
+    size: int,
+}
+struct Location {
+    line: int,
 }
