@@ -79,12 +79,14 @@ if !USE_MSVC!==1 (
     @REM SET error=!errorlevel!
 )
 
-if !errorlevel!==0 (
+if !error!==0 (
     @REM echo f | xcopy bin\app.exe app.exe /y /q > nul
 :RUN_COMPILER
-    @REM bin\tin -dev -t 1
-    @REM bin\tin test.tin -t 1 -run
-    bin\tin -dev -t 16
+    bin\tin tests/feature_set.tin -run
+    @REM bin\tin test.tin -run
+    @REM bin\tin -dev -t 16
+    
+    
 
     @REM SET OPTS=generated/main.tin -silent -measure -t
     @REM @REM @REM create file

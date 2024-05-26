@@ -322,6 +322,10 @@ struct AST {
         i->name = name;
         MUTEX_LOCK(imports_lock);
         imports.push_back(i);
+        auto pair = import_map.find(name);
+        if (pair != import_map.end()) {
+            Assert(("bug, creating import with a name that already exists",false));
+        }
         import_map[name] = i;
         MUTEX_UNLOCK(imports_lock);
         return i;

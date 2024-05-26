@@ -6,3 +6,5 @@ bin
 *.ilk
 *.pdb
 generated
+
+out

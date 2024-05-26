@@ -60,6 +60,9 @@ bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
     auto start_time = StartMeasure();
 
     SEM_INIT(compiler.tasks_queue_lock, 1, 1)
+#ifdef ENABLE_HIGH_PRIORITY_PROCESS
+    SetHighProcessPriority();
+#endif
 
     std::vector<Thread*> threads;
     for(int i=0;i<threadcount - 1;i++) {
@@ -167,6 +170,9 @@ bool CompileFile(CompilerOptions* options, Bytecode** out_bytecode) {
 }
 
 void Compiler::processTasks() {
+#ifdef ENABLE_HIGH_PRIORITY_PROCESS
+    SetHighThreadPriority();
+#endif
     // return;
     ZoneScopedC(tracy::Color::Gray12);
     
@@ -262,6 +268,7 @@ void Compiler::processTasks() {
                 // stream->print();
                 // ast->print();
 
+                // 
                 MUTEX_LOCK(tasks_lock);
                 for(auto& fix_imp : imp->fixups) {
                     fix_imp->deps_now++;
@@ -279,8 +286,10 @@ void Compiler::processTasks() {
                     imp->deps_now = 0;
                     imp->deps_count = 0;
                     for (auto& n : imp->dependencies) {
-                        auto ptr = ast->findImport(n);
-                        if(!ptr) {
+                        // IMPORTANT TODO: find and create import as well as adding it as a task
+                        // should be an atomic operation. This is currently a bug.
+                        auto dep_imp = ast->findImport(n);
+                        if(!dep_imp) {
                             Task t{};
                             t.type = TASK_LEX_FILE;
                             t.name = n;
@@ -293,11 +302,12 @@ void Compiler::processTasks() {
                         } else {
                             // import is already a task
                             MUTEX_LOCK(tasks_lock);
-                            if(ptr->body) {
+                            if(dep_imp->body) {
                                 // TODO: Is tasks_lock mutex enough for shared_scopes?
-                                ast->getScope(imp->body->scopeId)->shared_scopes.push_back(ast->getScope(ptr->body->scopeId));
+                                ScopeInfo* scope = ast->getScope(imp->body->scopeId);
+                                scope->shared_scopes.push_back(ast->getScope(dep_imp->body->scopeId));
                             } else {
-                                ptr->fixups.push_back(imp);
+                                dep_imp->fixups.push_back(imp);
                                 imp->deps_count++;
                             }
                             MUTEX_UNLOCK(tasks_lock);

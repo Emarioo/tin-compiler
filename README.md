@@ -32,3 +32,6 @@ Finally, you should be able to start `build.bat` in the terminal.
 If you have g++ (mingw-64) then you can run `make` to compile the project.
 
 Note that we have not managed to use Tracy Profiler with g++.
+
+# Further work
+From tracy, a million line program locks mutexes 34 000 times which takes 5.35 seconds. 5.35 s / 16 threads is 334 ms which is half of the compile time from start to finish which is 624 ms. If we can reduce locks further than we should achieve even better results.

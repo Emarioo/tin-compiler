@@ -528,6 +528,24 @@ ThreadId Thread::getId() {
 ThreadId Thread::GetThisThreadId() {
     return GetCurrentThreadId();
 }
+
+void SetHighProcessPriority() {
+    auto h = GetCurrentProcess();
+    // auto err = SetPriorityClass(h, HIGH_PRIORITY_CLASS);
+    auto err = SetPriorityClass(h, REALTIME_PRIORITY_CLASS); // dangerous?
+    if (err == 0) {
+        printf("fail prio\n");
+    }
+}
+void SetHighThreadPriority() {
+    auto h = GetCurrentThread();
+    // auto err = SetThreadPriority(h, THREAD_PRIORITY_HIGHEST);
+    auto err = SetThreadPriority(h, THREAD_PRIORITY_TIME_CRITICAL); // dangerous?
+    if (err == 0) {
+        printf("fail prio\n");
+    }
+}
+
 #endif
 
 #ifdef OS_UNIX
